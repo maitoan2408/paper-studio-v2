@@ -18,9 +18,9 @@ export function rigFixture() {
   ]);
   const limits = (min: number, max: number) => ({ min, max });
   const sideBones = (s: 'l' | 'r') => [
-    { id: `upper-arm.${s}`, parent: 'torso', attach: `shoulder.${s}`, limits: limits(-170, 170), z: s === 'l' ? -1 : 2 },
-    { id: `forearm.${s}`, parent: `upper-arm.${s}`, attach: 'elbow', limits: limits(-150, 0), z: s === 'l' ? -1 : 2 },
-    { id: `hand.${s}`, parent: `forearm.${s}`, attach: 'wrist', limits: limits(-60, 60), z: s === 'l' ? -1 : 2 },
+    { id: `upper-arm.${s}`, parent: 'torso', attach: `shoulder.${s}`, limits: limits(-170, 170), maxDegPerFrame: 12, z: s === 'l' ? -1 : 2 },
+    { id: `forearm.${s}`, parent: `upper-arm.${s}`, attach: 'elbow', limits: limits(-150, 0), maxDegPerFrame: 12, z: s === 'l' ? -1 : 2 },
+    { id: `hand.${s}`, parent: `forearm.${s}`, attach: 'wrist', limits: limits(-60, 60), maxDegPerFrame: 22.5, z: s === 'l' ? -1 : 2 },
   ];
   const character = (p: string) => ({
     id: p,
@@ -40,8 +40,8 @@ export function rigFixture() {
     id: 'biped-test',
     sides: ['l', 'r'],
     bones: [
-      { id: 'pelvis', parent: null, attach: null, limits: limits(-20, 20), z: 0 } as any,
-      { id: 'torso', parent: 'pelvis', attach: 'waist', limits: limits(-15, 40), z: 1 },
+      { id: 'pelvis', parent: null, attach: null, limits: limits(-20, 20), maxDegPerFrame: 12, z: 0 } as any,
+      { id: 'torso', parent: 'pelvis', attach: 'waist', limits: limits(-15, 40), maxDegPerFrame: 12, z: 1 },
       ...sideBones('l'),
       ...sideBones('r'),
     ],

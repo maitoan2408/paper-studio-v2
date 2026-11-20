@@ -2,7 +2,8 @@
  * Action clip — BẢN NHÁP v0 (được phép đổi ở M1/M2).
  * Thời gian chuẩn hóa t ∈ [0,1]; thời lượng thật do film quyết định.
  * `@active` trong tên xương/contact được film gán thành `l` hoặc `r`; validator kiểm cả hai bên.
- * Chưa kiểm ở M0 (cần lấy mẫu chuyển động, làm ở M2): ACTION_PRECONDITION, ACTION_LIMIT_EXCEEDED.
+ * Kiểm ở mức film (lấy mẫu mọi frame): ACTION_PRECONDITION, ACTION_LIMIT_EXCEEDED, ACTION_SPEED_EXCEEDED
+ * (ngưỡng tốc độ theo từng xương trong rig.json, gồm cả bàn tay khi thả).
  */
 import { z } from 'zod';
 import { fail, parseWith } from '../core/errors.ts';
@@ -21,18 +22,13 @@ const Channel = z.discriminatedUnion('prop', [
   z.object({ bone: Ref, prop: z.literal('rotation'), mode: z.enum(['offset', 'absolute']), keys: z.array(NumKey).min(1) }).strict(),
   z.object({ bone: Ref, prop: z.enum(['rootX', 'rootY']), mode: z.enum(['offset', 'absolute']), keys: z.array(NumKey).min(1) }).strict(),
   z.object({ bone: Ref, prop: z.literal('variant'), mode: z.literal('absolute'), keys: z.array(VariantKey).min(1) }).strict(),
+  /** Bóp ngang sprite của xương quanh pivot (1 = không bóp; dùng khi đổi variant, như lật tờ giấy). */
+  z.object({ bone: Ref, prop: z.literal('squashX'), mode: z.literal('absolute'), keys: z.array(z.object({ t: T, v: z.number().finite().min(0.05).max(1), ease: Ease.optional() }).strict()).min(1) }).strict(),
 ]);
 
 const Event = z.discriminatedUnion('type', [
   z.object({ t: T, type: z.literal('grip'), contact: Ref, target: Id }).strict(),
-  z
-    .object({
-      t: T,
-      type: z.literal('release'),
-      contact: Ref,
-      release: z.object({ from: Id, to: Id, maxDegPerFrame: z.number().finite().positive().max(90) }).strict(),
-    })
-    .strict(),
+  z.object({ t: T, type: z.literal('release'), contact: Ref }).strict(),
   z.object({ t: T, type: z.literal('contact'), contact: Ref, surface: Id }).strict(),
 ]);
 
@@ -92,11 +88,6 @@ export function validateAction(raw: unknown, rig: Rig): ActionClip {
       for (const side of rig.data.sides) {
         const c = resolve(e.contact, side);
         if (!contactNames.has(c)) fail('ACTION_UNKNOWN_BONE', `${where}.contact`, `contact "${c}" not in rig ${rig.data.id}`);
-        if (e.type === 'release') {
-          const bone = rig.data.contacts[c]!.bone;
-          requireVariant(rig, bone, e.release.from, `${where}.release.from`);
-          requireVariant(rig, bone, e.release.to, `${where}.release.to`);
-        }
       }
       if (e.type === 'grip') {
         if (gripped.has(e.contact)) fail('ACTION_EVENT_ORDER', where, `"${e.contact}" gripped twice without release`);

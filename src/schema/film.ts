@@ -233,17 +233,22 @@ export function validateFilm(
   if (f.physics.length > 0) fail('FILM_FEATURE_NOT_ENABLED', 'film.physics', 'physics is not enabled yet');
 
   const film: Film = { data: f, assets, packs, rigs, clips };
-  // Giới hạn khớp: lấy mẫu mọi frame của mọi nhân vật.
+  // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
   f.characters.forEach((c, ci) => {
     const rig = rigs.get(c.pack)!;
+    let prev: Map<string, number> | undefined;
     for (let fr = 0; fr < N; fr++) {
       const pose = characterPose(film, ci, fr);
       for (const b of rig.order) {
         const a = pose.angles.get(b.id)!;
+        const at = `film.characters[${ci}](${c.id}) frame ${fr}`;
         if (a < b.limits.min - 1e-9 || a > b.limits.max + 1e-9) {
-          fail('ACTION_LIMIT_EXCEEDED', `film.characters[${ci}](${c.id}) frame ${fr}`, `${b.id} = ${a.toFixed(2)}° outside [${b.limits.min}, ${b.limits.max}]`);
+          fail('ACTION_LIMIT_EXCEEDED', at, `${b.id} = ${a.toFixed(2)}° outside [${b.limits.min}, ${b.limits.max}]`);
         }
+        const d = prev ? Math.abs(a - prev.get(b.id)!) : 0;
+        if (d > b.maxDegPerFrame + 1e-9) fail('ACTION_SPEED_EXCEEDED', at, `${b.id} turns ${d.toFixed(2)}°/frame > ${b.maxDegPerFrame}`);
       }
+      prev = pose.angles;
     }
   });
   return film;

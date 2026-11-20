@@ -87,12 +87,25 @@ test('on screen: both characters touch the floor line; c2 is mirrored', () => {
     });
     assert.ok(near(Math.max(...ys), floorY, 1e-6), `${id} lowest contact at ${Math.max(...ys)}, floor ${floorY}`);
   }
-  assert.ok(sf.sprites.filter((s) => s.id.startsWith('c2/')).every((s) => s.flipX));
-  assert.ok(sf.sprites.filter((s) => s.id.startsWith('c1/')).every((s) => !s.flipX));
+  assert.ok(sf.sprites.filter((s) => s.id.startsWith('c2/')).every((s) => s.scaleX < 0));
+  assert.ok(sf.sprites.filter((s) => s.id.startsWith('c1/')).every((s) => s.scaleX > 0));
 });
 
 test('draw order inside a character follows bone z', () => {
   const ids = sampleFrame(film(), 0).sprites.filter((s) => s.id.startsWith('c1/')).map((s) => s.id.slice(3));
   assert.ok(ids.indexOf('upper-arm.l') < ids.indexOf('pelvis')); // z −1 trước z 0
   assert.ok(ids.indexOf('torso') < ids.indexOf('upper-arm.r')); // z 1 trước z 2
+});
+
+test('squashX narrows only the target bone sprite, around its pivot, and returns to 1', () => {
+  const squash = { schemaVersion: 1, id: 'squash', rig: 'biped-test', events: [], requires: {},
+    channels: [{ bone: 'torso', prop: 'squashX', mode: 'absolute', keys: [{ t: 0, v: 1, ease: 'linear' }, { t: 0.5, v: 0.5, ease: 'linear' }, { t: 1, v: 1 }] }] };
+  const cf = castFixture({ squash });
+  cf.film.timeline = [{ character: 'c1', clip: 'squash', start: 0, durationFrames: 11, bind: {} }];
+  const f = cf.validate();
+  const sx = (fr: number, b: string) => sampleFrame(f, fr).sprites.find((s) => s.id === `c1/${b}`)!.scaleX;
+  assert.equal(sx(5, 'torso'), 0.5);
+  assert.equal(sx(5, 'pelvis'), 1);
+  assert.equal(sx(10, 'torso'), 1);
+  assert.equal(sampleFrame(f, 5).sprites.find((s) => s.id === 'c1/torso')!.scale, 1); // chiều dọc không đổi
 });

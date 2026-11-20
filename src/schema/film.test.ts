@@ -153,3 +153,37 @@ test('ACTION_LIMIT_EXCEEDED: sampled pose leaves the joint range', () => {
   // forearm.l: rest −10, giới hạn [−150, 0] → −10 + 30 = 20 vượt max.
   assert.throws(() => cf.validate(), code('ACTION_LIMIT_EXCEEDED'));
 });
+
+/** Clip quay một xương đi rồi về với tốc độ đều `deg`/frame (9 frame: 4 bước đi, 4 bước về). */
+const spin = (bone: string, deg: number) => ({
+  schemaVersion: 1, id: 'spin', rig: 'biped-test', events: [], requires: {},
+  channels: [{ bone, prop: 'rotation', mode: 'offset', keys: [{ t: 0, v: 0, ease: 'linear' }, { t: 0.5, v: deg * 4, ease: 'linear' }, { t: 1, v: 0 }] }],
+});
+for (const [bone, deg, ok] of [['hand.l', 14, true], ['upper-arm.l', 11.9, true], ['upper-arm.l', 12.5, false]] as const) {
+  test(`ACTION_SPEED_EXCEEDED: ${bone} at ${deg}°/frame → ${ok ? 'ok' : 'fail'} (per-bone limit from rig.json)`, () => {
+    const cf = castFixture({ spin: spin(bone, deg) });
+    cf.film.timeline = [{ character: 'c1', clip: 'spin', start: 0, durationFrames: 9, bind: {} }];
+    if (ok) cf.validate();
+    else assert.throws(() => cf.validate(), code('ACTION_SPEED_EXCEEDED'));
+  });
+}
+
+test('per-bone limits differ: hand may turn 20°/frame where the upper arm may not', () => {
+  // Clip 3 frame 0 → v → 0: tốc độ v°/frame. Bàn tay ngưỡng 22.5, cánh tay 12 (rig fixture).
+  const quick = (bone: string, v: number) => ({ schemaVersion: 1, id: 'spin', rig: 'biped-test', events: [], requires: {},
+    channels: [{ bone, prop: 'rotation', mode: 'offset', keys: [{ t: 0, v: 0, ease: 'linear' }, { t: 0.5, v, ease: 'linear' }, { t: 1, v: 0 }] }] });
+  for (const [bone, v, ok] of [['hand.l', 20, true], ['upper-arm.l', 20, false], ['hand.l', 25, false]] as const) {
+    const cf = castFixture({ spin: quick(bone, v) });
+    cf.film.timeline = [{ character: 'c1', clip: 'spin', start: 0, durationFrames: 3, bind: {} }];
+    if (ok) cf.validate();
+    else assert.throws(() => cf.validate(), code('ACTION_SPEED_EXCEEDED'));
+  }
+});
+
+test('ACTION_SPEED_EXCEEDED: a clip that ends away from rest pops back → caught', () => {
+  const end = { schemaVersion: 1, id: 'spin', rig: 'biped-test', events: [], requires: {},
+    channels: [{ bone: 'upper-arm.l', prop: 'rotation', mode: 'offset', keys: [{ t: 0, v: 0, ease: 'linear' }, { t: 1, v: 30 }] }] };
+  const cf = castFixture({ spin: end });
+  cf.film.timeline = [{ character: 'c1', clip: 'spin', start: 0, durationFrames: 10, bind: {} }];
+  assert.throws(() => cf.validate(), (e: any) => code('ACTION_SPEED_EXCEEDED')(e) && /frame 10/.test(e.message));
+});

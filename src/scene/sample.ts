@@ -36,9 +36,10 @@ export interface Sprite {
   y: number;
   /** Độ, dương = theo chiều kim đồng hồ trên màn hình. */
   rot: number;
-  /** px màn hình trên mỗi px art. */
+  /** px màn hình trên mỗi px art theo chiều dọc. */
   scale: number;
-  flipX: boolean;
+  /** px màn hình trên mỗi px art theo chiều ngang, CÓ DẤU: âm = lật gương; |scaleX| < scale = bóp ngang. */
+  scaleX: number;
   opacity: number;
   /** Bóng đổ ở không gian màn hình (dy dương = xuống). */
   shadow?: { dx: number; dy: number; blur: number; opacity: number };
@@ -96,7 +97,7 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
       y: sy,
       rot: item.rotation === 0 ? 0 : -item.rotation, // ngược chiều kim đồng hồ (thế giới) → theo chiều (màn hình)
       scale: item.scale * zoomL,
-      flipX: false,
+      scaleX: item.scale * zoomL,
     };
     if (item.shadow) {
       s.shadow = {
@@ -135,7 +136,7 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
           y: sy,
           rot: worldAngle === 0 ? 0 : -worldAngle,
           scale: c.scale * zoomL,
-          flipX: sign < 0,
+          scaleX: sign * c.scale * zoomL * (pose.squash.get(part.bone) ?? 1),
         };
       });
   };
@@ -154,7 +155,7 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
 
 /** Điểm art (px SVG) của sprite → px màn hình. Định nghĩa phép biến đổi mà renderer phải tuân theo. */
 export function spriteToScreen(s: Sprite, artPoint: V2): V2 {
-  const vx = (artPoint[0] - s.pivot[0]) * s.scale * (s.flipX ? -1 : 1);
+  const vx = (artPoint[0] - s.pivot[0]) * s.scaleX;
   const vy = (artPoint[1] - s.pivot[1]) * s.scale;
   const r = (s.rot * Math.PI) / 180;
   const c = Math.cos(r);

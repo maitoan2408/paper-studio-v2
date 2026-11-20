@@ -14,7 +14,8 @@
         "min": -10,
         "max": 10
       },
-      "z": 0
+      "z": 0,
+      "maxDegPerFrame": 12
     },
     {
       "id": "leg.l",
@@ -24,7 +25,8 @@
         "min": -20,
         "max": 20
       },
-      "z": -1
+      "z": -1,
+      "maxDegPerFrame": 12
     },
     {
       "id": "leg.r",
@@ -34,7 +36,8 @@
         "min": -20,
         "max": 20
       },
-      "z": -1
+      "z": -1,
+      "maxDegPerFrame": 12
     },
     {
       "id": "torso",
@@ -44,7 +47,8 @@
         "min": -15,
         "max": 15
       },
-      "z": 1
+      "z": 1,
+      "maxDegPerFrame": 12
     },
     {
       "id": "head",
@@ -54,7 +58,8 @@
         "min": -25,
         "max": 25
       },
-      "z": 3
+      "z": 3,
+      "maxDegPerFrame": 12
     },
     {
       "id": "upper-arm.l",
@@ -64,7 +69,8 @@
         "min": -30,
         "max": 175
       },
-      "z": 2
+      "z": 2,
+      "maxDegPerFrame": 12
     },
     {
       "id": "forearm.l",
@@ -74,7 +80,8 @@
         "min": -60,
         "max": 150
       },
-      "z": 2
+      "z": 2,
+      "maxDegPerFrame": 12
     },
     {
       "id": "hand.l",
@@ -84,7 +91,8 @@
         "min": -45,
         "max": 45
       },
-      "z": 2
+      "z": 2,
+      "maxDegPerFrame": 22.5
     },
     {
       "id": "upper-arm.r",
@@ -94,7 +102,8 @@
         "min": -175,
         "max": 30
       },
-      "z": 2
+      "z": 2,
+      "maxDegPerFrame": 12
     },
     {
       "id": "forearm.r",
@@ -104,7 +113,8 @@
         "min": -150,
         "max": 60
       },
-      "z": 2
+      "z": 2,
+      "maxDegPerFrame": 12
     },
     {
       "id": "hand.r",
@@ -114,7 +124,8 @@
         "min": -45,
         "max": 45
       },
-      "z": 2
+      "z": 2,
+      "maxDegPerFrame": 22.5
     }
   ],
   "contacts": {

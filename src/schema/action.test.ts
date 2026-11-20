@@ -29,7 +29,7 @@ const pickPlace = () => ({
   rig: 'biped-test',
   channels: [{ bone: 'pelvis', prop: 'rootY', mode: 'offset', keys: [{ t: 0, v: 0, ease: 'inOutCubic' }, { t: 0.5, v: -20, ease: 'inOutCubic' }, { t: 1, v: 0 }] }],
   events: [
-    { t: 0.6, type: 'release', contact: 'grip.@active', release: { from: 'fist', to: 'default', maxDegPerFrame: 22.5 } },
+    { t: 0.6, type: 'release', contact: 'grip.@active' },
     { t: 0.3, type: 'grip', contact: 'grip.@active', target: 'item' },
   ],
   requires: { hands: ['hand.@active'], props: [{ role: 'item', anchors: ['grip'] }], contacts: ['grip.@active'] },
@@ -63,7 +63,8 @@ const cases: [string, () => unknown][] = [
   ['ACTION_UNKNOWN_BONE', () => { const p: any = pickPlace(); p.events[0].contact = 'sole.@active'; p.events[1].contact = 'sole.@active'; return p; }],
   ['ACTION_UNKNOWN_BONE', () => { const p: any = pickPlace(); p.requires.contacts = ['pinch.@active']; return p; }],
   ['ACTION_UNKNOWN_VARIANT', () => { const w: any = wave(); w.channels[1].keys[1].v = 'point'; return w; }],
-  ['ACTION_UNKNOWN_VARIANT', () => { const p: any = pickPlace(); p.events[0].release.to = 'open'; return p; }],
+  ['ACTION_SCHEMA', () => { const p: any = pickPlace(); p.events[0].release = { maxDegPerFrame: 22.5 }; return p; }],
+  ['ACTION_SCHEMA', () => { const w: any = wave(); w.channels.push({ bone: 'head', prop: 'squashX', mode: 'absolute', keys: [{ t: 0, v: 0 }] }); return w; }],
   ['ACTION_EVENT_ORDER', () => { const p: any = pickPlace(); p.events[0].t = 0.1; return p; }],
   ['ACTION_EVENT_ORDER', () => { const p: any = pickPlace(); p.events.push({ ...p.events[1], t: 0.4 }); return p; }],
 ];

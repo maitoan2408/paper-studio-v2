@@ -15,6 +15,8 @@ import { ease, type EasingName } from './easing.ts';
 export interface CharacterPose {
   angles: Map<string, number>;
   variants: Map<string, string>;
+  /** Hệ số bóp ngang theo xương (mặc định 1). */
+  squash: Map<string, number>;
   /** Độ lệch gốc (px art, local y-lên, trước khi lật hướng). */
   root: V2;
 }
@@ -56,6 +58,7 @@ export function characterPose(film: Film, charIndex: number, frame: number): Cha
   const def = rig.data.characters.find((c) => c.id === ch.character)!;
   const angles = new Map(rig.order.map((b) => [b.id, def.rest[b.id]!]));
   const variants = new Map<string, string>();
+  const squash = new Map<string, number>();
   const root: [number, number] = [0, 0];
 
   const items = film.data.timeline
@@ -83,6 +86,10 @@ export function characterPose(film: Film, charIndex: number, frame: number): Cha
         if (w >= 0.5) variants.set(bone, keyStep(c.keys, t));
         continue;
       }
+      if (c.prop === 'squashX') {
+        squash.set(bone, (squash.get(bone) ?? 1) * (1 + w * (keyValue(c.keys, t) - 1)));
+        continue;
+      }
       const v = keyValue(c.keys, t) * (mirrored && c.prop === 'rotation' ? -1 : 1);
       if (c.prop === 'rotation') {
         const cur = angles.get(bone)!;
@@ -93,5 +100,5 @@ export function characterPose(film: Film, charIndex: number, frame: number): Cha
       }
     }
   }
-  return { angles, variants, root };
+  return { angles, variants, squash, root };
 }

@@ -19,7 +19,7 @@ export function expectedState(f: SceneFrame): DrawnFrame {
         y: s.y,
         rot: s.rot,
         scale: s.scale,
-        flipX: s.flipX,
+        scaleX: s.scaleX,
         opacity: s.opacity,
         shadow: s.shadow ? { dx: s.shadow.dx, dy: s.shadow.dy, blurArt: shadowBlurArt(s), opacity: s.shadow.opacity } : null,
       }),
@@ -39,10 +39,10 @@ export function compareState(expected: DrawnFrame, drawn: DrawnFrame): void {
   expected.sprites.forEach((e, i) => {
     const d = drawn.sprites[i]!;
     const where = `${at} sprite[${i}](${e.id})`;
-    if (d.id !== e.id || d.sha256 !== e.sha256 || d.flipX !== e.flipX) {
-      fail('RENDER_STATE_MISMATCH', where, `drew ${d.id}/${d.sha256.slice(0, 12)}/flip=${d.flipX}`);
+    if (d.id !== e.id || d.sha256 !== e.sha256) {
+      fail('RENDER_STATE_MISMATCH', where, `drew ${d.id}/${d.sha256.slice(0, 12)}`);
     }
-    for (const k of ['x', 'y', 'rot', 'scale', 'opacity'] as const) {
+    for (const k of ['x', 'y', 'rot', 'scale', 'scaleX', 'opacity'] as const) {
       if (!(Math.abs(d[k] - e[k]) <= EPS)) fail('RENDER_STATE_MISMATCH', `${where}.${k}`, `drew ${d[k]}, expected ${e[k]}`);
     }
     if ((d.shadow === null) !== (e.shadow === null)) fail('RENDER_STATE_MISMATCH', `${where}.shadow`, 'presence differs');

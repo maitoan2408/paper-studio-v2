@@ -35,7 +35,7 @@ export interface DrawnSprite {
   y: number;
   rot: number;
   scale: number;
-  flipX: boolean;
+  scaleX: number;
   opacity: number;
   shadow: { dx: number; dy: number; blurArt: number; opacity: number } | null;
 }

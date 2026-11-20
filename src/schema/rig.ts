@@ -15,6 +15,8 @@ const BoneSchema = z
     parent: BoneId.nullable(),
     attach: AnchorName.nullable(),
     limits: z.object({ min: Angle, max: Angle }).strict(),
+    /** Tốc độ xoay khớp tối đa (độ/frame) — NGƯỠNG DUY NHẤT cho tính liên tục của xương này. */
+    maxDegPerFrame: z.number().finite().positive().max(90),
     z: z.number().int().min(-100).max(100),
   })
   .strict();

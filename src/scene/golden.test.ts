@@ -9,8 +9,8 @@ import { loadFilm } from '../schema/film.ts';
 import { sampleAll, sceneFramesSha256 } from '../render/render.ts';
 
 const GOLDEN: Record<string, string> = {
-  'demo-greeting': '42aefe3e4e059b811a9739d16990063bf995c5e9d3b77503bc11e063485f276e',
-  'm0-static': 'a6c7aced25fe843ca888caf9cb1d82e7c2a57fd1650f8ea4549fa8157df1bae2',
+  'demo-greeting': '5cae60fdaec95d9cf1297f772e8735c04f473b1dfb397def4715848330768834',
+  'm0-static': '3b7409d39b98b66755065448cadb7c929378b97b003beaff0da12fdc5c8edeb9',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {

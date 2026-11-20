@@ -147,7 +147,7 @@ async function init(): Promise<void> {
       );
       m.renderOrder = order++;
       m.rotation.z = (s.rot * Math.PI) / 180;
-      m.scale.set(s.flipX ? -s.scale : s.scale, s.scale, 1);
+      m.scale.set(s.scaleX, s.scale, 1);
       return m;
     };
     for (const s of f.sprites) {
@@ -184,8 +184,8 @@ async function init(): Promise<void> {
         x: m.position.x,
         y: m.position.y,
         rot: (m.rotation.z * 180) / Math.PI,
-        scale: Math.abs(m.scale.y),
-        flipX: m.scale.x < 0,
+        scale: m.scale.y,
+        scaleX: m.scale.x,
         opacity: mat.opacity,
         shadow:
           sh && shMat
