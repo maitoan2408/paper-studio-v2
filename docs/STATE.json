@@ -16,7 +16,8 @@
         "Đạt điều kiện kỹ thuật M0: CI verify + render xanh (run 44766857457 @dedc5f6), m0-static MP4 1080p24 48 frame, check:renderer 8/8, audit PASS (PSNR min 42.40 dB).",
         "Renderer/check-renderer/audit VIẾT MỚI — chưa đối chiếu repo cũ (chưa có quyền).",
         "Chưa kiểm: STORYBOARD_UNSUPPORTED_ACTION (M4).",
-        "Chờ chủ dự án xem ảnh/video và đặt ACCEPTED."
+        "Chờ chủ dự án xem ảnh/video và đặt ACCEPTED.",
+        "Phát hiện khi xác nhận CI @7829585: MP4 render trên CI (sha 2ef6d7eb…) khác MP4 render tại chỗ (45cb2f4f…) dù cùng Chrome 153.0.8010.12 + ffmpeg 6.1.1. Trong cùng một máy vẫn tất định (chụp lại cùng phiên/phiên mới trùng hash; 2 lần render tại chỗ trùng byte). Nguyên nhân chưa xác minh — giả thuyết: SwiftShader JIT khác theo CPU (AVX-512 vs AVX2). Cần xử lý trước khi coi hash pixel là bất biến giữa các máy."
       ]
     },
     "DEMO": {
@@ -26,7 +27,13 @@
       "checks": {},
       "notes": [
         "Đã làm theo yêu cầu chủ dự án (trước khi M0 ACCEPTED): demo-greeting 9 s, 2 nhân vật, 3 clip; render + audit PASS tại chỗ @e547c8a (PSNR min 41.79 dB).",
-        "Trạng thái giữ NOT_RUN vì validator thứ tự mốc (M0 chưa ACCEPTED); sẽ đặt READY_FOR_USER_REVIEW khi M0 được ACCEPTED."
+        "Trạng thái giữ NOT_RUN vì validator thứ tự mốc (M0 chưa ACCEPTED); sẽ đặt READY_FOR_USER_REVIEW khi M0 được ACCEPTED.",
+        "Chủ dự án đã xem video demo; các điểm cần cải thiện:",
+        "- Camera: đặt gần hơn (nhân vật đang nhỏ trong khung).",
+        "- wave: cần gập khuỷu và cổ tay (hiện chủ yếu xoay vai, cẳng tay lắc ít, cổ tay cứng).",
+        "- turn-head: bị nhảy hình khi đổi variant đầu (front → 3/4 → side đổi tức thời, không có chuyển tiếp).",
+        "- idle-breath: biên độ quá nhẹ, gần như không thấy.",
+        "- Art tạm: cần art pack thật (thuộc M1, qua duyệt art trước motion)."
       ]
     },
     "M1": {
