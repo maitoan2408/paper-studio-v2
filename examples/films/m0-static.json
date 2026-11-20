@@ -6,7 +6,7 @@
   "stage": {
     "layers": [
       { "id": "sky", "asset": "sky", "x": 0, "y": -260, "scale": 1, "rotation": 0, "depth": 20 },
-      { "id": "sun", "asset": "sun", "x": 520, "y": 640, "scale": 1, "rotation": 0, "depth": 15 },
+      { "id": "sun", "asset": "sun", "x": 150, "y": 560, "scale": 1, "rotation": 0, "depth": 15 },
       { "id": "hills-far", "asset": "hills-far", "x": -100, "y": -10, "scale": 1, "rotation": 0, "depth": 8,
         "shadow": { "dx": 5, "dy": -6, "blur": 10, "opacity": 0.25 } },
       { "id": "hills-mid", "asset": "hills-mid", "x": 150, "y": -10, "scale": 1, "rotation": 0, "depth": 4,
