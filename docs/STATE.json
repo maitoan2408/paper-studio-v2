@@ -45,9 +45,18 @@
       "status": "NOT_RUN",
       "head": null,
       "updated": "2026-11-20",
-      "checks": {},
+      "checks": {
+        "verify": "PASS_TECHNICAL",
+        "render": "NOT_RUN",
+        "audit": "NOT_RUN"
+      },
       "notes": [
-        "Mốc đang mở (lựa chọn B: thêm hành động). Phạm vi chờ chủ dự án duyệt trước khi code."
+        "Phạm vi đã duyệt: phim chính 18–20 s (m2-handover) + phim ngắn 8–10 s (m2-plant, đổi vai/tay kia/chậu cây/đi chiều ngược) + test biến thể; chân cắt 3 mảnh; turn-head dùng squashX.",
+        "XONG + test: T1 scaleX/squashX/ngưỡng xoay theo xương (rig maxDegPerFrame); T2 chân 3 mảnh + rig ik/gait; T3 IK 2 xương; T4 đi bộ khóa chân + hướng nhìn theo hướng đi (lật như tờ giấy).",
+        "ĐANG DỞ (checkpoint, code + dữ liệu đã commit): T5/T6 cầm/đặt/trao — src/motion/props.ts (đồ đi theo tay nắm gần nhất; khi cả hai cùng nắm → theo người nhận), kênh reach ({point}|{role,anchor[,at:place]}|{bone,anchor}), PROP_FLOATING / PROP_DISCONTINUITY / PROP_BELOW_SURFACE / PROP_TARGET_HELD / HAND_BUSY; clip pick-up/carry/give/receive/place; wave/idle-breath/turn-head chỉnh theo buổi duyệt demo; 2 phim đã PASS validator.",
+        "CÒN LẠI: (1) test riêng cho props (2 đạo cụ, 2 tay, trao đồ, mã lỗi); (2) sửa lỗi hình đã thấy trên ảnh thật: tư thế bê của tam (khuỷu gập vào bụng, đèn sát chân), đồ đang cầm vẽ SAU lưng nhân vật (thứ tự vẽ prop/nhân vật), chỗ đặt đèn quá sát chân; (3) render + audit 2 phim trên CI, gửi 1× và 0.5×; (4) golden cho 2 phim mới.",
+        "Quyết định cần chủ dự án xác nhận: mở rộng giới hạn khớp vai demo-cast từ −30° lên −60° (dữ liệu tầm vận động rig, không phải ngưỡng QA; ngưỡng tốc độ 12°/frame giữ nguyên).",
+        "Giới hạn đã chấp nhận: thân nhìn thẳng khi đi ngang (gối gập sang ngang màn hình); lúc lật hướng bàn chân co theo fx (loại khỏi test trượt)."
       ]
     },
     "M1": {

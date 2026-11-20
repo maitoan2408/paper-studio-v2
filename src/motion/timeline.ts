@@ -43,13 +43,47 @@ export function keyStep(keys: readonly Key<string>[], t: number): string {
 }
 
 export function usesActive(clip: ActionClip): boolean {
-  return JSON.stringify([clip.channels.map((c) => c.bone), clip.events.map((e) => e.contact), clip.requires]).includes('@active');
+  return JSON.stringify([clip.channels.map((c) => (c.prop === 'reach' ? c.contact : c.bone)), clip.events.map((e) => e.contact), clip.requires]).includes('@active');
 }
 
 export function clipFor(film: Film, packId: string, clipId: string): ActionClip {
   const c = film.clips.get(packId)?.get(clipId);
   if (!c) return fail('FILM_UNKNOWN_REF', `clip ${clipId}`, `no clip "${clipId}" in pack ${packId}`);
   return c;
+}
+
+export interface ActiveItem {
+  index: number;
+  item: Film['data']['timeline'][number];
+  clip: ActionClip;
+  side: 'l' | 'r' | undefined;
+  /** Thời gian chuẩn hóa của clip ở frame này. */
+  t: number;
+  /** Trọng số blendIn/blendOut. */
+  w: number;
+}
+
+/** Các mục timeline của nhân vật đang chạy ở frame, theo lớp rồi start rồi thứ tự file. */
+export function activeItems(film: Film, charIndex: number, frame: number): ActiveItem[] {
+  const ch = film.data.characters[charIndex]!;
+  return film.data.timeline
+    .map((it, index) => ({ it, index }))
+    .filter(({ it }) => it.character === ch.id && frame >= it.start && frame < it.start + it.durationFrames)
+    .sort((a, b) => (a.it.layer ?? 0) - (b.it.layer ?? 0) || a.it.start - b.it.start || a.index - b.index)
+    .map(({ it, index }) => {
+      const clip = clipFor(film, ch.pack, it.clip);
+      const side = it.bind.active;
+      if (usesActive(clip) && !side) fail('ACTION_PRECONDITION', `timeline ${ch.id}/${it.clip}`, 'clip uses @active but bind.active is not set');
+      const d = it.durationFrames;
+      const u = d > 1 ? (frame - it.start) / (d - 1) : 1;
+      const rep = it.repeat ?? 1;
+      const t = rep === 1 ? u : u * rep - Math.floor(u * rep);
+      const end = it.start + d;
+      let w = 1;
+      if ((it.blendIn ?? 0) > 0) w = Math.min(w, (frame - it.start + 1) / ((it.blendIn ?? 0) + 1));
+      if ((it.blendOut ?? 0) > 0) w = Math.min(w, (end - frame) / ((it.blendOut ?? 0) + 1));
+      return { index, item: it, clip, side, t, w };
+    });
 }
 
 export function characterPose(film: Film, charIndex: number, frame: number): CharacterPose {
@@ -61,25 +95,9 @@ export function characterPose(film: Film, charIndex: number, frame: number): Cha
   const squash = new Map<string, number>();
   const root: [number, number] = [0, 0];
 
-  const items = film.data.timeline
-    .map((it, index) => ({ it, index }))
-    .filter(({ it }) => it.character === ch.id && frame >= it.start && frame < it.start + it.durationFrames)
-    .sort((a, b) => (a.it.layer ?? 0) - (b.it.layer ?? 0) || a.it.start - b.it.start || a.index - b.index);
-
-  for (const { it } of items) {
-    const clip = clipFor(film, ch.pack, it.clip);
-    const side = it.bind.active;
-    if (usesActive(clip) && !side) fail('ACTION_PRECONDITION', `timeline ${ch.id}/${it.clip}`, 'clip uses @active but bind.active is not set');
-    const d = it.durationFrames;
-    const u = d > 1 ? (frame - it.start) / (d - 1) : 1;
-    const rep = it.repeat ?? 1;
-    const t = rep === 1 ? u : u * rep - Math.floor(u * rep);
-    const end = it.start + d;
-    let w = 1;
-    if ((it.blendIn ?? 0) > 0) w = Math.min(w, (frame - it.start + 1) / ((it.blendIn ?? 0) + 1));
-    if ((it.blendOut ?? 0) > 0) w = Math.min(w, (end - frame) / ((it.blendOut ?? 0) + 1));
-
+  for (const { clip, side, t, w } of activeItems(film, charIndex, frame)) {
     for (const c of clip.channels) {
+      if (c.prop === 'reach') continue; // IK với tới xử lý ở character.ts (cần vị trí gốc và đạo cụ)
       const mirrored = side === 'r' && c.bone.includes('.@active');
       const bone = side ? c.bone.replace('.@active', `.${side}`) : c.bone;
       if (c.prop === 'variant') {

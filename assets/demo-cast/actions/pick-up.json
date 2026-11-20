@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "id": "pick-up",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.55,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.85,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "torso",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.55,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.85,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 1
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": -6,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.7,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.5,
+      "type": "grip",
+      "contact": "grip.@active",
+      "target": "item",
+      "anchor": "grip"
+    }
+  ],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ],
+    "props": [
+      {
+        "role": "item",
+        "anchors": [
+          "grip"
+        ]
+      }
+    ]
+  }
+}

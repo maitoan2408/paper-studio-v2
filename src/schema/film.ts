@@ -7,7 +7,9 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { fail, parseWith, readJsonFile } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
-import { characterState } from '../motion/character.ts';
+import { characterState, contactWorld } from '../motion/character.ts';
+import { usesActive } from '../motion/timeline.ts';
+import { checkHeldAboveSurface, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
 import { loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { validateRig, type Rig } from './rig.ts';
@@ -39,7 +41,16 @@ const CameraKey = z.object({ frame: Frame, x: Finite, y: Finite, zoom: z.number(
 const TimelineItem = z
   .object({
     character: Id, clip: Id, start: Frame, durationFrames: z.number().int().min(1),
-    bind: z.object({ active: z.enum(['l', 'r']).optional(), roles: z.record(Id, Id).optional() }).strict(),
+    bind: z
+      .object({
+        active: z.enum(['l', 'r']).optional(),
+        roles: z.record(Id, Id).optional(),
+        /** Điểm thế giới cho kênh reach {point}. */
+        points: z.record(Id, z.object({ x: Finite, y: Finite }).strict()).optional(),
+        /** Nơi đặt đạo cụ khi thả mà không còn ai cầm. */
+        place: z.object({ surface: Id, x: Finite }).strict().optional(),
+      })
+      .strict(),
     blendIn: z.number().int().min(0).optional(),
     blendOut: z.number().int().min(0).optional(),
     /** Lớp cộng dồn: chồng clip chỉ bị cấm trong cùng lớp. */
@@ -201,7 +212,7 @@ export function validateFilm(
     const clip = clips.get(c.pack)?.get(t.clip);
     if (!clip) fail('FILM_UNKNOWN_REF', `${where}.clip`, `clip "${t.clip}" not in pack ${c.pack}`);
     if (clip.rig !== c.rig) fail('FILM_UNKNOWN_REF', `${where}.clip`, `clip rig "${clip.rig}" != character rig "${c.rig}"`);
-    const needsSide = JSON.stringify([clip.channels.map((x) => x.bone), clip.events.map((x) => x.contact), clip.requires]).includes('@active');
+    const needsSide = usesActive(clip);
     if (needsSide && !t.bind.active) fail('ACTION_PRECONDITION', `${where}.bind.active`, `clip "${t.clip}" needs a hand (l|r)`);
     for (const need of clip.requires.props ?? []) {
       const propId = t.bind.roles?.[need.role];
@@ -254,6 +265,7 @@ export function validateFilm(
   if (f.physics.length > 0) fail('FILM_FEATURE_NOT_ENABLED', 'film.physics', 'physics is not enabled yet');
 
   const film: Film = { data: f, assets, packs, rigs, clips };
+  propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
   // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
   f.characters.forEach((c, ci) => {
     const rig = rigs.get(c.pack)!;
@@ -272,5 +284,7 @@ export function validateFilm(
       prev = pose.angles;
     }
   });
+  for (let fr = 0; fr < N; fr++) checkHeldAboveSurface(film, fr, (ci, contact) => contactWorld(film, ci, fr, contact));
+  checkProps(film, (ci, contact, fr) => contactWorld(film, ci, fr, contact));
   return film;
 }

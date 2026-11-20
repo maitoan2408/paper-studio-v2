@@ -13,7 +13,8 @@ import type { Rig } from '../schema/rig.ts';
 import type { ArtPack } from '../schema/art-pack.ts';
 import { contactPoint, forwardKinematics, restPose, standingHeight, type PoseInput } from '../rig/pose.ts';
 import { solveChain } from './ik.ts';
-import { characterPose } from './timeline.ts';
+import { activeItems, characterPose, keyValue } from './timeline.ts';
+import { anchorOffset, segmentAt } from './props.ts';
 import { walkState, type WalkState } from './walk.ts';
 
 export interface CharacterState {
@@ -76,6 +77,7 @@ export function characterState(film: Film, ci: number, frame: number): Character
     const sign = c.facing === 'right' ? 1 : -1;
     const walk: WalkState = { rootX: c.x, fx: sign, stepPhase: 0 };
     const root: V2 = [c.x + sign * clip.root[0] * c.scale, surface.y + (standingHeight(rig, pack, c.character) + clip.root[1]) * c.scale];
+    applyReach(film, ci, frame, angles, clip.variants, root, sign, c.scale);
     return { angles, variants: clip.variants, squash: clip.squash, root, fx: sign, scale: c.scale, walk };
   }
 
@@ -121,7 +123,72 @@ export function characterState(film: Film, ci: number, frame: number): Character
   });
 
   const root: V2 = [walk.rootX + walk.fx * clip.root[0] * c.scale, surface.y + hFinal * c.scale];
+  applyReach(film, ci, frame, angles, clip.variants, root, walk.fx, c.scale);
   return { angles, variants: clip.variants, squash: clip.squash, root, fx: walk.fx, scale: c.scale, walk };
+}
+
+/**
+ * Kênh reach: IK tay tới đích thế giới với trọng số = w(blend) · keys(t). Đích {role, anchor} chỉ hợp lệ khi
+ * đạo cụ đang NẰM YÊN (PROP_TARGET_HELD nếu đang trong tay ai). Không với trong lúc đang lật hướng.
+ */
+function applyReach(film: Film, ci: number, frame: number, angles: Map<string, number>, variants: Map<string, string>, root: V2, fx: number, scale: number): void {
+  const c = film.data.characters[ci]!;
+  const rig = film.rigs.get(c.pack)!;
+  const pack = film.packs.get(c.pack)!;
+  for (const a of activeItems(film, ci, frame)) {
+    for (const ch of a.clip.channels) {
+      if (ch.prop !== 'reach') continue;
+      const weight = a.w * keyValue(ch.keys, a.t);
+      if (weight <= 0) continue;
+      const where = `film.timeline[${a.index}] frame ${frame}`;
+      const contact = a.side ? ch.contact.replace('.@active', `.${a.side}`) : ch.contact;
+      const chainName = Object.entries(rig.data.ik ?? {}).find(([, k]) => k.contact === contact)?.[0];
+      if (!chainName) fail('ACTION_UNKNOWN_BONE', where, `no IK chain for contact "${contact}"`);
+      let target: V2 | undefined; // đích thế giới (y-lên)
+      let local: V2 | undefined; // hoặc đích local trực tiếp (bám thân — dùng được cả khi đang lật)
+      const tg = ch.target;
+      if ('point' in tg) {
+        const p = a.item.bind.points?.[tg.point];
+        if (!p) fail('FILM_UNKNOWN_REF', `${where}.bind.points.${tg.point}`, 'point is not bound');
+        target = [p.x, p.y];
+      } else if ('bone' in tg) {
+        const bone = a.side ? tg.bone.replace('.@active', `.${a.side}`) : tg.bone;
+        const anchor = a.side ? tg.anchor.replace('.@active', `.${a.side}`) : tg.anchor;
+        const parts = forwardKinematics(rig, pack, c.character, { angle: (b) => angles.get(b)!, variant: (b) => variants.get(b) ?? 'default' });
+        const part = parts.find((p) => p.bone === bone);
+        const an = part?.asset.anchors[anchor];
+        if (!part || !an) fail('RIG_ANCHOR_MISSING', where, `${c.character}: bone "${bone}" has no anchor "${anchor}"`);
+        const v = rotate(artToLocal(an, part.asset.pivot), part.angle);
+        local = [part.pos[0] + v[0], part.pos[1] + v[1]];
+      } else {
+        const propId = a.item.bind.roles?.[tg.role];
+        if (!propId) fail('ACTION_PRECONDITION', `${where}.bind.roles.${tg.role}`, 'role is not bound to a prop');
+        const off = anchorOffset(film, propId, tg.anchor);
+        let pivot: V2;
+        if (tg.at === 'place') {
+          const pl = a.item.bind.place;
+          if (!pl) fail('ACTION_PRECONDITION', `${where}.bind.place`, 'reach "at: place" needs bind.place');
+          const s = film.data.stage.surfaces.find((x) => x.id === pl.surface);
+          if (!s) fail('FILM_UNKNOWN_REF', `${where}.bind.place`, `surface "${pl.surface}" does not exist`);
+          pivot = [pl.x, s.y];
+        } else {
+          const seg = segmentAt(film, propId, frame);
+          const others = seg.holders.filter((h) => !(h.ci === ci && h.contact === contact));
+          if (others.length > 0) fail('PROP_TARGET_HELD', where, `reach target "${propId}" is held by someone else; reach a point instead`);
+          // Đang do chính tay này cầm: đích là chỗ đồ nằm TRƯỚC khi cầm (rời tay khỏi chỗ nhặt mượt mà).
+          const mine = seg.holders.find((h) => h.ci === ci && h.contact === contact);
+          pivot = mine ? segmentAt(film, propId, mine.since - 1).rest : seg.rest;
+        }
+        target = [pivot[0] + off[0], pivot[1] + off[1]];
+      }
+      if (!local) {
+        if (Math.abs(fx) < 1) fail('ACTION_PRECONDITION', where, `${c.id} reaches a world target while turning`);
+        local = [(target![0] - root[0]) / (fx * scale), (target![1] - root[1]) / scale];
+      }
+      const pose: PoseInput = { angle: (b) => angles.get(b)!, variant: (b) => variants.get(b) ?? 'default' };
+      for (const [b, v] of solveChain(rig, pack, c.character, pose, chainName, local, weight)) angles.set(b, v);
+    }
+  }
 }
 
 /** Một contact của nhân vật trong thế giới (y-lên) — dùng cho test trượt chân và gắn đạo cụ. */

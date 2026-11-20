@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "carry",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "torso",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 1
+        }
+      ]
+    }
+  ],
+  "events": [],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ]
+  }
+}

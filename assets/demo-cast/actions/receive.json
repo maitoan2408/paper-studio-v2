@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "id": "receive",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "point": "meet"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.6,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.9,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "torso",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.6,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.9,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 1
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.5,
+      "type": "grip",
+      "contact": "grip.@active",
+      "target": "item",
+      "anchor": "grip"
+    }
+  ],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ],
+    "props": [
+      {
+        "role": "item",
+        "anchors": [
+          "grip"
+        ]
+      }
+    ]
+  }
+}

@@ -15,12 +15,12 @@
         },
         {
           "t": 0.3,
-          "v": 140,
+          "v": 130,
           "ease": "linear"
         },
         {
           "t": 0.75,
-          "v": 140,
+          "v": 130,
           "ease": "inOutSine"
         },
         {
@@ -41,27 +41,73 @@
         },
         {
           "t": 0.3,
-          "v": 10,
+          "v": 55,
           "ease": "inOutSine"
         },
         {
           "t": 0.4,
-          "v": 40,
+          "v": 80,
           "ease": "inOutSine"
         },
         {
           "t": 0.5,
-          "v": 0,
+          "v": 35,
           "ease": "inOutSine"
         },
         {
           "t": 0.6,
-          "v": 40,
+          "v": 80,
           "ease": "inOutSine"
         },
         {
           "t": 0.7,
-          "v": 10,
+          "v": 40,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.75,
+          "v": 55,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "hand.@active",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.35,
+          "v": -20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.55,
+          "v": -20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.65,
+          "v": 20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.75,
+          "v": 0,
           "ease": "inOutSine"
         },
         {

@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { fail, parseWith } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
 import { Id } from './common.ts';
+import { AnchorName } from './art-pack.ts';
 import type { Rig } from './rig.ts';
 
 const Ref = z.string().regex(/^[a-z][a-z0-9-]*(\.([lr]|@active))?$/, 'must be name, name.l, name.r or name.@active');
@@ -23,11 +24,30 @@ const Channel = z.discriminatedUnion('prop', [
   z.object({ bone: Ref, prop: z.enum(['rootX', 'rootY']), mode: z.enum(['offset', 'absolute']), keys: z.array(NumKey).min(1) }).strict(),
   z.object({ bone: Ref, prop: z.literal('variant'), mode: z.literal('absolute'), keys: z.array(VariantKey).min(1) }).strict(),
   /** Bóp ngang sprite của xương quanh pivot (1 = không bóp; dùng khi đổi variant, như lật tờ giấy). */
+  /**
+   * Với tới bằng IK: đưa `contact` (vd. grip.@active) tới đích với trọng số keys ∈ [0,1].
+   * Đích: {point} = bind.points[point]; {role, anchor} = anchor của đạo cụ đang NẰM YÊN;
+   * {role, anchor, at:'place'} = vị trí anchor khi đạo cụ được đặt tại bind.place;
+   * {bone, anchor} = anchor trên art xương của CHÍNH nhân vật (vd. torso @ carry.@active — tư thế bê đồ đi theo thân).
+   */
+  z
+    .object({
+      prop: z.literal('reach'),
+      contact: Ref,
+      target: z.union([
+        z.object({ point: Id }).strict(),
+        z.object({ role: Id, anchor: AnchorName, at: z.literal('place').optional() }).strict(),
+        z.object({ bone: Ref, anchor: Ref }).strict(),
+      ]),
+      mode: z.literal('absolute'),
+      keys: z.array(z.object({ t: T, v: z.number().finite().min(0).max(1), ease: Ease.optional() }).strict()).min(1),
+    })
+    .strict(),
   z.object({ bone: Ref, prop: z.literal('squashX'), mode: z.literal('absolute'), keys: z.array(z.object({ t: T, v: z.number().finite().min(0.05).max(1), ease: Ease.optional() }).strict()).min(1) }).strict(),
 ]);
 
 const Event = z.discriminatedUnion('type', [
-  z.object({ t: T, type: z.literal('grip'), contact: Ref, target: Id }).strict(),
+  z.object({ t: T, type: z.literal('grip'), contact: Ref, target: Id, anchor: AnchorName.default('grip') }).strict(),
   z.object({ t: T, type: z.literal('release'), contact: Ref }).strict(),
   z.object({ t: T, type: z.literal('contact'), contact: Ref, surface: Id }).strict(),
 ]);
@@ -64,10 +84,19 @@ export function validateAction(raw: unknown, rig: Rig): ActionClip {
     ch.keys.forEach((k, j) => {
       if (j === 0 && k.t !== 0) fail('ACTION_KEYS_UNSORTED', `${where}.keys[0]`, 'first key must be at t=0');
       if (j > 0 && !(k.t > ch.keys[j - 1]!.t)) fail('ACTION_KEYS_UNSORTED', `${where}.keys[${j}]`, `t=${k.t} must be > previous t`);
-      if (ch.prop !== 'variant' && j < ch.keys.length - 1 && k.ease === undefined) {
+      if (ch.prop !== 'variant' && j < ch.keys.length - 1 && (k as { ease?: string }).ease === undefined) {
         fail('ACTION_SCHEMA', `${where}.keys[${j}].ease`, 'ease is required on every key except the last');
       }
     });
+    if (ch.prop === 'reach') {
+      for (const side of rig.data.sides) {
+        const c = resolve(ch.contact, side);
+        if (!Object.values(rig.data.ik ?? {}).some((k) => k.contact === c)) {
+          fail('ACTION_UNKNOWN_BONE', `${where}.contact`, `no IK chain ends at contact "${c}" in rig ${rig.data.id}`);
+        }
+      }
+      return;
+    }
     for (const side of rig.data.sides) {
       const bone = resolve(ch.bone, side);
       if (!bones.has(bone)) fail('ACTION_UNKNOWN_BONE', `${where}.bone`, `"${ch.bone}" → "${bone}" not in rig ${rig.data.id}`);
@@ -79,7 +108,9 @@ export function validateAction(raw: unknown, rig: Rig): ActionClip {
   });
 
   const contactNames = new Set(Object.keys(rig.data.contacts));
-  const gripped = new Map<string, number>();
+  // Trong một clip: không grip hai lần hay release hai lần liên tiếp cùng một tay. Release đồ đã cầm từ clip
+  // trước là hợp lệ — thứ tự cầm/thả xuyên clip được kiểm ở cấp film (props.ts).
+  const last = new Map<string, 'grip' | 'release'>();
   a.events
     .map((e, i) => ({ e, i }))
     .sort((x, y) => x.e.t - y.e.t || x.i - y.i)
@@ -89,13 +120,9 @@ export function validateAction(raw: unknown, rig: Rig): ActionClip {
         const c = resolve(e.contact, side);
         if (!contactNames.has(c)) fail('ACTION_UNKNOWN_BONE', `${where}.contact`, `contact "${c}" not in rig ${rig.data.id}`);
       }
-      if (e.type === 'grip') {
-        if (gripped.has(e.contact)) fail('ACTION_EVENT_ORDER', where, `"${e.contact}" gripped twice without release`);
-        gripped.set(e.contact, e.t);
-      }
-      if (e.type === 'release') {
-        if (!gripped.has(e.contact)) fail('ACTION_EVENT_ORDER', where, `release of "${e.contact}" without a prior grip`);
-        gripped.delete(e.contact);
+      if (e.type === 'grip' || e.type === 'release') {
+        if (last.get(e.contact) === e.type) fail('ACTION_EVENT_ORDER', where, `"${e.contact}" ${e.type} twice in a row`);
+        last.set(e.contact, e.type);
       }
     });
 

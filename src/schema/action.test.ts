@@ -65,7 +65,7 @@ const cases: [string, () => unknown][] = [
   ['ACTION_UNKNOWN_VARIANT', () => { const w: any = wave(); w.channels[1].keys[1].v = 'point'; return w; }],
   ['ACTION_SCHEMA', () => { const p: any = pickPlace(); p.events[0].release = { maxDegPerFrame: 22.5 }; return p; }],
   ['ACTION_SCHEMA', () => { const w: any = wave(); w.channels.push({ bone: 'head', prop: 'squashX', mode: 'absolute', keys: [{ t: 0, v: 0 }] }); return w; }],
-  ['ACTION_EVENT_ORDER', () => { const p: any = pickPlace(); p.events[0].t = 0.1; return p; }],
+  ['ACTION_EVENT_ORDER', () => { const p: any = pickPlace(); p.events.push({ t: 0.7, type: 'release', contact: 'grip.@active' }); return p; }],
   ['ACTION_EVENT_ORDER', () => { const p: any = pickPlace(); p.events.push({ ...p.events[1], t: 0.4 }); return p; }],
 ];
 

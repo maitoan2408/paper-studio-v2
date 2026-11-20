@@ -13,7 +13,8 @@ import type { V2 } from '../core/space.ts';
 import { ease } from '../motion/easing.ts';
 import type { Film } from '../schema/film.ts';
 import type { Asset } from '../schema/art-pack.ts';
-import { characterState } from '../motion/character.ts';
+import { characterState, contactWorld } from '../motion/character.ts';
+import { propPivot } from '../motion/props.ts';
 import { forwardKinematics } from '../rig/pose.ts';
 
 export interface Camera {
@@ -87,10 +88,12 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
   });
 
   type Item = (typeof film.data.stage.layers)[number] | (typeof film.data.props)[number];
-  const flat = (item: Item): Sprite[] => {
+  const flat = (item: Item, isProp: boolean): Sprite[] => {
     const asset = film.assets.get(item.asset);
     if (!asset) return fail('SCENE_UNKNOWN_ASSET', `film.${item.id}`, `asset "${item.asset}" not resolved`);
-    const { sx, sy, zoomL } = project(item.x, item.y, item.depth);
+    // Đạo cụ: vị trí theo trạng thái cầm/đặt ở frame này (nằm yên tại chỗ dàn cảnh nếu chưa ai cầm).
+    const [x, y] = isProp ? propPivot(film, item.id, frame, (ci, contact) => contactWorld(film, ci, frame, contact)) : [item.x, item.y];
+    const { sx, sy, zoomL } = project(x, y, item.depth);
     const s: Sprite = {
       ...base(item.id, asset),
       x: sx,
@@ -140,8 +143,8 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
   };
 
   const entries: { depth: number; kind: number; index: number; make: () => Sprite[] }[] = [
-    ...film.data.stage.layers.map((it, index) => ({ depth: it.depth, kind: 0, index, make: () => flat(it) })),
-    ...film.data.props.map((it, index) => ({ depth: it.depth, kind: 1, index, make: () => flat(it) })),
+    ...film.data.stage.layers.map((it, index) => ({ depth: it.depth, kind: 0, index, make: () => flat(it, false) })),
+    ...film.data.props.map((it, index) => ({ depth: it.depth, kind: 1, index, make: () => flat(it, true) })),
     ...film.data.characters.map((it, index) => ({ depth: it.depth, kind: 2, index, make: () => puppet(index) })),
   ];
   // Xa trước; cùng depth: layer → prop → nhân vật; rồi theo thứ tự trong file. Sắp ổn định, tất định.

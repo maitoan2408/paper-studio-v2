@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "give",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "torso",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.4,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "point": "meet"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.4,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.65,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.9,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.6,
+      "type": "release",
+      "contact": "grip.@active"
+    }
+  ],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ]
+  }
+}
