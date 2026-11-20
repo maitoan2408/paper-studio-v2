@@ -3,17 +3,20 @@
   "openMilestone": "M0",
   "milestones": {
     "M0": {
-      "status": "NOT_RUN",
-      "head": null,
+      "status": "BLOCKED",
+      "head": "68fa19b65391b46802b4a2013e3f9753c8833148",
       "updated": "2026-11-20",
       "checks": {
-        "verify": "NOT_RUN",
-        "render": "NOT_RUN",
-        "checkRenderer": "NOT_RUN",
-        "audit": "NOT_RUN"
+        "verify": "PASS_TECHNICAL",
+        "render": "BLOCKED",
+        "checkRenderer": "BLOCKED",
+        "audit": "BLOCKED"
       },
       "notes": [
-        "T1-T9 đang làm; T10+ chờ quyền đọc repo cũ"
+        "T1-T9 xong: schema art pack/rig/film + action/storyboard v0 (nháp), validator có test âm tính, sampler thuần, art pack sample-m0, phim m0-static.",
+        "verify = PASS_TECHNICAL: chạy thật tại chỗ trên Node 24.22.3 (128 test); CI verify xem trên PR.",
+        "render/checkRenderer/audit = BLOCKED: T10+ cần đọc repo cũ (ai-animation-studio-research-content @006d629) để mang renderer sang; chưa có quyền.",
+        "Chưa kiểm ở M0 (chuyển M2): ACTION_PRECONDITION, ACTION_LIMIT_EXCEEDED. Chuyển M4: STORYBOARD_UNSUPPORTED_ACTION."
       ]
     },
     "M1": {
