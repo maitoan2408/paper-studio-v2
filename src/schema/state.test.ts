@@ -18,7 +18,7 @@ test('repo docs/STATE.json is valid', () => {
 });
 
 test('valid state passes', () => {
-  validateState(state('M1', { M0: 'ACCEPTED', DEMO: 'ACCEPTED', M1: 'READY_FOR_USER_REVIEW' }));
+  validateState(state('M1', { M0: 'ACCEPTED', DEMO: 'ACCEPTED', M2: 'ACCEPTED', M1: 'READY_FOR_USER_REVIEW' }));
 });
 
 test('unknown status is rejected', () => {
@@ -47,10 +47,15 @@ test('open milestone marked ACCEPTED is rejected', () => {
   assert.throws(() => validateState(state('M0', { M0: 'ACCEPTED' })), code('STATE_ORDER'));
 });
 
-test('DEMO sits between M0 and M1', () => {
-  assert.deepEqual(MILESTONES.slice(0, 3), ['M0', 'DEMO', 'M1']);
+test('execution order: M0 → DEMO → M2 → M1 (PLAN.md §6)', () => {
+  assert.deepEqual(MILESTONES.slice(0, 4), ['M0', 'DEMO', 'M2', 'M1']);
+  validateState(state('M2', { M0: 'ACCEPTED', DEMO: 'ACCEPTED' }));
+  assert.throws(() => validateState(state('M1', { M0: 'ACCEPTED', DEMO: 'ACCEPTED' })), code('STATE_ORDER'));
+});
+
+test('DEMO sits between M0 and the next milestone', () => {
   validateState(state('DEMO', { M0: 'ACCEPTED', DEMO: 'READY_FOR_USER_REVIEW' }));
   assert.throws(() => validateState(state('DEMO', { M0: 'BLOCKED' })), code('STATE_ORDER'));
-  assert.throws(() => validateState(state('M1', { M0: 'ACCEPTED', DEMO: 'PASS_TECHNICAL' })), code('STATE_ORDER'));
+  assert.throws(() => validateState(state('M2', { M0: 'ACCEPTED', DEMO: 'PASS_TECHNICAL' })), code('STATE_ORDER'));
   assert.throws(() => validateState(state('M0', { DEMO: 'PASS_TECHNICAL' })), code('STATE_ORDER'));
 });

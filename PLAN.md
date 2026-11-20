@@ -55,6 +55,10 @@ Repo cũ: `maitoan2408/ai-animation-studio-research-content`, nhánh `codex/m6-u
 1. **Mọi thứ cụ thể là dữ liệu.** Không `if (character === 'an')`, không điều kiện riêng cho cốc/đèn, không số frame cụ thể trong code. Tìm thấy tên nhân vật/đạo cụ trong `src/` là lỗi.
 
 2. **Tất định.** Hàm lấy mẫu `frame → SceneFrame` thuần; không đồng hồ, không trạng thái tích lũy. Input, art, bake đều có SHA-256.
+   Ba mức tất định (chủ dự án chốt sau M0):
+   1. **Hash SceneFrame** (dữ liệu frame) phải giống hệt trên **mọi máy** — bắt buộc; kiểm bằng test golden trong `npm test` (CI chạy trên máy khác).
+   2. **Pixel giống hệt từng byte** trong cùng môi trường render đã cố định phiên bản (Chromium, ffmpeg, three). **CI là môi trường chuẩn** cho video chính thức.
+   3. **Khác máy:** chỉ yêu cầu PSNR ≥ ngưỡng trong `config/audit.json`.
 
 3. **Dừng khi sai (fail closed).** Dữ liệu sai, không với tới, hash sai, bake cũ → lỗi có mã (`CODE: chi tiết`). Không fallback âm thầm.
 
@@ -148,6 +152,8 @@ Tham chiếu tại commit `006d629` của repo cũ (`production/` = engine, `src
 ## 6. Các mốc
 
 Mỗi mốc: code + test + **render thật** + ảnh/video trong chat + chủ dự án duyệt. Không sang mốc sau khi chưa `ACCEPTED`.
+
+**Thứ tự thực hiện** (chủ dự án quyết định sau Demo slice, 2026-11-20): M0 → Demo slice → **M2** → M1 → M3 → M4 → M5 → M6. Art mới (M1) làm sau M2; trong M2 tiếp tục dùng art tạm của demo.
 
 ### M0 — Khung repo
 

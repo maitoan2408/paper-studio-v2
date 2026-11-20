@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "openMilestone": "M0",
+  "openMilestone": "M2",
   "milestones": {
     "M0": {
-      "status": "READY_FOR_USER_REVIEW",
-      "head": "e547c8ab28a13d65f58cc31e277a1d5a568b1df6",
+      "status": "ACCEPTED",
+      "head": "78295850c12adc0ef4543b199b79457d9e4fc84e",
       "updated": "2026-11-20",
       "checks": {
         "verify": "PASS_TECHNICAL",
@@ -17,14 +17,18 @@
         "Renderer/check-renderer/audit VIẾT MỚI — chưa đối chiếu repo cũ (chưa có quyền).",
         "Chưa kiểm: STORYBOARD_UNSUPPORTED_ACTION (M4).",
         "Chờ chủ dự án xem ảnh/video và đặt ACCEPTED.",
-        "Phát hiện khi xác nhận CI @7829585: MP4 render trên CI (sha 2ef6d7eb…) khác MP4 render tại chỗ (45cb2f4f…) dù cùng Chrome 153.0.8010.12 + ffmpeg 6.1.1. Trong cùng một máy vẫn tất định (chụp lại cùng phiên/phiên mới trùng hash; 2 lần render tại chỗ trùng byte). Nguyên nhân chưa xác minh — giả thuyết: SwiftShader JIT khác theo CPU (AVX-512 vs AVX2). Cần xử lý trước khi coi hash pixel là bất biến giữa các máy."
+        "Phát hiện khi xác nhận CI @7829585: MP4 render trên CI (sha 2ef6d7eb…) khác MP4 render tại chỗ (45cb2f4f…) dù cùng Chrome 153.0.8010.12 + ffmpeg 6.1.1. Trong cùng một máy vẫn tất định (chụp lại cùng phiên/phiên mới trùng hash; 2 lần render tại chỗ trùng byte). Nguyên nhân chưa xác minh — giả thuyết: SwiftShader JIT khác theo CPU (AVX-512 vs AVX2). Cần xử lý trước khi coi hash pixel là bất biến giữa các máy.",
+        "ACCEPTED bởi chủ dự án (2026-11-20) sau xác nhận CI verify + render xanh @7829585. Khác biệt MP4 giữa máy được chấp nhận theo 3 mức tất định (PLAN.md §3.2)."
       ]
     },
     "DEMO": {
-      "status": "NOT_RUN",
-      "head": null,
+      "status": "ACCEPTED",
+      "head": "78295850c12adc0ef4543b199b79457d9e4fc84e",
       "updated": "2026-11-20",
-      "checks": {},
+      "checks": {
+        "render": "PASS_TECHNICAL",
+        "audit": "PASS_TECHNICAL"
+      },
       "notes": [
         "Đã làm theo yêu cầu chủ dự án (trước khi M0 ACCEPTED): demo-greeting 9 s, 2 nhân vật, 3 clip; render + audit PASS tại chỗ @e547c8a (PSNR min 41.79 dB).",
         "Trạng thái giữ NOT_RUN vì validator thứ tự mốc (M0 chưa ACCEPTED); sẽ đặt READY_FOR_USER_REVIEW khi M0 được ACCEPTED.",
@@ -33,17 +37,20 @@
         "- wave: cần gập khuỷu và cổ tay (hiện chủ yếu xoay vai, cẳng tay lắc ít, cổ tay cứng).",
         "- turn-head: bị nhảy hình khi đổi variant đầu (front → 3/4 → side đổi tức thời, không có chuyển tiếp).",
         "- idle-breath: biên độ quá nhẹ, gần như không thấy.",
-        "- Art tạm: cần art pack thật (thuộc M1, qua duyệt art trước motion)."
+        "- Art tạm: cần art pack thật (thuộc M1, qua duyệt art trước motion).",
+        "ACCEPTED bởi chủ dự án (2026-11-20). CI @7829585: demo-greeting render 216 frame, audit PASS (PSNR min 41.77 dB)."
       ]
     },
-    "M1": {
+    "M2": {
       "status": "NOT_RUN",
       "head": null,
       "updated": "2026-11-20",
       "checks": {},
-      "notes": []
+      "notes": [
+        "Mốc đang mở (lựa chọn B: thêm hành động). Phạm vi chờ chủ dự án duyệt trước khi code."
+      ]
     },
-    "M2": {
+    "M1": {
       "status": "NOT_RUN",
       "head": null,
       "updated": "2026-11-20",
