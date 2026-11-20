@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "m0-static",
+  "output": { "width": 1920, "height": 1080, "fps": 24, "durationFrames": 48 },
+  "packs": [{ "id": "sample-m0", "version": "0.1.0", "manifestSha256": "b08dd679129e59f8eb6a8e678e0e7755f403dc9e4e37e9c8e83e69748e4ebbc4" }],
+  "stage": {
+    "layers": [
+      { "id": "sky", "asset": "sky", "x": 0, "y": -260, "scale": 1, "rotation": 0, "depth": 20 },
+      { "id": "sun", "asset": "sun", "x": 520, "y": 640, "scale": 1, "rotation": 0, "depth": 15 },
+      { "id": "hills-far", "asset": "hills-far", "x": -100, "y": -10, "scale": 1, "rotation": 0, "depth": 8,
+        "shadow": { "dx": 5, "dy": -6, "blur": 10, "opacity": 0.25 } },
+      { "id": "hills-mid", "asset": "hills-mid", "x": 150, "y": -10, "scale": 1, "rotation": 0, "depth": 4,
+        "shadow": { "dx": 6, "dy": -8, "blur": 12, "opacity": 0.3 } },
+      { "id": "hills-near", "asset": "hills-near", "x": -80, "y": -10, "scale": 1, "rotation": 0, "depth": 2,
+        "shadow": { "dx": 7, "dy": -9, "blur": 12, "opacity": 0.35 } },
+      { "id": "ground", "asset": "ground", "x": 0, "y": 0, "scale": 1, "rotation": 0, "depth": 1,
+        "shadow": { "dx": 0, "dy": -10, "blur": 14, "opacity": 0.3 } }
+    ],
+    "surfaces": [
+      { "id": "floor", "y": 0, "x0": -1300, "x1": 1300 },
+      { "id": "table-top", "y": 246, "x0": 60, "x1": 460 }
+    ]
+  },
+  "props": [
+    { "id": "table-1", "asset": "table", "x": 260, "y": 0, "scale": 1, "rotation": 0, "depth": 1, "on": "floor",
+      "shadow": { "dx": 9, "dy": -7, "blur": 10, "opacity": 0.35 } },
+    { "id": "lantern-1", "asset": "lantern", "x": 300, "y": 246, "scale": 1, "rotation": 0, "depth": 1, "on": "table-top",
+      "shadow": { "dx": 7, "dy": -5, "blur": 8, "opacity": 0.35 } },
+    { "id": "plant-1", "asset": "plant", "x": -380, "y": 0, "scale": 1, "rotation": 0, "depth": 1, "on": "floor",
+      "shadow": { "dx": 8, "dy": -6, "blur": 10, "opacity": 0.35 } }
+  ],
+  "characters": [],
+  "camera": { "keys": [
+    { "frame": 0, "x": 0, "y": 290, "zoom": 1, "ease": "inOutSine" },
+    { "frame": 47, "x": 40, "y": 290, "zoom": 1.04 }
+  ] },
+  "timeline": [],
+  "physics": []
+}

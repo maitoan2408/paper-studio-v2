@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "sample-m0",
+  "version": "0.1.0",
+  "assets": [
+    {
+      "id": "sky",
+      "file": "background/sky.svg",
+      "width": 2200,
+      "height": 1240,
+      "pivot": [
+        1100.0,
+        1240
+      ],
+      "anchors": {},
+      "category": "background",
+      "sha256": "0b56bdba5748b2ce0b9991ffa7f815476fb37a78ffe80d27437ad85db79e0707"
+    },
+    {
+      "id": "sun",
+      "file": "background/sun.svg",
+      "width": 220,
+      "height": 220,
+      "pivot": [
+        110,
+        110
+      ],
+      "anchors": {},
+      "category": "background",
+      "sha256": "2ea7faf3d6eb016544a7dd528a384144f47b7d136919f27af15bc907f8ccf799"
+    },
+    {
+      "id": "hills-far",
+      "file": "background/hills-far.svg",
+      "width": 2600,
+      "height": 560,
+      "pivot": [
+        1300,
+        560
+      ],
+      "anchors": {},
+      "category": "background",
+      "sha256": "7bda32499c978d2fb7d676842a7140a53543759075828ad183c03171b0cf1a81"
+    },
+    {
+      "id": "hills-mid",
+      "file": "background/hills-mid.svg",
+      "width": 2600,
+      "height": 440,
+      "pivot": [
+        1300,
+        440
+      ],
+      "anchors": {},
+      "category": "background",
+      "sha256": "424ea10b33cfb6011f0766f2c794be97a0d685b1d07d05dd30e661f5d445948f"
+    },
+    {
+      "id": "hills-near",
+      "file": "background/hills-near.svg",
+      "width": 2600,
+      "height": 320,
+      "pivot": [
+        1300,
+        320
+      ],
+      "anchors": {},
+      "category": "background",
+      "sha256": "0bd27412a2584bce16c477dfa16e10164c9aad82229a8b53374f9087d2e8bde1"
+    },
+    {
+      "id": "ground",
+      "file": "surface/ground.svg",
+      "width": 2600,
+      "height": 260,
+      "pivot": [
+        1300,
+        6
+      ],
+      "anchors": {},
+      "category": "surface",
+      "sha256": "07742498a5b09cddb30d1c2c17809256b5fe1b76ddf947791c3ff884465b9f42"
+    },
+    {
+      "id": "table",
+      "file": "surface/table.svg",
+      "width": 420,
+      "height": 260,
+      "pivot": [
+        210,
+        260
+      ],
+      "anchors": {
+        "top": [
+          210,
+          14
+        ]
+      },
+      "category": "surface",
+      "sha256": "8d7272234e9702a9e46316e802101f95747fd1adab394272c265d7dfa0040318"
+    },
+    {
+      "id": "lantern",
+      "file": "prop/lantern.svg",
+      "width": 90,
+      "height": 170,
+      "pivot": [
+        45,
+        170
+      ],
+      "anchors": {},
+      "category": "prop",
+      "sha256": "7e01a655721494a259e4e83f21af30755debacacf71ae31a50dcc34721c4cde2"
+    },
+    {
+      "id": "plant",
+      "file": "prop/plant.svg",
+      "width": 120,
+      "height": 190,
+      "pivot": [
+        60,
+        190
+      ],
+      "anchors": {},
+      "category": "prop",
+      "sha256": "02c1d7799c5d02790387c1b9933fcbfe47aa3b38d1569d00cf656d43ebcbb542"
+    }
+  ]
+}
