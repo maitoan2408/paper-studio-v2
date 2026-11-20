@@ -102,7 +102,7 @@ export function extractFrames(file: string, w: number, h: number, indices: numbe
   const sorted = [...new Set(indices)].sort((a, b) => a - b);
   const select = sorted.map((i) => `eq(n\\,${i})`).join('+');
   const r = spawnSync(FFMPEG, ['-v', 'error', '-i', file, '-vf', `select='${select}',scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgba`,
-    '-fps_mode', 'passthrough', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 1 << 31 });
+    '-fps_mode', 'passthrough', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 2 ** 31 });
   if (r.status !== 0) fail('DECODE_FAILED', file, r.stderr.toString());
   const size = w * h * 4;
   if (r.stdout.length !== size * sorted.length) fail('DECODE_FAILED', file, `extracted ${r.stdout.length} bytes for ${sorted.length} frames`);
