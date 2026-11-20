@@ -3,20 +3,20 @@
   "openMilestone": "M0",
   "milestones": {
     "M0": {
-      "status": "BLOCKED",
-      "head": "68fa19b65391b46802b4a2013e3f9753c8833148",
+      "status": "READY_FOR_USER_REVIEW",
+      "head": "e547c8ab28a13d65f58cc31e277a1d5a568b1df6",
       "updated": "2026-11-20",
       "checks": {
         "verify": "PASS_TECHNICAL",
-        "render": "BLOCKED",
-        "checkRenderer": "BLOCKED",
-        "audit": "BLOCKED"
+        "render": "PASS_TECHNICAL",
+        "checkRenderer": "PASS_TECHNICAL",
+        "audit": "PASS_TECHNICAL"
       },
       "notes": [
-        "T1-T9 xong: schema art pack/rig/film + action/storyboard v0 (nháp), validator có test âm tính, sampler thuần, art pack sample-m0, phim m0-static.",
-        "verify = PASS_TECHNICAL: chạy thật tại chỗ trên Node 24.22.3 (128 test); CI verify xem trên PR.",
-        "render/checkRenderer/audit = BLOCKED: T10+ cần đọc repo cũ (ai-animation-studio-research-content @006d629) để mang renderer sang; chưa có quyền.",
-        "Chưa kiểm ở M0 (chuyển M2): ACTION_PRECONDITION, ACTION_LIMIT_EXCEEDED. Chuyển M4: STORYBOARD_UNSUPPORTED_ACTION."
+        "Đạt điều kiện kỹ thuật M0: CI verify + render xanh (run 44766857457 @dedc5f6), m0-static MP4 1080p24 48 frame, check:renderer 8/8, audit PASS (PSNR min 42.40 dB).",
+        "Renderer/check-renderer/audit VIẾT MỚI — chưa đối chiếu repo cũ (chưa có quyền).",
+        "Chưa kiểm: STORYBOARD_UNSUPPORTED_ACTION (M4).",
+        "Chờ chủ dự án xem ảnh/video và đặt ACCEPTED."
       ]
     },
     "DEMO": {
@@ -24,7 +24,10 @@
       "head": null,
       "updated": "2026-11-20",
       "checks": {},
-      "notes": []
+      "notes": [
+        "Đã làm theo yêu cầu chủ dự án (trước khi M0 ACCEPTED): demo-greeting 9 s, 2 nhân vật, 3 clip; render + audit PASS tại chỗ @e547c8a (PSNR min 41.79 dB).",
+        "Trạng thái giữ NOT_RUN vì validator thứ tự mốc (M0 chưa ACCEPTED); sẽ đặt READY_FOR_USER_REVIEW khi M0 được ACCEPTED."
+      ]
     },
     "M1": {
       "status": "NOT_RUN",
