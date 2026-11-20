@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "openMilestone": "M0",
+  "milestones": {
+    "M0": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {
+        "verify": "NOT_RUN",
+        "render": "NOT_RUN",
+        "checkRenderer": "NOT_RUN",
+        "audit": "NOT_RUN"
+      },
+      "notes": [
+        "T1-T9 đang làm; T10+ chờ quyền đọc repo cũ"
+      ]
+    },
+    "M1": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M2": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M3": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M4": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M5": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M6": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    }
+  }
+}
