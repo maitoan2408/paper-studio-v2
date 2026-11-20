@@ -383,10 +383,15 @@
     }
   },
   "gait": {
-    "strideRatio": 0.42,
-    "liftRatio": 0.09,
+    "strideRatio": 0.34,
+    "liftRatio": 0.035,
     "reachRatio": 0.985,
+    "swingRatio": 0.85,
     "turnFrames": 8,
-    "armSwingDeg": 10
+    "swingBones": [
+      "upper-arm.l",
+      "upper-arm.r"
+    ],
+    "armSwingDeg": 8
   }
 }

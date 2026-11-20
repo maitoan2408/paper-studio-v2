@@ -38,7 +38,11 @@ const GaitSchema = z
     strideRatio: z.number().finite().positive().max(1.5),
     liftRatio: z.number().finite().min(0).max(0.5),
     reachRatio: z.number().finite().min(0.8).max(0.999),
+    /** Phần đầu mỗi bước bàn chân di chuyển; phần còn lại cả hai chân cùng trụ (không có frame nào hai chân cùng trượt). */
+    swingRatio: z.number().finite().min(0.3).max(0.9),
     turnFrames: z.number().int().min(1).max(48),
+    /** Xương đung đưa theo nhịp bước (cùng chiều, ±armSwingDeg) — dữ liệu, không gắn tên trong code. */
+    swingBones: z.array(BoneId),
     armSwingDeg: z.number().finite().min(0).max(45),
   })
   .strict();
@@ -118,6 +122,7 @@ export function validateRig(raw: unknown, pack: ArtPack): Rig {
     if (l.parent !== u.id || e.parent !== l.id) fail('RIG_IK_INVALID', where, `chain must be parent→child: ${ch.upper} → ${ch.lower} → ${ch.end}`);
     if (data.contacts[ch.contact]?.bone !== ch.end) fail('RIG_IK_INVALID', where, `contact "${ch.contact}" must be on bone "${ch.end}"`);
   }
+  for (const b of data.gait?.swingBones ?? []) if (!bones.has(b)) fail('RIG_UNKNOWN_PARENT', 'rig.gait.swingBones', `bone "${b}" does not exist`);
 
   const characters = new Map<string, CharacterInfo>();
   for (const ch of data.characters) characters.set(ch.id, validateCharacter(ch, data, bones, order, pack));

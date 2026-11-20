@@ -51,6 +51,7 @@ function fixture(): { film: (asset: string) => Film } {
           characters: [],
           camera: { keys: [{ frame: 0, x: 0, y: 300, zoom: 1, ease: 'linear' }, { frame: 11, x: 400, y: 340, zoom: 1.3 }] },
           timeline: [],
+          walks: [],
           physics: [],
         },
         new Map([['check-pack', pack]]),

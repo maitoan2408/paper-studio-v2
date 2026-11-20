@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { fail, parseWith, readJsonFile } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
-import { characterPose } from '../motion/timeline.ts';
+import { characterState } from '../motion/character.ts';
 import { validateAction, type ActionClip } from './action.ts';
 import { loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { validateRig, type Rig } from './rig.ts';
@@ -49,6 +49,8 @@ const TimelineItem = z
   })
   .strict();
 
+const Walk = z.object({ character: Id, start: Frame, durationFrames: z.number().int().min(2), toX: Finite }).strict();
+
 const FilmSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -60,6 +62,7 @@ const FilmSchema = z
     characters: z.array(Character),
     camera: z.object({ keys: z.array(CameraKey).min(1) }).strict(),
     timeline: z.array(TimelineItem),
+    walks: z.array(Walk),
     physics: z.array(z.unknown()),
   })
   .strict();
@@ -211,6 +214,24 @@ export function validateFilm(
     }
   });
 
+  // Đi bộ: nhân vật có thật, trong thời lượng, không chồng nhau, điểm đến nằm trên mặt đỡ của nhân vật.
+  const walkBy = new Map<string, { start: number; end: number; i: number }[]>();
+  f.walks.forEach((w, i) => {
+    const where = `film.walks[${i}]`;
+    const c = chars.get(w.character);
+    if (!c) fail('FILM_UNKNOWN_REF', `${where}.character`, `character "${w.character}" does not exist`);
+    if (w.start + w.durationFrames > N) fail('FILM_FRAME_RANGE', where, `ends at ${w.start + w.durationFrames} > durationFrames ${N}`);
+    const s = surfaces.get(c.on)!;
+    if (w.toX < s.x0 || w.toX > s.x1) fail('FILM_NOT_ON_SURFACE', `${where}.toX`, `${w.toX} outside surface "${s.id}" [${s.x0}, ${s.x1}]`);
+    walkBy.set(w.character, [...(walkBy.get(w.character) ?? []), { start: w.start, end: w.start + w.durationFrames, i }]);
+  });
+  for (const list of walkBy.values()) {
+    list.sort((a, b) => a.start - b.start);
+    for (let j = 1; j < list.length; j++) {
+      if (list[j]!.start < list[j - 1]!.end) fail('FILM_TIMELINE_OVERLAP', `film.walks[${list[j]!.i}]`, `overlaps walks[${list[j - 1]!.i}]`);
+    }
+  }
+
   // Timeline: kiểm thời gian; chồng clip chỉ bị cấm trong cùng (nhân vật, lớp).
   const byChar = new Map<string, { start: number; end: number; i: number }[]>();
   f.timeline.forEach((t, i) => {
@@ -238,7 +259,7 @@ export function validateFilm(
     const rig = rigs.get(c.pack)!;
     let prev: Map<string, number> | undefined;
     for (let fr = 0; fr < N; fr++) {
-      const pose = characterPose(film, ci, fr);
+      const pose = characterState(film, ci, fr);
       for (const b of rig.order) {
         const a = pose.angles.get(b.id)!;
         const at = `film.characters[${ci}](${c.id}) frame ${fr}`;

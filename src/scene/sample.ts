@@ -13,8 +13,8 @@ import type { V2 } from '../core/space.ts';
 import { ease } from '../motion/easing.ts';
 import type { Film } from '../schema/film.ts';
 import type { Asset } from '../schema/art-pack.ts';
-import { characterPose } from '../motion/timeline.ts';
-import { forwardKinematics, standingHeight } from '../rig/pose.ts';
+import { characterState } from '../motion/character.ts';
+import { forwardKinematics } from '../rig/pose.ts';
 
 export interface Camera {
   x: number;
@@ -115,20 +115,18 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
     const c = film.data.characters[ci]!;
     const rig = film.rigs.get(c.pack)!;
     const pack = film.packs.get(c.pack)!;
-    const pose = characterPose(film, ci, frame);
+    const st = characterState(film, ci, frame);
     const parts = forwardKinematics(rig, pack, c.character, {
-      angle: (b) => pose.angles.get(b)!,
-      variant: (b) => pose.variants.get(b) ?? 'default',
+      angle: (b) => st.angles.get(b)!,
+      variant: (b) => st.variants.get(b) ?? 'default',
     });
-    const surface = film.data.stage.surfaces.find((x) => x.id === c.on)!;
-    const sign = c.facing === 'right' ? 1 : -1;
-    const rootX = c.x + sign * pose.root[0] * c.scale;
-    const rootY = surface.y + (standingHeight(rig, pack, c.character) + pose.root[1]) * c.scale;
+    // fx ∈ [−1, 1]: x local nhân với fx (lật/co như tờ giấy); góc lật dấu theo dấu fx.
+    const sign = st.fx >= 0 ? 1 : -1;
     return parts
       .slice()
       .sort((a, b) => a.z - b.z || a.order - b.order)
       .map((part): Sprite => {
-        const { sx, sy, zoomL } = project(rootX + sign * part.pos[0] * c.scale, rootY + part.pos[1] * c.scale, c.depth);
+        const { sx, sy, zoomL } = project(st.root[0] + st.fx * part.pos[0] * c.scale, st.root[1] + part.pos[1] * c.scale, c.depth);
         const worldAngle = sign * part.angle; // lật gương: góc đổi dấu, art lật ngang
         return {
           ...base(`${c.id}/${part.bone}`, part.asset),
@@ -136,7 +134,7 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
           y: sy,
           rot: worldAngle === 0 ? 0 : -worldAngle,
           scale: c.scale * zoomL,
-          scaleX: sign * c.scale * zoomL * (pose.squash.get(part.bone) ?? 1),
+          scaleX: st.fx * c.scale * zoomL * (st.squash.get(part.bone) ?? 1),
         };
       });
   };

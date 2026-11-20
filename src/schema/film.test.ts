@@ -34,6 +34,7 @@ function setup() {
     characters: [] as unknown[],
     camera: { keys: [{ frame: 0, x: 0, y: 540, zoom: 1, ease: 'inOutSine' }, { frame: 47, x: 120, y: 540, zoom: 1.1 }] },
     timeline: [] as unknown[],
+    walks: [] as unknown[],
     physics: [] as unknown[],
   };
   return { p, pack, film, packs: new Map([['pack-a', pack]]) };

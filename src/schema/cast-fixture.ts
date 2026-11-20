@@ -53,6 +53,7 @@ export function castFixture(clips: Record<string, unknown> = { breath: breathCli
       { character: 'c1', clip: 'wave', start: 10, durationFrames: 64, bind: { active: 'l' }, layer: 1, blendIn: 4, blendOut: 4 },
       { character: 'c2', clip: 'wave', start: 30, durationFrames: 60, bind: { active: 'r' }, layer: 1, blendIn: 4, blendOut: 4 },
     ] as any[],
+    walks: [] as any[],
     physics: [] as unknown[],
   };
   const packs = new Map<string, ArtPack>([['pack-a', stagePack], ['test-pack', castPack]]);

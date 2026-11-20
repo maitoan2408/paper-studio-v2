@@ -93,6 +93,6 @@ for (const [name, chain] of [
 }
 test('RIG_SCHEMA: gait ratios out of range', () => {
   const { pack, rig } = fixture();
-  (rig as any).gait = { strideRatio: 0.4, liftRatio: 0.1, reachRatio: 1.2, turnFrames: 8, armSwingDeg: 10 };
+  (rig as any).gait = { strideRatio: 0.4, liftRatio: 0.1, reachRatio: 1.2, swingRatio: 0.75, turnFrames: 8, swingBones: [], armSwingDeg: 10 };
   assert.throws(() => validateRig(rig, pack), code('RIG_SCHEMA'));
 });
