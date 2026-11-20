@@ -23,6 +23,26 @@ const BoneSchema = z
 
 const SkinSchema = z.object({ default: Id, variants: z.record(Id, Id).optional() }).strict();
 
+/**
+ * Chuỗi IK 2 xương: upper → lower → end, contact nằm trên `end`.
+ * bend = +1/−1: khớp giữa (khuỷu/gối) nằm về phía góc dương/âm của đường gốc→đích (local nhân vật, y-lên).
+ * endWorldAngle: nếu có, xương `end` giữ góc thế giới này (vd. bàn chân phẳng = 0); nếu không, `end` giữ góc khớp FK.
+ */
+const IkChainSchema = z
+  .object({ upper: BoneId, lower: BoneId, end: BoneId, contact: AnchorName, bend: z.union([z.literal(1), z.literal(-1)]), endWorldAngle: Angle.optional() })
+  .strict();
+
+/** Tham số dáng đi, tính theo tỷ lệ chiều dài chân (lấy từ art) — không có số đo tuyệt đối. */
+const GaitSchema = z
+  .object({
+    strideRatio: z.number().finite().positive().max(1.5),
+    liftRatio: z.number().finite().min(0).max(0.5),
+    reachRatio: z.number().finite().min(0.8).max(0.999),
+    turnFrames: z.number().int().min(1).max(48),
+    armSwingDeg: z.number().finite().min(0).max(45),
+  })
+  .strict();
+
 const CharacterSchema = z
   .object({ id: Id, skin: z.record(BoneId, SkinSchema), rest: z.record(BoneId, Angle) })
   .strict();
@@ -36,6 +56,8 @@ const RigSchema = z
     contacts: z.record(AnchorName, z.object({ bone: BoneId, anchor: AnchorName }).strict()),
     /** Contact chạm mặt đỡ khi đứng (vd. sole.l, sole.r): dùng để đặt nhân vật đúng sàn. */
     ground: z.array(AnchorName).min(1),
+    ik: z.record(BoneId, IkChainSchema).optional(),
+    gait: GaitSchema.optional(),
     characters: z.array(CharacterSchema).min(1),
   })
   .strict();
@@ -87,6 +109,15 @@ export function validateRig(raw: unknown, pack: ArtPack): Rig {
     if (!bones.has(c.bone)) fail('RIG_UNKNOWN_PARENT', `rig.contacts.${name}`, `bone "${c.bone}" does not exist`);
   }
   for (const g of data.ground) if (!data.contacts[g]) fail('RIG_UNKNOWN_PARENT', 'rig.ground', `contact "${g}" does not exist`);
+  for (const [name, ch] of Object.entries(data.ik ?? {})) {
+    const where = `rig.ik.${name}`;
+    const u = bones.get(ch.upper);
+    const l = bones.get(ch.lower);
+    const e = bones.get(ch.end);
+    if (!u || !l || !e) fail('RIG_IK_INVALID', where, 'upper/lower/end must be existing bones');
+    if (l.parent !== u.id || e.parent !== l.id) fail('RIG_IK_INVALID', where, `chain must be parent→child: ${ch.upper} → ${ch.lower} → ${ch.end}`);
+    if (data.contacts[ch.contact]?.bone !== ch.end) fail('RIG_IK_INVALID', where, `contact "${ch.contact}" must be on bone "${ch.end}"`);
+  }
 
   const characters = new Map<string, CharacterInfo>();
   for (const ch of data.characters) characters.set(ch.id, validateCharacter(ch, data, bones, order, pack));

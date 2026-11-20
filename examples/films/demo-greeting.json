@@ -11,12 +11,12 @@
     {
       "id": "sample-m0",
       "version": "0.1.0",
-      "manifestSha256": "b08dd679129e59f8eb6a8e678e0e7755f403dc9e4e37e9c8e83e69748e4ebbc4"
+      "manifestSha256": "6c42177cfbc6d882cc3485f830a286557e5cdcb21de03f2c6f27c89d44acaa76"
     },
     {
       "id": "demo-cast",
       "version": "0.1.0",
-      "manifestSha256": "9662c5863ec1f38434c7ab48323b768fe7e735ab5c6b5fc50a9420254f915ac3"
+      "manifestSha256": "6b320e1f0b917eaa0252f080a43580a99d433b5d7ccb1ff1ed34be650e02c909"
     }
   ],
   "stage": {

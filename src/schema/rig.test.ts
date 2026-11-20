@@ -73,3 +73,26 @@ test('RIG_DEGENERATE_BONE: attach anchor on the pivot', () => {
   f.packFixture.write();
   assert.throws(() => validateRig(f.rig, loadArtPack(f.packFixture.dir)), code('RIG_DEGENERATE_BONE'));
 });
+
+const arm = { upper: 'upper-arm.l', lower: 'forearm.l', end: 'hand.l', contact: 'grip.l', bend: -1 };
+test('ik chain parent→child with contact on end validates', () => {
+  const { pack, rig } = fixture();
+  (rig as any).ik = { 'arm.l': arm };
+  validateRig(rig, pack);
+});
+for (const [name, chain] of [
+  ['wrong order', { ...arm, upper: 'forearm.l', lower: 'upper-arm.l' }],
+  ['contact on another bone', { ...arm, contact: 'grip.r' }],
+  ['unknown bone', { ...arm, end: 'paw.l' }],
+] as const) {
+  test(`RIG_IK_INVALID: ${name}`, () => {
+    const { pack, rig } = fixture();
+    (rig as any).ik = { 'arm.l': chain };
+    assert.throws(() => validateRig(rig, pack), code('RIG_IK_INVALID'));
+  });
+}
+test('RIG_SCHEMA: gait ratios out of range', () => {
+  const { pack, rig } = fixture();
+  (rig as any).gait = { strideRatio: 0.4, liftRatio: 0.1, reachRatio: 1.2, turnFrames: 8, armSwingDeg: 10 };
+  assert.throws(() => validateRig(rig, pack), code('RIG_SCHEMA'));
+});

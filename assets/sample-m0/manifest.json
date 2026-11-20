@@ -108,7 +108,12 @@
         45,
         170
       ],
-      "anchors": {},
+      "anchors": {
+        "grip": [
+          45,
+          4
+        ]
+      },
       "category": "prop",
       "sha256": "7e01a655721494a259e4e83f21af30755debacacf71ae31a50dcc34721c4cde2"
     },
@@ -121,7 +126,12 @@
         60,
         190
       ],
-      "anchors": {},
+      "anchors": {
+        "grip": [
+          60,
+          122
+        ]
+      },
       "category": "prop",
       "sha256": "02c1d7799c5d02790387c1b9933fcbfe47aa3b38d1569d00cf656d43ebcbb542"
     }
