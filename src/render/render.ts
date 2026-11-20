@@ -33,6 +33,11 @@ export interface RenderManifest {
 /** -0 → 0 và chuẩn hóa kiểu dữ liệu trình duyệt trả về trước khi băm. */
 export const stateSha = (s: DrawnFrame) => canonicalSha256(JSON.parse(JSON.stringify(s)));
 
+/** Hash gộp của mọi SceneFrame — mức tất định 1: phải giống hệt trên mọi máy. */
+export function sceneFramesSha256(frames: SceneFrame[]): string {
+  return canonicalSha256(frames.map((f) => canonicalSha256(f)));
+}
+
 export function sampleAll(film: Film): SceneFrame[] {
   return Array.from({ length: film.data.output.durationFrames }, (_, i) => sampleFrame(film, i));
 }
