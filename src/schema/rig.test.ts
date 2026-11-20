@@ -35,6 +35,8 @@ const cases: [string, (r: any) => void][] = [
   ['RIG_SCHEMA', (r) => (r.bones[1].limits.max = 999)],
   ['RIG_UNKNOWN_PARENT', (r) => (r.bones[1].parent = 'spine')],
   ['RIG_UNKNOWN_PARENT', (r) => (r.contacts['grip.l'].bone = 'paw.l')],
+  ['RIG_UNKNOWN_PARENT', (r) => (r.ground = ['sole.l'])],
+  ['RIG_SCHEMA', (r) => (r.ground = [])],
   ['RIG_ROOT_COUNT', (r) => r.bones.push({ id: 'tail', parent: null, attach: null, limits: { min: -1, max: 1 }, z: 0 })],
   ['RIG_CYCLE', (r) => { r.bones[2].parent = 'hand.l'; r.bones[2].attach = 'grip'; }],
   ['RIG_SIDE_UNPAIRED', (r) => (r.bones = r.bones.filter((b: any) => b.id !== 'hand.r'))],

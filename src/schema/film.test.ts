@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { loadArtPack } from './art-pack.ts';
 import { loadFilm, validateFilm } from './film.ts';
 import { code, makePack } from './test-helpers.ts';
+import { castFixture } from './cast-fixture.ts';
 
 function setup() {
   const p = makePack(
@@ -78,17 +79,7 @@ const cases: [string, (f: any, s: ReturnType<typeof setup>) => void][] = [
   ['FILM_FRAME_RANGE', (f) => (f.camera.keys[0].frame = 1)],
   ['FILM_FRAME_RANGE', (f) => (f.camera.keys[1].frame = 48)],
   ['FILM_FRAME_RANGE', (f) => (f.camera.keys[1].frame = 0)],
-  ['FILM_FRAME_RANGE', (f) => f.timeline.push({ character: 'c1', clip: 'wave', start: 40, durationFrames: 9, bind: {} })],
-  ['FILM_TIMELINE_OVERLAP', (f) => f.timeline.push(
-    { character: 'c1', clip: 'wave', start: 0, durationFrames: 20, bind: {} },
-    { character: 'c1', clip: 'wave', start: 15, durationFrames: 20, bind: {}, blendIn: 4 },
-  )],
-  ['FILM_FEATURE_NOT_ENABLED', (f) => f.timeline.push(
-    { character: 'c1', clip: 'wave', start: 0, durationFrames: 20, bind: {} },
-    { character: 'c1', clip: 'wave', start: 15, durationFrames: 20, bind: {}, blendIn: 5 },
-  )],
   ['FILM_FEATURE_NOT_ENABLED', (f) => f.physics.push({})],
-  ['FILM_FEATURE_NOT_ENABLED', (f) => f.characters.push({ id: 'c1', pack: 'pack-a', rig: 'r', character: 'a', x: 0, depth: 0, facing: 'left', on: 'floor' })],
 ];
 
 for (const [c, mutate] of cases) {
@@ -105,4 +96,60 @@ test('FILM_UNKNOWN_REF: asset id present in two packs is ambiguous', () => {
   const b = loadArtPack(q.dir);
   s.film.packs.push({ id: 'pack-b', version: '0.1.0', manifestSha256: b.manifestSha256 });
   assert.throws(() => validateFilm(s.film, new Map([...s.packs, ['pack-b', b]])), code('FILM_UNKNOWN_REF'));
+});
+
+test('film with two characters, two layers and both hands validates', () => {
+  const f = castFixture().validate();
+  assert.equal(f.data.characters.length, 2);
+  assert.equal(f.rigs.get('test-pack')?.data.id, 'biped-test');
+});
+
+test('clips on different layers may overlap; same layer may not', () => {
+  const cf = castFixture();
+  cf.validate(); // breath (layer 0) chồng wave (layer 1) là hợp lệ
+  cf.film.timeline.push({ character: 'c1', clip: 'wave', start: 30, durationFrames: 20, bind: { active: 'r' }, layer: 1 });
+  assert.throws(() => cf.validate(), code('FILM_TIMELINE_OVERLAP'));
+});
+
+const castCases: [string, (f: any) => void][] = [
+  ['FILM_UNKNOWN_REF', (f) => (f.characters[0].pack = 'pack-z')],
+  ['FILM_UNKNOWN_REF', (f) => (f.characters[0].rig = 'quadruped')],
+  ['FILM_UNKNOWN_REF', (f) => (f.characters[1].character = 'ghost')],
+  ['FILM_UNKNOWN_REF', (f) => (f.characters[1].on = 'roof')],
+  ['FILM_UNKNOWN_REF', (f) => (f.timeline[0].character = 'c9')],
+  ['FILM_UNKNOWN_REF', (f) => (f.timeline[0].clip = 'dance')],
+  ['FILM_NOT_ON_SURFACE', (f) => (f.characters[0].x = -1000)],
+  ['FILM_SCHEMA', (f) => (f.characters[0].scale = 0)],
+  ['FILM_SCHEMA', (f) => (f.timeline[0].repeat = 0)],
+  ['FILM_FRAME_RANGE', (f) => (f.timeline[3].durationFrames = 70)],
+  ['FILM_FRAME_RANGE', (f) => (f.timeline[2].blendIn = 65)],
+  ['FILM_TIMELINE_OVERLAP', (f) => (f.timeline[3].layer = 0)],
+  ['ACTION_PRECONDITION', (f) => (f.timeline[2].bind = {})],
+];
+for (const [c, mutate] of castCases) {
+  test(`${c} (cast): ${mutate.toString().slice(6, 80)}`, () => {
+    const cf = castFixture();
+    mutate(cf.film);
+    assert.throws(() => cf.validate(), code(c));
+  });
+}
+
+test('ACTION_PRECONDITION: clip needs a prop role with a grip anchor', () => {
+  const grab = { schemaVersion: 1, id: 'grab', rig: 'biped-test', channels: [], events: [], requires: { props: [{ role: 'item', anchors: ['grip'] }] } };
+  const cf = castFixture({ grab });
+  cf.film.timeline = [{ character: 'c1', clip: 'grab', start: 0, durationFrames: 10, bind: {} }];
+  assert.throws(() => cf.validate(), code('ACTION_PRECONDITION'));
+  cf.film.props = [{ id: 'cup', asset: 'sky', x: 0, y: 0, scale: 1, rotation: 0, depth: 1 }];
+  cf.film.timeline[0].bind = { roles: { item: 'cup' } };
+  assert.throws(() => cf.validate(), (e: any) => code('ACTION_PRECONDITION')(e) && /lacks anchor "grip"/.test(e.message));
+});
+
+test('ACTION_LIMIT_EXCEEDED: sampled pose leaves the joint range', () => {
+  const big = { ...(castFixture().film.timeline[2]), clip: 'bend' };
+  const bend = { schemaVersion: 1, id: 'bend', rig: 'biped-test', events: [], requires: {},
+    channels: [{ bone: 'forearm.l', prop: 'rotation', mode: 'offset', keys: [{ t: 0, v: 0, ease: 'linear' }, { t: 1, v: 30 }] }] };
+  const cf = castFixture({ bend });
+  cf.film.timeline = [{ ...big, bind: {} }];
+  // forearm.l: rest −10, giới hạn [−150, 0] → −10 + 30 = 20 vượt max.
+  assert.throws(() => cf.validate(), code('ACTION_LIMIT_EXCEEDED'));
 });

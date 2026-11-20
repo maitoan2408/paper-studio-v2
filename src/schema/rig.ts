@@ -32,6 +32,8 @@ const RigSchema = z
     sides: z.tuple([z.literal('l'), z.literal('r')]),
     bones: z.array(BoneSchema).min(1),
     contacts: z.record(AnchorName, z.object({ bone: BoneId, anchor: AnchorName }).strict()),
+    /** Contact chạm mặt đỡ khi đứng (vd. sole.l, sole.r): dùng để đặt nhân vật đúng sàn. */
+    ground: z.array(AnchorName).min(1),
     characters: z.array(CharacterSchema).min(1),
   })
   .strict();
@@ -82,6 +84,7 @@ export function validateRig(raw: unknown, pack: ArtPack): Rig {
   for (const [name, c] of Object.entries(data.contacts)) {
     if (!bones.has(c.bone)) fail('RIG_UNKNOWN_PARENT', `rig.contacts.${name}`, `bone "${c.bone}" does not exist`);
   }
+  for (const g of data.ground) if (!data.contacts[g]) fail('RIG_UNKNOWN_PARENT', 'rig.ground', `contact "${g}" does not exist`);
 
   const characters = new Map<string, CharacterInfo>();
   for (const ch of data.characters) characters.set(ch.id, validateCharacter(ch, data, bones, order, pack));

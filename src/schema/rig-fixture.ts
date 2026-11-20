@@ -46,6 +46,7 @@ export function rigFixture() {
       ...sideBones('r'),
     ],
     contacts: { 'grip.l': { bone: 'hand.l', anchor: 'grip' }, 'grip.r': { bone: 'hand.r', anchor: 'grip' } },
+    ground: ['grip.l', 'grip.r'],
     characters: [character('stout'), character('lanky')],
   };
   return { pack: loadArtPack(pack.dir), rig, packFixture: pack };

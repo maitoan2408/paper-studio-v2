@@ -14,7 +14,7 @@ const by = (f: ReturnType<typeof sampleFrame>, id: string) => f.sprites.find((s)
 function withData(f: Film, mutate: (d: any) => void): Film {
   const data = structuredClone(f.data);
   mutate(data);
-  return { data, assets: f.assets };
+  return { ...f, data };
 }
 
 test('pure: forward, reverse and shuffled sampling give identical frames', () => {

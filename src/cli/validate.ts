@@ -1,16 +1,14 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { readJsonFile, StudioError } from '../core/errors.ts';
-import { validateAction } from '../schema/action.ts';
 import { loadArtPack } from '../schema/art-pack.ts';
-import { loadFilm } from '../schema/film.ts';
-import { validateRig } from '../schema/rig.ts';
+import { loadFilm, loadPackMotion } from '../schema/film.ts';
 import { validateState } from '../schema/state.ts';
 
 const ASSETS = 'assets';
 const FILMS = 'examples/films';
 
-const jsonFiles = (dir: string) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => join(dir, f)) : []);
+const jsonFiles = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => join(dir, f)) : []);
 
 /** Validate toàn bộ dữ liệu trong repo. Dừng ở lỗi đầu tiên, exit 1. */
 function main(): void {
@@ -23,18 +21,9 @@ function main(): void {
     const pack = loadArtPack(dir);
     if (pack.id !== name) throw new StudioError('ART_SCHEMA', `${dir}/manifest.json`, `pack id "${pack.id}" must equal folder name "${name}"`);
     console.log(`OK ${dir} (${pack.assets.size} assets, manifest ${pack.manifestSha256})`);
-    const rigFile = join(dir, 'rig.json');
-    const actions = jsonFiles(join(dir, 'actions'));
-    if (!existsSync(rigFile)) {
-      if (actions.length > 0) throw new StudioError('RIG_SCHEMA', rigFile, 'pack has actions but no rig.json');
-      continue;
-    }
-    const rig = validateRig(readJsonFile(rigFile), pack);
-    console.log(`OK ${rigFile} (${rig.order.length} bones, ${rig.characters.size} characters)`);
-    for (const f of actions) {
-      validateAction(readJsonFile(f), rig);
-      console.log(`OK ${f}`);
-    }
+    const motion = loadPackMotion(pack);
+    if (motion.rig) console.log(`OK ${dir}/rig.json (${motion.rig.order.length} bones, ${motion.rig.characters.size} characters)`);
+    for (const id of motion.clips.keys()) console.log(`OK ${dir}/actions/${id}.json`);
   }
 
   for (const f of jsonFiles(FILMS)) {
