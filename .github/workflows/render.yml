@@ -1,0 +1,46 @@
+name: render
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Install pinned Chrome for Testing
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: 153.0.8010.12
+      - run: npm ci
+      - name: check:renderer
+        env:
+          CHROMIUM_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run check:renderer
+      - name: render + audit every example film
+        env:
+          CHROMIUM_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          for f in examples/films/*.json; do
+            id=$(basename "$f" .json)
+            npm run render -- "$f"
+            npm run audit -- "out/$id/render-manifest.json"
+          done
+      - name: upload renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renders-${{ github.sha }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: warn
