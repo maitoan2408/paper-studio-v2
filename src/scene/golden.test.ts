@@ -9,7 +9,7 @@ import { loadFilm } from '../schema/film.ts';
 import { sampleAll, sceneFramesSha256 } from '../render/render.ts';
 
 const GOLDEN: Record<string, string> = {
-  'demo-greeting': '',
+  'demo-greeting': 'f271276faff5bf91562cc930f93f1fa47054d1b884a23e2615b8ed2cd997ab9b',
   'm0-static': '3b7409d39b98b66755065448cadb7c929378b97b003beaff0da12fdc5c8edeb9',
 };
 
