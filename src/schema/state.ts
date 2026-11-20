@@ -11,7 +11,7 @@ export const STATUSES = [
 ] as const;
 export const Status = z.enum(STATUSES);
 
-export const MILESTONES = ['M0', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6'] as const;
+export const MILESTONES = ['M0', 'DEMO', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6'] as const;
 
 const Milestone = z
   .object({

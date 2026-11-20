@@ -159,6 +159,18 @@ Mỗi mốc: code + test + **render thật** + ảnh/video trong chat + chủ d�
 
 - **Đạt khi:** CI xanh; render ra MP4 1080p24 một cảnh tĩnh; check-renderer PASS.
 
+### Demo slice — workflow xuyên suốt (ngay sau M0, trước M1)
+
+Mục đích: cho chủ dự án thấy sớm nhất toàn bộ đường đi **dữ liệu → MP4**. Chất lượng hình và phong cách **chưa** là mục tiêu; sẽ tinh chỉnh ở các mốc sau.
+
+- 2 nhân vật đơn giản (art thô, khớp tròn), cùng một kiểu rig nhưng khác số đo; rig là dữ liệu (`rig.json`).
+- 3 action clip dữ liệu (schema action v0): `idle-breath`, `wave` (một nhân vật vẫy tay trái, nhân vật kia tay phải), `turn-head` (đổi variant đầu + xoay).
+- Ráp con rối thuần (`src/rig`: góc khớp → sprite, FK) và lấy mẫu clip theo frame (`src/motion`). Chưa làm: IK, đi bộ, cầm/thả, vật lý, Studio.
+- 1 phim mẫu 8–10 giây, 2 nhân vật, nền nhiều lớp, camera di chuyển nhẹ.
+- Render MP4 thật + audit; gửi chủ dự án bản 1× và 0.5×.
+- Giữ nguyên §3 (dữ liệu, tất định, fail closed, có test). **Ngoại lệ ghi rõ:** art của demo là art tạm, không qua bước "art trước motion"; không dùng nó làm art pack của M1.
+- **Đạt khi:** CI xanh; MP4 1080p24 dài 8–10 giây; audit PASS; chủ dự án đã xem video. Sau đó chủ dự án chọn phần làm kỹ tiếp theo (art, hành động, vật lý, Studio…); thứ tự M1–M6 có thể đổi theo quyết định đó và được cập nhật ngay trong file này.
+
 ### M1 — Art pack + rig dữ liệu (art trước motion)
 
 - Art pack chuẩn cho **2 nhân vật khác tỷ lệ** (ví dụ một người thấp đậm, một người cao gầy): khớp tròn chồng mép, nhiều hình bàn tay (nắm, thả lỏng, mở, chỉ), đầu 3 hướng, thân 3 hướng.

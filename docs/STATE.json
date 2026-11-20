@@ -19,6 +19,13 @@
         "Chưa kiểm ở M0 (chuyển M2): ACTION_PRECONDITION, ACTION_LIMIT_EXCEEDED. Chuyển M4: STORYBOARD_UNSUPPORTED_ACTION."
       ]
     },
+    "DEMO": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
     "M1": {
       "status": "NOT_RUN",
       "head": null,
