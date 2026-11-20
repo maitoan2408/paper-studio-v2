@@ -126,7 +126,7 @@ export function psnr(a: Buffer, b: Buffer): number {
 
 /** Bản xem chậm 0.5× và contact sheet — chỉ để người duyệt xem, không phải đầu ra được audit. */
 export function reviewCopies(mp4: string, frames: number, half: string, sheet: string): void {
-  const step = Math.max(1, Math.floor(frames / 16));
+  const step = Math.max(1, Math.ceil(frames / 16));
   const rows = Math.ceil(Math.ceil(frames / step) / 4);
   for (const args of [
     ['-v', 'error', '-y', '-i', mp4, '-vf', 'setpts=2.0*PTS', '-r', '24', '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p', '-an', half],

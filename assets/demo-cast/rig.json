@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "id": "biped-demo",
+  "sides": [
+    "l",
+    "r"
+  ],
+  "bones": [
+    {
+      "id": "pelvis",
+      "parent": null,
+      "attach": null,
+      "limits": {
+        "min": -10,
+        "max": 10
+      },
+      "z": 0
+    },
+    {
+      "id": "leg.l",
+      "parent": "pelvis",
+      "attach": "hip.l",
+      "limits": {
+        "min": -20,
+        "max": 20
+      },
+      "z": -1
+    },
+    {
+      "id": "leg.r",
+      "parent": "pelvis",
+      "attach": "hip.r",
+      "limits": {
+        "min": -20,
+        "max": 20
+      },
+      "z": -1
+    },
+    {
+      "id": "torso",
+      "parent": "pelvis",
+      "attach": "waist",
+      "limits": {
+        "min": -15,
+        "max": 15
+      },
+      "z": 1
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "attach": "neck",
+      "limits": {
+        "min": -25,
+        "max": 25
+      },
+      "z": 3
+    },
+    {
+      "id": "upper-arm.l",
+      "parent": "torso",
+      "attach": "shoulder.l",
+      "limits": {
+        "min": -30,
+        "max": 175
+      },
+      "z": 2
+    },
+    {
+      "id": "forearm.l",
+      "parent": "upper-arm.l",
+      "attach": "elbow",
+      "limits": {
+        "min": -60,
+        "max": 150
+      },
+      "z": 2
+    },
+    {
+      "id": "hand.l",
+      "parent": "forearm.l",
+      "attach": "wrist",
+      "limits": {
+        "min": -45,
+        "max": 45
+      },
+      "z": 2
+    },
+    {
+      "id": "upper-arm.r",
+      "parent": "torso",
+      "attach": "shoulder.r",
+      "limits": {
+        "min": -175,
+        "max": 30
+      },
+      "z": 2
+    },
+    {
+      "id": "forearm.r",
+      "parent": "upper-arm.r",
+      "attach": "elbow",
+      "limits": {
+        "min": -150,
+        "max": 60
+      },
+      "z": 2
+    },
+    {
+      "id": "hand.r",
+      "parent": "forearm.r",
+      "attach": "wrist",
+      "limits": {
+        "min": -45,
+        "max": 45
+      },
+      "z": 2
+    }
+  ],
+  "contacts": {
+    "grip.l": {
+      "bone": "hand.l",
+      "anchor": "grip"
+    },
+    "grip.r": {
+      "bone": "hand.r",
+      "anchor": "grip"
+    },
+    "sole.l": {
+      "bone": "leg.l",
+      "anchor": "sole"
+    },
+    "sole.r": {
+      "bone": "leg.r",
+      "anchor": "sole"
+    }
+  },
+  "ground": [
+    "sole.l",
+    "sole.r"
+  ],
+  "characters": [
+    {
+      "id": "tam",
+      "skin": {
+        "pelvis": {
+          "default": "tam-pelvis"
+        },
+        "torso": {
+          "default": "tam-torso"
+        },
+        "head": {
+          "default": "tam-head",
+          "variants": {
+            "three-quarter": "tam-head-tq",
+            "side": "tam-head-side"
+          }
+        },
+        "leg.l": {
+          "default": "tam-leg"
+        },
+        "upper-arm.l": {
+          "default": "tam-uarm"
+        },
+        "forearm.l": {
+          "default": "tam-farm"
+        },
+        "hand.l": {
+          "default": "tam-hand",
+          "variants": {
+            "open": "tam-hand-open"
+          }
+        },
+        "leg.r": {
+          "default": "tam-leg"
+        },
+        "upper-arm.r": {
+          "default": "tam-uarm"
+        },
+        "forearm.r": {
+          "default": "tam-farm"
+        },
+        "hand.r": {
+          "default": "tam-hand",
+          "variants": {
+            "open": "tam-hand-open"
+          }
+        }
+      },
+      "rest": {
+        "pelvis": 0,
+        "leg.l": 0,
+        "leg.r": 0,
+        "torso": 0,
+        "head": 0,
+        "upper-arm.l": 8,
+        "forearm.l": 4,
+        "hand.l": 0,
+        "upper-arm.r": -8,
+        "forearm.r": -4,
+        "hand.r": 0
+      }
+    },
+    {
+      "id": "lan",
+      "skin": {
+        "pelvis": {
+          "default": "lan-pelvis"
+        },
+        "torso": {
+          "default": "lan-torso"
+        },
+        "head": {
+          "default": "lan-head",
+          "variants": {
+            "three-quarter": "lan-head-tq",
+            "side": "lan-head-side"
+          }
+        },
+        "leg.l": {
+          "default": "lan-leg"
+        },
+        "upper-arm.l": {
+          "default": "lan-uarm"
+        },
+        "forearm.l": {
+          "default": "lan-farm"
+        },
+        "hand.l": {
+          "default": "lan-hand",
+          "variants": {
+            "open": "lan-hand-open"
+          }
+        },
+        "leg.r": {
+          "default": "lan-leg"
+        },
+        "upper-arm.r": {
+          "default": "lan-uarm"
+        },
+        "forearm.r": {
+          "default": "lan-farm"
+        },
+        "hand.r": {
+          "default": "lan-hand",
+          "variants": {
+            "open": "lan-hand-open"
+          }
+        }
+      },
+      "rest": {
+        "pelvis": 0,
+        "leg.l": 0,
+        "leg.r": 0,
+        "torso": 0,
+        "head": 0,
+        "upper-arm.l": 8,
+        "forearm.l": 4,
+        "hand.l": 0,
+        "upper-arm.r": -8,
+        "forearm.r": -4,
+        "hand.r": 0
+      }
+    }
+  ]
+}

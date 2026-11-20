@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "idle-breath",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "bone": "torso",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": 1.5,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": -1.2,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "pelvis",
+      "prop": "rootY",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": 2.5,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "upper-arm.l",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": -2,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "upper-arm.r",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": 2,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [],
+  "requires": {}
+}
