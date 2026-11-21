@@ -5,7 +5,7 @@
     "width": 1920,
     "height": 1080,
     "fps": 24,
-    "durationFrames": 216
+    "durationFrames": 332
   },
   "packs": [
     {
@@ -137,7 +137,7 @@
       "asset": "plant",
       "x": -300,
       "y": 246,
-      "scale": 1,
+      "scale": 0.85,
       "rotation": 0,
       "depth": 1,
       "on": "table-top",
@@ -172,7 +172,7 @@
       "rig": "biped-demo",
       "character": "tam",
       "x": -100,
-      "scale": 1.25,
+      "scale": 1.4,
       "depth": 1,
       "facing": "right",
       "on": "floor"
@@ -199,7 +199,7 @@
         "ease": "inOutSine"
       },
       {
-        "frame": 215,
+        "frame": 331,
         "x": -40,
         "y": 330,
         "zoom": 1.4
@@ -211,7 +211,7 @@
       "character": "tam",
       "clip": "idle-breath",
       "start": 0,
-      "durationFrames": 216,
+      "durationFrames": 332,
       "bind": {},
       "repeat": 3
     },
@@ -219,7 +219,7 @@
       "character": "lan",
       "clip": "idle-breath",
       "start": 0,
-      "durationFrames": 216,
+      "durationFrames": 332,
       "bind": {},
       "repeat": 3
     },
@@ -227,7 +227,7 @@
       "character": "tam",
       "clip": "pick-up",
       "start": 20,
-      "durationFrames": 104,
+      "durationFrames": 144,
       "bind": {
         "active": "r",
         "roles": {
@@ -239,7 +239,7 @@
     {
       "character": "tam",
       "clip": "carry",
-      "start": 124,
+      "start": 164,
       "durationFrames": 8,
       "bind": {
         "active": "r"
@@ -249,8 +249,8 @@
     {
       "character": "tam",
       "clip": "place",
-      "start": 132,
-      "durationFrames": 84,
+      "start": 172,
+      "durationFrames": 144,
       "bind": {
         "active": "r",
         "roles": {
@@ -258,7 +258,7 @@
         },
         "place": {
           "surface": "table-top",
-          "x": -230
+          "x": -330
         }
       },
       "layer": 1

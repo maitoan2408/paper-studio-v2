@@ -18,7 +18,7 @@
           "ease": "inOutSine"
         },
         {
-          "t": 0.22,
+          "t": 0.14,
           "v": 0,
           "ease": "linear"
         },
@@ -28,6 +28,141 @@
         }
       ],
       "bend": "flip"
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "hand.@active",
+        "anchor": "grip",
+        "offset": {
+          "x": 0,
+          "y": 25.0
+        }
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.14,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.23,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.32,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip",
+        "at": "place",
+        "offset": {
+          "x": 0,
+          "y": 20.0
+        },
+        "clear": 0.6
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.25,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.32,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.52,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.58,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip",
+        "at": "place",
+        "offset": {
+          "x": 0,
+          "y": 20.0
+        }
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.45,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.52,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.66,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.72,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
     },
     {
       "prop": "reach",
@@ -45,22 +180,22 @@
           "ease": "linear"
         },
         {
-          "t": 0.22,
+          "t": 0.58,
           "v": 0,
           "ease": "inOutSine"
         },
         {
-          "t": 0.48,
+          "t": 0.66,
           "v": 1,
           "ease": "linear"
         },
         {
-          "t": 0.6,
+          "t": 0.79,
           "v": 1,
           "ease": "inOutSine"
         },
         {
-          "t": 0.85,
+          "t": 0.9,
           "v": 0,
           "ease": "linear"
         },
@@ -73,7 +208,7 @@
   ],
   "events": [
     {
-      "t": 0.55,
+      "t": 0.76,
       "type": "release",
       "contact": "grip.@active"
     }

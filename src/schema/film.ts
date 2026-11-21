@@ -9,7 +9,7 @@ import { fail, parseWith, readJsonFile } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
 import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
-import { checkHeldAboveSurface, checkProps, propTimeline } from '../motion/props.ts';
+import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
@@ -344,6 +344,7 @@ export function validateFilm(
     }
   });
   for (let fr = 0; fr < N; fr++) checkHeldAboveSurface(film, fr, (ci, contact) => contactWorld(film, ci, fr, contact));
+  checkLiftClearance(film, (ci, contact, f) => contactWorld(film, ci, f, contact));
   checkProps(film, (ci, contact, fr) => contactWorld(film, ci, fr, contact));
   return film;
 }

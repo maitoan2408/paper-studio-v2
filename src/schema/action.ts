@@ -12,6 +12,8 @@ import { Id } from './common.ts';
 import { AnchorName } from './art-pack.ts';
 import type { Rig } from './rig.ts';
 
+/** Dời đích reach (px art của nhân vật): x theo hướng nhìn, y lên. */
+const Offset = z.object({ x: z.number().finite().min(-1000).max(1000), y: z.number().finite().min(-1000).max(1000) }).strict();
 const Ref = z.string().regex(/^[a-z][a-z0-9-]*(\.([lr]|@active))?$/, 'must be name, name.l, name.r or name.@active');
 const T = z.number().finite().min(0).max(1);
 const Ease = z.enum(EASING_NAMES);
@@ -28,6 +30,9 @@ const Channel = z.discriminatedUnion('prop', [
    * Với tới bằng IK: đưa `contact` (vd. grip.@active) tới đích với trọng số keys ∈ [0,1].
    * Đích: {point} = bind.points[point]; {role, anchor} = anchor của đạo cụ đang NẰM YÊN;
    * {role, anchor, at:'place'} = vị trí anchor khi đạo cụ được đặt tại bind.place;
+   * `offset` {x, y} (px art của nhân vật; x theo hướng nhìn, đối xứng gương khi @active = r; y lên; mặc định 0) dời đích — vd. nhấc đồ thẳng lên khỏi chỗ
+   * nằm, rồi kéo về phía người, trước khi hạ xuống (đường đi gồm các đoạn thẳng khi trộn các đích);
+   * `clear` (chỉ đích đạo cụ) = dời thêm về phía người `clear` × bề ngang của chính đạo cụ — đủ để rời chỗ nằm, không gắn số px;
    * {bone, anchor} = anchor trên art xương của CHÍNH nhân vật (vd. torso @ carry.@active — tư thế bê đồ đi theo thân).
    */
   z
@@ -36,8 +41,8 @@ const Channel = z.discriminatedUnion('prop', [
       contact: Ref,
       target: z.union([
         z.object({ point: Id }).strict(),
-        z.object({ role: Id, anchor: AnchorName, at: z.literal('place').optional() }).strict(),
-        z.object({ bone: Ref, anchor: Ref }).strict(),
+        z.object({ role: Id, anchor: AnchorName, at: z.literal('place').optional(), offset: Offset.optional(), clear: z.number().finite().min(0).max(4).optional() }).strict(),
+        z.object({ bone: Ref, anchor: Ref, offset: Offset.optional() }).strict(),
       ]),
       mode: z.literal('absolute'),
       keys: z.array(z.object({ t: T, v: z.number().finite().min(0).max(1), ease: Ease.optional() }).strict()).min(1),

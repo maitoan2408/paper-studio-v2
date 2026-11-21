@@ -77,6 +77,63 @@ for (const [name, f] of Object.entries(films)) {
   });
 }
 
+// E2 — nhấc lên trước khi rời chỗ, đặt xuống từ phía trên. Kiểm trên đường đi thật của đạo cụ (không qua hàm kiểm):
+// lan nhặt đèn bằng tay trái, tam nhặt chậu bằng tay phải (offset/clear đối xứng gương), tam đặt chậu lên bàn.
+for (const [name, f] of Object.entries(films)) {
+  test(`${name}: a picked-up prop rises off its spot before its centre leaves it, and lands on its new spot from above`, () => {
+    const N = f.data.output.durationFrames;
+    let checked = 0;
+    for (const p of f.data.props) {
+      const a = f.assets.get(p.asset)!;
+      const over = (x: number, spot: readonly number[]) => x > spot[0]! - a.pivot[0] * p.scale && x < spot[0]! + (a.width - a.pivot[0]) * p.scale;
+      for (let fr = 1; fr < N; fr++) {
+        const prev = segmentAt(f, p.id, fr - 1);
+        const cur = segmentAt(f, p.id, fr);
+        if (prev.holders.length === 0 && cur.holders.length > 0) {
+          // Nhặt: tới khi tâm rời chỗ cũ, đáy không thấp hơn chỗ cũ; và tâm PHẢI rời chỗ cũ trong lúc đang cầm.
+          let left = false;
+          for (let k = fr; k < N && segmentAt(f, p.id, k).holders.length > 0; k++) {
+            const pv = propPivot(f, p.id, k, hand(f, k));
+            if (!over(pv[0], prev.rest)) { left = true; break; }
+            assert.ok(pv[1] >= prev.rest[1] - 0.5, `${p.id} frame ${k}: sinks ${(prev.rest[1] - pv[1]).toFixed(1)} px into its spot`);
+            checked++;
+          }
+          assert.ok(left, `${p.id}: never carried off its spot`);
+        }
+        if (prev.holders.length > 0 && cur.holders.length === 0) {
+          for (let k = fr - 1; k >= 0; k--) {
+            const pv = propPivot(f, p.id, k, hand(f, k));
+            if (!over(pv[0], cur.rest)) break;
+            assert.ok(pv[1] >= cur.rest[1] - 0.5, `${p.id} frame ${k}: comes up through its new spot`);
+            checked++;
+          }
+        }
+      }
+    }
+    assert.ok(checked > 10, `only ${checked} frames checked — test would be vacuous`);
+  });
+}
+
+/** Phim với clip đã sửa (đột biến dữ liệu chuyển động, không sửa phim). */
+function buildWithClip(id: string, clipId: string, mutate: (c: any) => void): Film {
+  const clips = new Map(motion.clips);
+  const c = structuredClone(clips.get(clipId)!) as any;
+  mutate(c);
+  clips.set(clipId, c);
+  return validateFilm(raw(id), packs, new Map([['demo-cast', motion.rig!]]), new Map([['demo-cast', clips], ['sample-m0', new Map()]]));
+}
+
+test('PROP_THROUGH_SURFACE: without the lift/clear path the prop is dragged down through its spot — both characters', () => {
+  // Bỏ chặng nhấc + kéo (đích có offset/clear): tay đi thẳng từ chỗ nằm xuống cạnh thân như trước E2.
+  const flat = (c: any) => {
+    for (const ch of c.channels) if (ch.prop === 'reach' && 'role' in ch.target) { delete ch.target.offset; delete ch.target.clear; }
+  };
+  assert.throws(() => buildWithClip('m2-handover', 'pick-up', flat), code('PROP_THROUGH_SURFACE'));
+  assert.throws(() => buildWithClip('m2-plant', 'pick-up', flat), code('PROP_THROUGH_SURFACE'));
+  // Đặt lên bàn mà không đưa lên phía trên chỗ đặt trước: chậu đi lên xuyên qua chỗ đặt.
+  assert.throws(() => buildWithClip('m2-plant', 'place', flat), code('PROP_THROUGH_SURFACE'));
+});
+
 test('handover: while both hold, the prop follows the receiver (most recent grip)', () => {
   const f = films.handover;
   let both = 0;

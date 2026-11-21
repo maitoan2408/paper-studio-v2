@@ -227,7 +227,7 @@
       "character": "lan",
       "clip": "pick-up",
       "start": 20,
-      "durationFrames": 104,
+      "durationFrames": 144,
       "bind": {
         "active": "l",
         "roles": {
@@ -251,8 +251,8 @@
     {
       "character": "lan",
       "clip": "carry",
-      "start": 124,
-      "durationFrames": 92,
+      "start": 164,
+      "durationFrames": 52,
       "bind": {
         "active": "l"
       },

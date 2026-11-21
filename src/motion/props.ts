@@ -151,6 +151,46 @@ export function checkHeldAboveSurface(film: Film, frame: number, hand: (ci: numb
 }
 
 /**
+ * Nhấc lên trước khi rời chỗ, đặt xuống từ phía trên (không "lún" qua mặt đỡ). Trong một lần cầm:
+ *  - từ frame nắm cho tới khi TÂM (pivot x) của đạo cụ lần đầu ra khỏi bề ngang chỗ nó vừa nằm, đáy không được thấp hơn chỗ đó;
+ *  - từ lần cuối tâm đi vào bề ngang chỗ sẽ đặt cho tới frame thả, đáy không được thấp hơn chỗ đặt.
+ * Bề ngang = bbox art × scale quanh pivot. Mặt đỡ chưa có chiều sâu (2.5D): ở giữa hai đoạn đó, đồ có thể đi phía trước mặt
+ * bàn (thấp hơn mặt bàn). Va chạm đầy đủ theo hình khối thuộc M3 (vật lý thống nhất).
+ */
+export function checkLiftClearance(film: Film, hand: (ci: number, contact: string, frame: number) => V2): void {
+  const N = film.data.output.durationFrames;
+  for (const [propId, list] of propTimeline(film)) {
+    const p = film.data.props.find((x) => x.id === propId)!;
+    const a = film.assets.get(p.asset)!;
+    const inside = (x: number, spot: V2) => x > spot[0] - a.pivot[0] * p.scale && x < spot[0] + (a.width - a.pivot[0]) * p.scale;
+    // Các lần cầm: từ một đoạn đang nằm yên tới đoạn nằm yên kế tiếp (có thể qua nhiều người cầm, vd. trao tay).
+    for (let k = 0; k < list.length; k++) {
+      if (list[k]!.holders.length === 0 || (k > 0 && list[k - 1]!.holders.length > 0)) continue;
+      const from = list[k]!.from;
+      const origin = list[k]!.rest;
+      const endIdx = list.findIndex((x, j) => j > k && x.holders.length === 0);
+      const to = endIdx < 0 ? N : list[endIdx]!.from;
+      const at = (fr: number) => propPivot(film, propId, fr, (ci, c) => hand(ci, c, fr));
+      const bad = (fr: number, spot: V2, what: string) =>
+        fail('PROP_THROUGH_SURFACE', `prop ${propId} frame ${fr}`, `bottom ${(spot[1] - at(fr)[1]).toFixed(1)} px below the spot ${what} while still over it; lift it clear first`);
+      for (let fr = from; fr < to; fr++) {
+        const pv = at(fr);
+        if (!inside(pv[0], origin)) break;
+        if (pv[1] < origin[1] - ALIGN_TOLERANCE_PX) bad(fr, origin, 'where it was picked up');
+      }
+      if (endIdx >= 0) {
+        const dest = list[endIdx]!.rest;
+        for (let fr = to - 1; fr >= from; fr--) {
+          const pv = at(fr);
+          if (!inside(pv[0], dest)) break;
+          if (pv[1] < dest[1] - ALIGN_TOLERANCE_PX) bad(fr, dest, 'where it is placed');
+        }
+      }
+    }
+  }
+}
+
+/**
  * Kiểm sau khi film đã dựng: tại frame grip, contact tay trùng anchor đạo cụ (trước khi nắm);
  * tại frame thả về chỗ đặt, contact tay trùng anchor ở vị trí đặt. Lệch > 0.5 px → PROP_DISCONTINUITY.
  */

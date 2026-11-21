@@ -162,6 +162,9 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
       let target: V2 | undefined; // đích thế giới (y-lên)
       let local: V2 | undefined; // hoặc đích local trực tiếp (bám thân — dùng được cả khi đang lật)
       const tg = ch.target;
+      // offset.x đối xứng gương khi @active = r (như giá trị xoay của xương @active — timeline.ts).
+      const ox = (a.side === 'r' ? -1 : 1) * ('offset' in tg ? (tg.offset?.x ?? 0) : 0);
+      const oy = 'offset' in tg ? (tg.offset?.y ?? 0) : 0;
       if ('point' in tg) {
         const p = a.item.bind.points?.[tg.point];
         if (!p) fail('FILM_UNKNOWN_REF', `${where}.bind.points.${tg.point}`, 'point is not bound');
@@ -174,7 +177,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
         const an = part?.asset.anchors[anchor];
         if (!part || !an) fail('RIG_ANCHOR_MISSING', where, `${c.character}: bone "${bone}" has no anchor "${anchor}"`);
         const v = rotate(artToLocal(an, part.asset.pivot), part.angle);
-        local = [part.pos[0] + v[0], part.pos[1] + v[1]];
+        local = [part.pos[0] + v[0] + ox, part.pos[1] + v[1] + oy];
       } else {
         const propId = a.item.bind.roles?.[tg.role];
         if (!propId) fail('ACTION_PRECONDITION', `${where}.bind.roles.${tg.role}`, 'role is not bound to a prop');
@@ -194,7 +197,10 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
           const mine = seg.holders.find((h) => h.ci === ci && h.contact === contact);
           pivot = mine ? segmentAt(film, propId, mine.since - 1).rest : seg.rest;
         }
-        target = [pivot[0] + off[0], pivot[1] + off[1]];
+        // clear = dời VỀ PHÍA NGƯỜI một phần bề ngang của chính đạo cụ (px thế giới, suy ra từ art × scale; gương khi r).
+        const pr = film.data.props.find((x) => x.id === propId)!;
+        const clearX = (a.side === 'r' ? 1 : -1) * (tg.clear ?? 0) * film.assets.get(pr.asset)!.width * pr.scale;
+        target = [pivot[0] + off[0] + fx * (scale * ox + clearX), pivot[1] + off[1] + scale * oy];
       }
       if (!local) {
         if (Math.abs(fx) < 1) fail('ACTION_PRECONDITION', where, `${c.id} reaches a world target while turning`);
