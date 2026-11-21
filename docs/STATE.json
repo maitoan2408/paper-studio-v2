@@ -43,7 +43,7 @@
     },
     "M2": {
       "status": "READY_FOR_USER_REVIEW",
-      "head": "6a2df54",
+      "head": "6a2df54c12d2504744a044618c5490f724ce7b5c",
       "updated": "2026-11-21",
       "checks": {
         "baselineVerify": "PASS_TECHNICAL",
