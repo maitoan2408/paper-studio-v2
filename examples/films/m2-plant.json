@@ -227,7 +227,7 @@
       "character": "tam",
       "clip": "pick-up",
       "start": 20,
-      "durationFrames": 90,
+      "durationFrames": 104,
       "bind": {
         "active": "r",
         "roles": {
@@ -239,8 +239,8 @@
     {
       "character": "tam",
       "clip": "carry",
-      "start": 110,
-      "durationFrames": 20,
+      "start": 124,
+      "durationFrames": 8,
       "bind": {
         "active": "r"
       },
@@ -249,8 +249,8 @@
     {
       "character": "tam",
       "clip": "place",
-      "start": 130,
-      "durationFrames": 70,
+      "start": 132,
+      "durationFrames": 84,
       "bind": {
         "active": "r",
         "roles": {

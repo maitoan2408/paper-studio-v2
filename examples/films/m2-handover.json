@@ -226,8 +226,8 @@
     {
       "character": "lan",
       "clip": "pick-up",
-      "start": 40,
-      "durationFrames": 90,
+      "start": 20,
+      "durationFrames": 104,
       "bind": {
         "active": "l",
         "roles": {
@@ -251,8 +251,8 @@
     {
       "character": "lan",
       "clip": "carry",
-      "start": 130,
-      "durationFrames": 102,
+      "start": 124,
+      "durationFrames": 92,
       "bind": {
         "active": "l"
       },
@@ -261,14 +261,13 @@
     {
       "character": "lan",
       "clip": "give",
-      "start": 232,
-      "durationFrames": 80,
+      "start": 216,
+      "durationFrames": 96,
       "bind": {
         "active": "l",
         "points": {
           "meet": {
-            "x": 10,
-            "y": 250
+            "use": "handover"
           }
         }
       },
@@ -277,8 +276,8 @@
     {
       "character": "tam",
       "clip": "receive",
-      "start": 232,
-      "durationFrames": 80,
+      "start": 216,
+      "durationFrames": 96,
       "bind": {
         "active": "l",
         "roles": {
@@ -286,8 +285,7 @@
         },
         "points": {
           "meet": {
-            "x": 10,
-            "y": 250
+            "use": "handover"
           }
         }
       },
@@ -297,7 +295,7 @@
       "character": "tam",
       "clip": "carry",
       "start": 312,
-      "durationFrames": 100,
+      "durationFrames": 84,
       "bind": {
         "active": "l"
       },
@@ -306,8 +304,8 @@
     {
       "character": "tam",
       "clip": "place-low",
-      "start": 412,
-      "durationFrames": 62,
+      "start": 396,
+      "durationFrames": 80,
       "bind": {
         "active": "l",
         "roles": {
@@ -315,12 +313,54 @@
         },
         "place": {
           "surface": "floor",
-          "x": -365
+          "x": -325
         }
       },
       "layer": 1
     }
   ],
+  "points": {
+    "handover": {
+      "anchors": [
+        {
+          "character": "lan",
+          "bone": "torso",
+          "anchor": "shoulder.l"
+        },
+        {
+          "character": "tam",
+          "bone": "torso",
+          "anchor": "shoulder.l"
+        },
+        {
+          "character": "lan",
+          "bone": "pelvis",
+          "anchor": "carry.l"
+        },
+        {
+          "character": "tam",
+          "bone": "pelvis",
+          "anchor": "carry.l"
+        }
+      ],
+      "reach": [
+        {
+          "character": "lan",
+          "contact": "grip.l"
+        },
+        {
+          "character": "tam",
+          "contact": "grip.l"
+        }
+      ],
+      "clearance": [
+        {
+          "prop": "lantern-1",
+          "anchor": "grip"
+        }
+      ]
+    }
+  },
   "walks": [
     {
       "character": "tam",
@@ -330,15 +370,15 @@
     },
     {
       "character": "lan",
-      "start": 196,
+      "start": 180,
       "durationFrames": 34,
       "toX": 120
     },
     {
       "character": "tam",
       "start": 316,
-      "durationFrames": 96,
-      "toX": -260
+      "durationFrames": 80,
+      "toX": -220
     }
   ],
   "physics": []

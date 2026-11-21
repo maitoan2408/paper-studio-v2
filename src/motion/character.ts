@@ -15,6 +15,7 @@ import { contactPoint, forwardKinematics, restPose, standingHeight, type PoseInp
 import { solveChain } from './ik.ts';
 import { activeItems, characterPose, keyValue } from './timeline.ts';
 import { anchorOffset, segmentAt } from './props.ts';
+import { solvedPoint } from './interaction.ts';
 import { walkState, type WalkState } from './walk.ts';
 
 export interface CharacterState {
@@ -65,7 +66,7 @@ export function legsOf(rig: Rig, pack: ArtPack, characterId: string): LegInfo[] 
   return legs.sort((a, b) => b.restSole[0] - a.restSole[0]);
 }
 
-export function characterState(film: Film, ci: number, frame: number): CharacterState {
+export function characterState(film: Film, ci: number, frame: number, ignorePoints?: ReadonlySet<string>): CharacterState {
   const c = film.data.characters[ci]!;
   const rig = film.rigs.get(c.pack)!;
   const pack = film.packs.get(c.pack)!;
@@ -77,7 +78,7 @@ export function characterState(film: Film, ci: number, frame: number): Character
     const sign = c.facing === 'right' ? 1 : -1;
     const walk: WalkState = { rootX: c.x, fx: sign, stepPhase: 0 };
     const root: V2 = [c.x + sign * clip.root[0] * c.scale, surface.y + (standingHeight(rig, pack, c.character) + clip.root[1]) * c.scale];
-    applyReach(film, ci, frame, angles, clip.variants, root, sign, c.scale);
+    applyReach(film, ci, frame, angles, clip.variants, root, sign, c.scale, ignorePoints);
     return { angles, variants: clip.variants, squash: clip.squash, root, fx: sign, scale: c.scale, walk };
   }
 
@@ -123,7 +124,7 @@ export function characterState(film: Film, ci: number, frame: number): Character
   });
 
   const root: V2 = [walk.rootX + walk.fx * clip.root[0] * c.scale, surface.y + hFinal * c.scale];
-  applyReach(film, ci, frame, angles, clip.variants, root, walk.fx, c.scale);
+  applyReach(film, ci, frame, angles, clip.variants, root, walk.fx, c.scale, ignorePoints);
   return { angles, variants: clip.variants, squash: clip.squash, root, fx: walk.fx, scale: c.scale, walk };
 }
 
@@ -131,7 +132,7 @@ export function characterState(film: Film, ci: number, frame: number): Character
  * Kênh reach: IK tay tới đích thế giới với trọng số = w(blend) · keys(t). Đích {role, anchor} chỉ hợp lệ khi
  * đạo cụ đang NẰM YÊN (PROP_TARGET_HELD nếu đang trong tay ai). Không với trong lúc đang lật hướng.
  */
-function applyReach(film: Film, ci: number, frame: number, angles: Map<string, number>, variants: Map<string, string>, root: V2, fx: number, scale: number): void {
+function applyReach(film: Film, ci: number, frame: number, angles: Map<string, number>, variants: Map<string, string>, root: V2, fx: number, scale: number, ignorePoints?: ReadonlySet<string>): void {
   const c = film.data.characters[ci]!;
   const rig = film.rigs.get(c.pack)!;
   const pack = film.packs.get(c.pack)!;
@@ -141,6 +142,10 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
   for (const a of activeItems(film, ci, frame)) {
     for (const ch of a.clip.channels) {
       if (ch.prop !== 'reach') continue;
+      if ('point' in ch.target) {
+        const b = a.item.bind.points?.[ch.target.point];
+        if (b && 'use' in b && ignorePoints?.has(b.use)) continue; // đang giải chính điểm này
+      }
       const weight = a.w * keyValue(ch.keys, a.t);
       if (weight <= 0) continue;
       const where = `film.timeline[${a.index}] frame ${frame}`;
@@ -160,7 +165,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
       if ('point' in tg) {
         const p = a.item.bind.points?.[tg.point];
         if (!p) fail('FILM_UNKNOWN_REF', `${where}.bind.points.${tg.point}`, 'point is not bound');
-        target = [p.x, p.y];
+        target = 'use' in p ? solvedPoint(film, p.use) : [p.x, p.y];
       } else if ('bone' in tg) {
         const bone = a.side ? tg.bone.replace('.@active', `.${a.side}`) : tg.bone;
         const anchor = a.side ? tg.anchor.replace('.@active', `.${a.side}`) : tg.anchor;

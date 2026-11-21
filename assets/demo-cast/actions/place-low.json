@@ -87,12 +87,12 @@
           "ease": "linear"
         },
         {
-          "t": 0.1,
+          "t": 0.2,
           "v": 0,
           "ease": "inOutSine"
         },
         {
-          "t": 0.42,
+          "t": 0.45,
           "v": -10,
           "ease": "linear"
         },

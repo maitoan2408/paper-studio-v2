@@ -18,17 +18,17 @@
           "ease": "inOutSine"
         },
         {
-          "t": 0.45,
+          "t": 0.4,
           "v": 1,
           "ease": "linear"
         },
         {
-          "t": 0.55,
+          "t": 0.52,
           "v": 1,
           "ease": "inOutSine"
         },
         {
-          "t": 0.72,
+          "t": 0.74,
           "v": 0,
           "ease": "linear"
         },
@@ -53,12 +53,12 @@
           "ease": "linear"
         },
         {
-          "t": 0.72,
+          "t": 0.74,
           "v": 0,
           "ease": "inOutSine"
         },
         {
-          "t": 0.92,
+          "t": 0.96,
           "v": 1,
           "ease": "linear"
         },
@@ -93,7 +93,7 @@
   ],
   "events": [
     {
-      "t": 0.5,
+      "t": 0.46,
       "type": "grip",
       "contact": "grip.@active",
       "target": "item",

@@ -11,8 +11,8 @@ import { sampleAll, sceneFramesSha256 } from '../render/render.ts';
 const GOLDEN: Record<string, string> = {
   'demo-greeting': 'f271276faff5bf91562cc930f93f1fa47054d1b884a23e2615b8ed2cd997ab9b',
   'm0-static': '3b7409d39b98b66755065448cadb7c929378b97b003beaff0da12fdc5c8edeb9',
-  'm2-handover': '6318e36fb3907bd89703c3719802592cbb53a868d5f7a7cd507038e2b4025380',
-  'm2-plant': 'c2d2fd7c68e70f7ad29686353d5d84ce642dc1f3147af7f865059e678a5063d3',
+  'm2-handover': 'b1d985fe743a7338d3deee5dbdc221448fb0ccb0b84bc4fb668a5e8e16e403a1',
+  'm2-plant': '1d7c65e5e3edc53e13d57f5a10e69a93d61ebf91ba418bbb53c18826b3fae597',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {

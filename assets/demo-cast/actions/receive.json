@@ -17,17 +17,17 @@
           "ease": "inOutSine"
         },
         {
-          "t": 0.45,
+          "t": 0.44,
           "v": 1,
           "ease": "linear"
         },
         {
-          "t": 0.55,
+          "t": 0.56,
           "v": 1,
           "ease": "inOutSine"
         },
         {
-          "t": 0.75,
+          "t": 0.76,
           "v": 0,
           "ease": "linear"
         },
@@ -52,12 +52,12 @@
           "ease": "linear"
         },
         {
-          "t": 0.75,
+          "t": 0.76,
           "v": 0,
           "ease": "inOutSine"
         },
         {
-          "t": 0.95,
+          "t": 0.97,
           "v": 1,
           "ease": "linear"
         },

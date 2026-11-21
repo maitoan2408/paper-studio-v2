@@ -11,8 +11,8 @@ import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
 import { checkHeldAboveSurface, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
-import { loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
-import { validateRig, type Rig } from './rig.ts';
+import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
+import { BoneId, validateRig, type Rig } from './rig.ts';
 import { Finite, Id, Semver, Sha256, firstDuplicate } from './common.ts';
 
 export const MAX_FRAMES = 24 * 600;
@@ -46,7 +46,7 @@ const TimelineItem = z
         active: z.enum(['l', 'r']).optional(),
         roles: z.record(Id, Id).optional(),
         /** Điểm thế giới cho kênh reach {point}. */
-        points: z.record(Id, z.object({ x: Finite, y: Finite }).strict()).optional(),
+        points: z.record(Id, z.union([z.object({ x: Finite, y: Finite }).strict(), z.object({ use: Id }).strict()])).optional(),
         /** Nơi đặt đạo cụ khi thả mà không còn ai cầm. */
         place: z.object({ surface: Id, x: Finite }).strict().optional(),
       })
@@ -57,6 +57,23 @@ const TimelineItem = z
     layer: z.number().int().min(0).max(7).optional(),
     /** Số lần lặp clip trong durationFrames. */
     repeat: z.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
+/** Điểm tương tác giải theo neo + ràng buộc (src/motion/interaction.ts). */
+const PointSpec = z
+  .object({
+    anchors: z
+      .array(
+        z.union([
+          z.object({ character: Id, bone: BoneId, anchor: AnchorName, weight: z.number().finite().positive().optional() }).strict(),
+          z.object({ prop: Id, anchor: AnchorName, weight: z.number().finite().positive().optional() }).strict(),
+        ]),
+      )
+      .min(1),
+    reach: z.array(z.object({ character: Id, contact: AnchorName, bend: z.enum(['rig', 'flip']).optional() }).strict()).min(1),
+    clearance: z.array(z.object({ prop: Id, anchor: AnchorName }).strict()).optional(),
+    frame: Frame.optional(),
   })
   .strict();
 
@@ -74,6 +91,7 @@ const FilmSchema = z
     camera: z.object({ keys: z.array(CameraKey).min(1) }).strict(),
     timeline: z.array(TimelineItem),
     walks: z.array(Walk),
+    points: z.record(Id, PointSpec).optional(),
     physics: z.array(z.unknown()),
   })
   .strict();
@@ -241,6 +259,22 @@ export function validateFilm(
     for (let j = 1; j < list.length; j++) {
       if (list[j]!.start < list[j - 1]!.end) fail('FILM_TIMELINE_OVERLAP', `film.walks[${list[j]!.i}]`, `overlaps walks[${list[j - 1]!.i}]`);
     }
+  }
+
+  // Điểm tương tác: tham chiếu `use` và đặc tả phải trỏ tới thứ có thật (giải chi tiết khi lấy mẫu).
+  const pointIds = new Set(Object.keys(f.points ?? {}));
+  f.timeline.forEach((t, i) => {
+    for (const [name, p] of Object.entries(t.bind.points ?? {})) {
+      if ('use' in p && !pointIds.has(p.use)) fail('FILM_UNKNOWN_REF', `film.timeline[${i}].bind.points.${name}`, `interaction point "${p.use}" is not defined in film.points`);
+    }
+  });
+  for (const [id, sp] of Object.entries(f.points ?? {})) {
+    for (const a of sp.anchors) {
+      if ('character' in a ? !chars.has(a.character) : !props.has(a.prop)) fail('FILM_UNKNOWN_REF', `film.points.${id}.anchors`, `unknown ${'character' in a ? `character "${a.character}"` : `prop "${a.prop}"`}`);
+    }
+    for (const r of sp.reach) if (!chars.has(r.character)) fail('FILM_UNKNOWN_REF', `film.points.${id}.reach`, `unknown character "${r.character}"`);
+    for (const c of sp.clearance ?? []) if (!props.has(c.prop)) fail('FILM_UNKNOWN_REF', `film.points.${id}.clearance`, `unknown prop "${c.prop}"`);
+    if (sp.frame !== undefined && sp.frame >= N) fail('FILM_FRAME_RANGE', `film.points.${id}.frame`, `${sp.frame} >= durationFrames ${N}`);
   }
 
   // Timeline: kiểm thời gian; chồng clip chỉ bị cấm trong cùng (nhân vật, lớp).
