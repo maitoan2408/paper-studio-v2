@@ -51,7 +51,7 @@
         "baselineRender": "PASS_TECHNICAL",
         "baselineAudit": "PASS_TECHNICAL",
         "baselineCi": "PASS_TECHNICAL",
-        "rootCause": "NOT_RUN",
+        "rootCause": "PASS_TECHNICAL",
         "interactionSolver": "NOT_RUN",
         "turnInPlace": "NOT_RUN",
         "liftTiming": "NOT_RUN",
@@ -64,7 +64,8 @@
         "Khóa checks: baseline* = phần M2 đã làm TRƯỚC vòng đóng, PASS_TECHNICAL tại commit 25e962a (CI verify 44862810501/44862815771, render 44862815716; chưa được chủ dự án nghiệm thu). Vòng đóng: rootCause=E0, interactionSolver=E1, turnInPlace=E4, liftTiming=E2, durationHints=E3, rerender=E5, acceptanceRun=lượt chạy nghiệm thu. status = NOT_RUN phản ánh vòng đóng (chưa làm); không phủ định baseline.",
         "Lịch sử (phần đã làm trước vòng đóng): CI @25e962a xanh (verify run 44862810501/44862815771, render run 44862815716): check:renderer 8/8; m2-handover 480 frame audit PASS (PSNR min 41.33 dB); m2-plant 216 frame audit PASS (41.03 dB); demo-greeting, m0-static PASS. Hash SceneFrame CI = tại chỗ = golden cho cả 4 phim (tất định mức 1). Tại chỗ: verify 235/235, check:renderer 8/8, audit 2 phim M2 PASS.",
         "Quyết định đã duyệt: giới hạn vai demo-cast −60° (tầm vận động rig); tỷ lệ dàn cảnh m2-handover tam 1.35, đèn 0.9.",
-        "Lỗi đã ghi nhận chờ E0 kết luận nguyên nhân (art/rig → M1, hay sửa được trong M2): tay vắt qua thân khi bê đồ (cả tam và lan); đèn đặt sát chân tam. Chuyển M1 (đã xác định): chưa có bóng đổ nhân vật; thân nhìn thẳng khi đi ngang."
+        "Lỗi đã ghi nhận chờ E0 kết luận nguyên nhân (art/rig → M1, hay sửa được trong M2): tay vắt qua thân khi bê đồ (cả tam và lan); đèn đặt sát chân tam. Chuyển M1 (đã xác định): chưa có bóng đổ nhân vật; thân nhìn thẳng khi đi ngang.",
+        "E0 (kết luận có số liệu, quét 1600 điểm bê × 2 chiều khuỷu × 4 tay): Q1 tay vắt qua thân KHÔNG do art — với chiều khuỷu của rig chỉ 0–1/1600 tư thế bê đạt (tay dưới vai, ở phía mình, đồ trên sàn, trong giới hạn khớp); với chiều đảo có 20–43 tư thế đạt (mép hông). Nguyên nhân: một chiều gập cố định/chuỗi + trộn 2 nghiệm ngược chiều. Đã sửa trong M2: reach.bend 'rig'|'flip' + IK_BEND_CONFLICT; trộn kênh reach theo đích (đường thẳng) thay vì theo góc; khi w<1 đích ngoài tầm → vươn tối đa (w=1 vẫn fail closed). Q2 đặt đồ sát chân: rig không hạ người — tam cần dx≥57 px (art) để đèn không chạm giày, ở đó tay chỉ hạ tới y=−8 so với cần −22.7; lan không hạ đủ ở mọi khoảng cách. Sửa một phần trong M2 bằng dữ liệu (place-low khuỵu gối 10 px, đặt xa thêm 30 px); phần còn lại (cúi người thật) chuyển M1b với bằng chứng này."
       ]
     },
     "M1": {

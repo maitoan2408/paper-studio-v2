@@ -135,6 +135,9 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
   const c = film.data.characters[ci]!;
   const rig = film.rigs.get(c.pack)!;
   const pack = film.packs.get(c.pack)!;
+  // Gom theo chuỗi tay: đích = trung bình có trọng số (tay đi THẲNG giữa các đích), trọng số FK→IK = 1 − Π(1 − wᵢ);
+  // giải IK MỘT lần cho mỗi chuỗi. Một kênh duy nhất ⇒ đúng như trộn FK↔IK thông thường.
+  const byChain = new Map<string, { flip: boolean; where: string; targets: { local: V2; w: number }[] }>();
   for (const a of activeItems(film, ci, frame)) {
     for (const ch of a.clip.channels) {
       if (ch.prop !== 'reach') continue;
@@ -144,6 +147,13 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
       const contact = a.side ? ch.contact.replace('.@active', `.${a.side}`) : ch.contact;
       const chainName = Object.entries(rig.data.ik ?? {}).find(([, k]) => k.contact === contact)?.[0];
       if (!chainName) fail('ACTION_UNKNOWN_BONE', where, `no IK chain for contact "${contact}"`);
+      const flip = ch.bend === 'flip';
+      const other = byChain.get(chainName);
+      if (other && other.flip !== flip) {
+        fail('IK_BEND_CONFLICT', `${where} (${a.item.clip})`, `${c.id}.${chainName}: reach channels with opposite bends overlap (also ${other.where}); fade one to 0 before the other starts`);
+      }
+      const entry = other ?? { flip, where: `${where} (${a.item.clip})`, targets: [] };
+      byChain.set(chainName, entry);
       let target: V2 | undefined; // đích thế giới (y-lên)
       let local: V2 | undefined; // hoặc đích local trực tiếp (bám thân — dùng được cả khi đang lật)
       const tg = ch.target;
@@ -185,16 +195,22 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
         if (Math.abs(fx) < 1) fail('ACTION_PRECONDITION', where, `${c.id} reaches a world target while turning`);
         local = [(target![0] - root[0]) / (fx * scale), (target![1] - root[1]) / scale];
       }
-      const pose: PoseInput = { angle: (b) => angles.get(b)!, variant: (b) => variants.get(b) ?? 'default' };
-      let solved: Map<string, number>;
-      try {
-        solved = solveChain(rig, pack, c.character, pose, chainName, local, weight);
-      } catch (e) {
-        if (e instanceof StudioError) fail(e.code, `${where} (${a.item.clip})`, `${e.path}: ${e.detail}`);
-        throw e;
-      }
-      for (const [b, v] of solved) angles.set(b, v);
+      entry.targets.push({ local, w: weight });
     }
+  }
+  for (const [chainName, e] of byChain) {
+    const sw = e.targets.reduce((acc, t) => acc + t.w, 0);
+    const target: V2 = [e.targets.reduce((acc, t) => acc + t.w * t.local[0], 0) / sw, e.targets.reduce((acc, t) => acc + t.w * t.local[1], 0) / sw];
+    const W = 1 - e.targets.reduce((acc, t) => acc * (1 - t.w), 1);
+    const pose: PoseInput = { angle: (b) => angles.get(b)!, variant: (b) => variants.get(b) ?? 'default' };
+    let solved: Map<string, number>;
+    try {
+      solved = solveChain(rig, pack, c.character, pose, chainName, target, W, e.flip);
+    } catch (err) {
+      if (err instanceof StudioError) fail(err.code, e.where, `${err.path}: ${err.detail}`);
+      throw err;
+    }
+    for (const [b, v] of solved) angles.set(b, v);
   }
 }
 

@@ -41,6 +41,12 @@ const Channel = z.discriminatedUnion('prop', [
       ]),
       mode: z.literal('absolute'),
       keys: z.array(z.object({ t: T, v: z.number().finite().min(0).max(1), ease: Ease.optional() }).strict()).min(1),
+      /**
+       * Chiều gập khớp giữa: 'rig' (mặc định, theo rig.json) hoặc 'flip' (ngược lại) — vd. bê đồ bên hông cần khuỷu
+       * chìa ra ngoài. Trên CÙNG một chuỗi, hai kênh khác chiều không được cùng có trọng số ở một frame
+       * (IK_BEND_CONFLICT): chuyển chiều phải đi qua FK, tránh trộn hai nghiệm ngược chiều (quét tay).
+       */
+      bend: z.enum(['rig', 'flip']).optional(),
     })
     .strict(),
   z.object({ bone: Ref, prop: z.literal('squashX'), mode: z.literal('absolute'), keys: z.array(z.object({ t: T, v: z.number().finite().min(0.05).max(1), ease: Ease.optional() }).strict()).min(1) }).strict(),

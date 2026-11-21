@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "place-low",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "pelvis",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.1,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ],
+      "bend": "flip"
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip",
+        "at": "place"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.1,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.6,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.85,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ],
+      "bend": "flip"
+    },
+    {
+      "bone": "pelvis",
+      "prop": "rootY",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.1,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.42,
+          "v": -10,
+          "ease": "linear"
+        },
+        {
+          "t": 0.85,
+          "v": -10,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.55,
+      "type": "release",
+      "contact": "grip.@active"
+    }
+  ],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ],
+    "props": [
+      {
+        "role": "item",
+        "anchors": [
+          "grip"
+        ]
+      }
+    ]
+  }
+}

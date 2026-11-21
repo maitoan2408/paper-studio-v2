@@ -72,3 +72,33 @@ test('IK_UNREACHABLE: target beyond arm reach, with distance in the message', ()
 test('RIG_IK_INVALID: unknown chain', () => {
   assert.throws(() => solveChain(rig, pack, 'tam', restPose(rig, 'tam'), 'tail', [0, 0], 1), code('RIG_IK_INVALID'));
 });
+
+test('approaching (w < 1): an out-of-reach target stretches the arm toward it; at w = 1 it fails closed', () => {
+  const rest = restPose(rig, 'tam');
+  const s = forwardKinematics(rig, pack, 'tam', rest).find((p) => p.bone === 'upper-arm.l')!.pos;
+  const far: [number, number] = [s[0] + 400, s[1]];
+  const half = solveChain(rig, pack, 'tam', rest, 'arm.l', far, 0.5);
+  assert.ok(half.size > 0);
+  // Ở w = 1 với đích đã kéo về tầm với tối đa, contact nằm đúng trên tia vai → đích.
+  const full = solveChain(rig, pack, 'tam', rest, 'arm.l', far, 0.999999);
+  const g = contactPoint(rig, forwardKinematics(rig, pack, 'tam', apply(rest, full)), 'grip.l');
+  assert.ok(Math.abs(g[1] - s[1]) < 0.5 && g[0] > s[0], `grip=${g}`);
+  assert.throws(() => solveChain(rig, pack, 'tam', rest, 'arm.l', far, 1), code('IK_UNREACHABLE'));
+});
+
+test('bend flip puts the elbow on the other side and still lands on the target', () => {
+  const rest = restPose(rig, 'lan');
+  const parts = forwardKinematics(rig, pack, 'lan', rest);
+  const c = contactPoint(rig, parts, 'grip.l');
+  const S = parts.find((p) => p.bone === 'upper-arm.l')!.pos;
+  const t: [number, number] = [c[0] + 10, c[1] + 50];
+  const side = (flip: boolean) => {
+    const pose = apply(rest, solveChain(rig, pack, 'lan', rest, 'arm.l', t, 1, flip));
+    const p2 = forwardKinematics(rig, pack, 'lan', pose);
+    const e = p2.find((p) => p.bone === 'forearm.l')!.pos;
+    const g = contactPoint(rig, p2, 'grip.l');
+    assert.ok(Math.hypot(g[0] - t[0], g[1] - t[1]) < 1e-6);
+    return Math.sign((t[0] - S[0]) * (e[1] - S[1]) - (t[1] - S[1]) * (e[0] - S[0]));
+  };
+  assert.equal(side(true), -side(false));
+});

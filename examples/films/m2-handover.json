@@ -16,7 +16,7 @@
     {
       "id": "demo-cast",
       "version": "0.1.0",
-      "manifestSha256": "5aefbaa8cdaabdfc9b649b58394cb15693b55a62c9f92dec19b4a5cf56c233ba"
+      "manifestSha256": "08f7ca7e35b1539605ec9f0005bf4b85603b06f80ffac6536d3d7a5c450109d0"
     }
   ],
   "stage": {
@@ -137,7 +137,7 @@
       "asset": "lantern",
       "x": 330,
       "y": 246,
-      "scale": 0.9,
+      "scale": 0.86,
       "rotation": 0,
       "depth": 1,
       "on": "table-top",
@@ -227,7 +227,7 @@
       "character": "lan",
       "clip": "pick-up",
       "start": 40,
-      "durationFrames": 72,
+      "durationFrames": 90,
       "bind": {
         "active": "l",
         "roles": {
@@ -251,8 +251,8 @@
     {
       "character": "lan",
       "clip": "carry",
-      "start": 112,
-      "durationFrames": 120,
+      "start": 130,
+      "durationFrames": 102,
       "bind": {
         "active": "l"
       },
@@ -305,7 +305,7 @@
     },
     {
       "character": "tam",
-      "clip": "place",
+      "clip": "place-low",
       "start": 412,
       "durationFrames": 62,
       "bind": {
@@ -315,7 +315,7 @@
         },
         "place": {
           "surface": "floor",
-          "x": -335
+          "x": -365
         }
       },
       "layer": 1

@@ -27,7 +27,12 @@
           "ease": "inOutSine"
         },
         {
-          "t": 0.95,
+          "t": 0.75,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
           "v": 0
         }
       ]
@@ -36,7 +41,7 @@
       "prop": "reach",
       "contact": "grip.@active",
       "target": {
-        "bone": "torso",
+        "bone": "pelvis",
         "anchor": "carry.@active"
       },
       "mode": "absolute",
@@ -47,7 +52,7 @@
           "ease": "linear"
         },
         {
-          "t": 0.55,
+          "t": 0.75,
           "v": 0,
           "ease": "inOutSine"
         },
@@ -60,7 +65,8 @@
           "t": 1,
           "v": 1
         }
-      ]
+      ],
+      "bend": "flip"
     }
   ],
   "events": [

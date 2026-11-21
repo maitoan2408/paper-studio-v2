@@ -117,15 +117,17 @@ const mutate = (id: string, fn: (d: any) => void) => () => {
 };
 const item = (d: any, clip: string, ch?: string) => d.timeline.find((t: any) => t.clip === clip && (!ch || t.character === ch));
 const cases: [string, () => void][] = [
-  ['PROP_FLOATING', mutate('m2-handover', (d) => delete item(d, 'place').bind.place)],
-  ['FILM_NOT_ON_SURFACE', mutate('m2-handover', (d) => (item(d, 'place').bind.place.x = 5000))],
+  ['PROP_FLOATING', mutate('m2-handover', (d) => delete item(d, 'place-low').bind.place)],
+  ['FILM_NOT_ON_SURFACE', mutate('m2-handover', (d) => (item(d, 'place-low').bind.place.x = 5000))],
   ['HAND_BUSY', mutate('m2-plant', (d) => d.timeline.push({ ...item(d, 'pick-up'), start: 100, layer: 2, bind: { active: 'r', roles: { item: 'lantern-1' } } }))],
   ['ACTION_EVENT_ORDER', mutate('m2-plant', (d) => (d.timeline = d.timeline.filter((t: any) => t.clip !== 'pick-up' && t.clip !== 'carry')))],
   ['PROP_TARGET_HELD', mutate('m2-handover', (d) => (item(d, 'receive').clip = 'pick-up'))],
   ['PROP_DISCONTINUITY', mutate('m2-handover', (d) => (item(d, 'receive').bind.points.meet.x += 6))],
-  ['PROP_BELOW_SURFACE', mutate('m2-handover', (d) => (d.props.find((p: any) => p.id === 'lantern-1').scale = 1.3))],
+  // Đèn to hơn một chút so với tầm tay của tam → chạm sàn khi đang bê (trước khi chạm giới hạn khớp).
+  ['PROP_BELOW_SURFACE', mutate('m2-handover', (d) => (d.props.find((p: any) => p.id === 'lantern-1').scale = 0.92))],
   ['ACTION_PRECONDITION', mutate('m2-handover', (d) => delete item(d, 'pick-up').bind.roles)],
-  ['IK_UNREACHABLE', mutate('m2-handover', (d) => (item(d, 'place').bind.place.x = -600))],
+  // Chậu cây đặt quá xa trên bàn: lúc chạm (w = 1) tay không với tới.
+  ['IK_UNREACHABLE', mutate('m2-plant', (d) => (d.props.find((p: any) => p.id === 'plant-1').x = -450))],
 ];
 for (const [c, run] of cases) {
   test(`${c} (props)`, () => assert.throws(run, code(c)));

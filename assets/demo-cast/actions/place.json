@@ -7,7 +7,7 @@
       "prop": "reach",
       "contact": "grip.@active",
       "target": {
-        "bone": "torso",
+        "bone": "pelvis",
         "anchor": "carry.@active"
       },
       "mode": "absolute",
@@ -15,18 +15,19 @@
         {
           "t": 0,
           "v": 1,
-          "ease": "linear"
-        },
-        {
-          "t": 0.3,
-          "v": 1,
           "ease": "inOutSine"
         },
         {
-          "t": 0.45,
+          "t": 0.22,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
           "v": 0
         }
-      ]
+      ],
+      "bend": "flip"
     },
     {
       "prop": "reach",
@@ -41,20 +42,30 @@
         {
           "t": 0,
           "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.22,
+          "v": 0,
           "ease": "inOutSine"
         },
         {
-          "t": 0.4,
+          "t": 0.48,
           "v": 1,
           "ease": "linear"
         },
         {
-          "t": 0.55,
+          "t": 0.6,
           "v": 1,
           "ease": "inOutSine"
         },
         {
-          "t": 0.9,
+          "t": 0.85,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
           "v": 0
         }
       ]
@@ -62,7 +73,7 @@
   ],
   "events": [
     {
-      "t": 0.5,
+      "t": 0.55,
       "type": "release",
       "contact": "grip.@active"
     }

@@ -16,7 +16,7 @@
     {
       "id": "demo-cast",
       "version": "0.1.0",
-      "manifestSha256": "5aefbaa8cdaabdfc9b649b58394cb15693b55a62c9f92dec19b4a5cf56c233ba"
+      "manifestSha256": "08f7ca7e35b1539605ec9f0005bf4b85603b06f80ffac6536d3d7a5c450109d0"
     }
   ],
   "stage": {
@@ -227,7 +227,7 @@
       "character": "tam",
       "clip": "pick-up",
       "start": 20,
-      "durationFrames": 72,
+      "durationFrames": 90,
       "bind": {
         "active": "r",
         "roles": {
@@ -239,8 +239,8 @@
     {
       "character": "tam",
       "clip": "carry",
-      "start": 92,
-      "durationFrames": 38,
+      "start": 110,
+      "durationFrames": 20,
       "bind": {
         "active": "r"
       },

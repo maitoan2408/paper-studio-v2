@@ -7,7 +7,7 @@
       "prop": "reach",
       "contact": "grip.@active",
       "target": {
-        "bone": "torso",
+        "bone": "pelvis",
         "anchor": "carry.@active"
       },
       "mode": "absolute",
@@ -21,7 +21,8 @@
           "t": 1,
           "v": 1
         }
-      ]
+      ],
+      "bend": "flip"
     }
   ],
   "events": [],

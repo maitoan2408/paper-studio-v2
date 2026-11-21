@@ -16,7 +16,7 @@ const wrap = (d: number) => {
   return x;
 };
 
-export function solveChain(rig: Rig, pack: ArtPack, characterId: string, pose: PoseInput, chainName: string, target: V2, weight: number): Map<string, number> {
+export function solveChain(rig: Rig, pack: ArtPack, characterId: string, pose: PoseInput, chainName: string, target: V2, weight: number, flip = false): Map<string, number> {
   const chain = rig.data.ik?.[chainName];
   if (!chain) return fail('RIG_IK_INVALID', `rig.ik.${chainName}`, 'no such IK chain');
   const out = new Map<string, number>();
@@ -49,14 +49,25 @@ export function solveChain(rig: Rig, pack: ArtPack, characterId: string, pose: P
   const L1 = length(u1);
   const L2 = length(v2);
   const S = up.pos;
-  const d = Math.hypot(goal[0] - S[0], goal[1] - S[1]);
+  let d = Math.hypot(goal[0] - S[0], goal[1] - S[1]);
+  // Đang tiến tới (w < 1): đích ngoài tầm → vươn tối đa theo hướng đích (cơ thể có thể còn đang khuỵu/bước tới).
+  // Chạm đích (w = 1): phải với tới thật, nếu không → IK_UNREACHABLE. Frame cầm/thả còn được PROP_DISCONTINUITY kiểm.
+  if (weight < 1 && d > 0) {
+    const lo = Math.abs(L1 - L2) + 1e-6;
+    const hi = L1 + L2 - 1e-6;
+    const k = d > hi ? hi / d : d < lo ? lo / d : 1;
+    if (k !== 1) {
+      goal = [S[0] + (goal[0] - S[0]) * k, S[1] + (goal[1] - S[1]) * k];
+      d *= k;
+    }
+  }
   if (d > L1 + L2 + 1e-9 || d < Math.abs(L1 - L2) - 1e-9 || d === 0) {
     const need = d > L1 + L2 ? `${(d - (L1 + L2)).toFixed(1)} px too far` : `${(Math.abs(L1 - L2) - d).toFixed(1)} px too close`;
     fail('IK_UNREACHABLE', `${characterId}.${chainName}`, `target is ${need} (reach ${Math.abs(L1 - L2).toFixed(1)}–${(L1 + L2).toFixed(1)} px art)`);
   }
   const base = angleOf([goal[0] - S[0], goal[1] - S[1]]);
   const cosA = Math.min(1, Math.max(-1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d)));
-  const dir1 = base + chain.bend * ((Math.acos(cosA) * 180) / Math.PI);
+  const dir1 = base + (flip ? -chain.bend : chain.bend) * ((Math.acos(cosA) * 180) / Math.PI);
   const worldUpper = dir1 - angleOf(u1);
   const E: V2 = [S[0] + L1 * Math.cos((dir1 * Math.PI) / 180), S[1] + L1 * Math.sin((dir1 * Math.PI) / 180)];
   const worldLower = angleOf([goal[0] - E[0], goal[1] - E[1]]) - angleOf(v2);
