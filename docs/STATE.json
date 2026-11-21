@@ -53,7 +53,7 @@
         "baselineCi": "PASS_TECHNICAL",
         "rootCause": "PASS_TECHNICAL",
         "interactionSolver": "PASS_TECHNICAL",
-        "turnInPlace": "NOT_RUN",
+        "turnInPlace": "PASS_TECHNICAL",
         "liftTiming": "NOT_RUN",
         "durationHints": "NOT_RUN",
         "rerender": "NOT_RUN",
@@ -67,7 +67,8 @@
         "Lỗi đã ghi nhận chờ E0 kết luận nguyên nhân (art/rig → M1, hay sửa được trong M2): tay vắt qua thân khi bê đồ (cả tam và lan); đèn đặt sát chân tam. Chuyển M1 (đã xác định): chưa có bóng đổ nhân vật; thân nhìn thẳng khi đi ngang.",
         "E0 (kết luận có số liệu, quét 1600 điểm bê × 2 chiều khuỷu × 4 tay): Q1 tay vắt qua thân KHÔNG do art — với chiều khuỷu của rig chỉ 0–1/1600 tư thế bê đạt (tay dưới vai, ở phía mình, đồ trên sàn, trong giới hạn khớp); với chiều đảo có 20–43 tư thế đạt (mép hông). Nguyên nhân: một chiều gập cố định/chuỗi + trộn 2 nghiệm ngược chiều. Đã sửa trong M2: reach.bend 'rig'|'flip' + IK_BEND_CONFLICT; trộn kênh reach theo đích (đường thẳng) thay vì theo góc; khi w<1 đích ngoài tầm → vươn tối đa (w=1 vẫn fail closed). Q2 đặt đồ sát chân: rig không hạ người — tam cần dx≥57 px (art) để đèn không chạm giày, ở đó tay chỉ hạ tới y=−8 so với cần −22.7; lan không hạ đủ ở mọi khoảng cách. Sửa một phần trong M2 bằng dữ liệu (place-low khuỵu gối 10 px, đặt xa thêm 30 px); phần còn lại (cúi người thật) chuyển M1b với bằng chứng này.",
         "E1 (src/motion/interaction.ts): điểm tương tác = film.points[id] (neo anchor thân/đạo cụ có trọng số + ràng buộc: các tay phải chạm, chiều khuỷu, khoảng hở đồ treo). Giải tại frame tiếp xúc (sự kiện sớm nhất của các mục dùng điểm, hoặc `frame`), trên tư thế ở chính frame đó, bỏ qua reach nhắm vào chính điểm. Khả thi: IK có nghiệm đúng chiều khuỷu + giới hạn khớp, kiểm tại frame tiếp xúc rồi trên mọi frame kênh có trọng số > 0 (đúng phép trộn validator thấy); khoảng hở. Không khả thi → tìm vòng tròn đồng tâm (tất định) → INTERACTION_INFEASIBLE. Test: dời cả cảnh, đổi tỷ lệ, đổi đạo cụ (không sửa tọa độ), đang bước ở frame tiếp xúc, siết giới hạn khớp → điểm dời và tôn trọng giới hạn (kiểm ngược: bỏ kiểm cửa sổ → fail), khoảng hở đẩy điểm lên, tất định, mã lỗi.",
-        "E2 (một phần, làm sớm vì E1 cần): timing cầm/đặt/trao kéo dài + pha chuyển ~0.8 s (pick-up 104, give/receive 96, place-low 80, place 84 frame); place-low khuỵu muộn hơn. Đánh giá thị giác ở E5."
+        "E2 (một phần, làm sớm vì E1 cần): timing cầm/đặt/trao kéo dài + pha chuyển ~0.8 s (pick-up 104, give/receive 96, place-low 80, place 84 frame); place-low khuỵu muộn hơn. Đánh giá thị giác ở E5.",
+        "E4: film.turns {character, start, durationFrames?, face: left|right|{character}|{prop}} — chung chuỗi locomotion với walks (không chồng), lật như tờ giấy, x không đổi, chân khóa sàn ngoài các frame lật. Hướng tương đối tính tại frame bắt đầu theo vị trí suy từ các lần đi (không đệ quy qua lần quay). m2-handover: Lan quay tại chỗ về phía tam thay cho bước 60 px; bộ giải E1 tự dời điểm gặp (9.2 → 40.2). Bổ sung E1: explainPoint (chẩn đoán) + bán kính tìm kiếm = tổng tầm với các tay (dữ liệu) thay hằng số 200 px."
       ]
     },
     "M1": {

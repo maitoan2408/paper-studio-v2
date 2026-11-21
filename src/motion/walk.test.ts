@@ -129,3 +129,60 @@ for (const [c, mutate] of cases) {
     assert.throws(() => walkFilm(mutate), code(c));
   });
 }
+
+// ── Quay tại chỗ (E4) ────────────────────────────────────────────────────────────────────────────────
+/** Phim đi bộ + một đạo cụ trên sàn + các lần quay. a kết thúc đi ở x=−420 nhìn trái; b ở x=80 nhìn trái. */
+const turnFilm = (turns: unknown[], extra: (f: any) => void = () => {}) =>
+  walkFilm((f) => {
+    f.props = [{ id: 'pot', asset: 'plant', x: 300, y: 0, scale: 1, rotation: 0, depth: 1, on: 'floor' }];
+    f.turns = turns;
+    extra(f);
+  });
+
+test('turn in place flips facing through 0 monotonically while x stays put — both characters', () => {
+  const f = turnFilm([
+    { character: 'a', start: 210, face: 'right' },
+    { character: 'b', start: 175, face: { prop: 'pot' } },
+  ]);
+  const T = f.rigs.get('demo-cast')!.data.gait!.turnFrames;
+  for (const [ci, start, from, to, x] of [[0, 210, -1, 1, -420], [1, 175, -1, 1, 80]] as const) {
+    const fx = Array.from({ length: T + 2 }, (_, k) => characterState(f, ci, start - 1 + k).fx);
+    assert.equal(fx[0], from);
+    assert.equal(fx[T], to);
+    for (let k = 1; k < fx.length; k++) assert.ok(to * (fx[k]! - fx[k - 1]!) >= -1e-12, `c${ci} not monotonic at ${start - 1 + k}`);
+    for (let k = 0; k <= T + 1; k++) assert.equal(characterState(f, ci, start - 1 + k).root[0], x);
+  }
+});
+
+test('relative facing: towards a character or a prop at the start frame; no-op when already facing it', () => {
+  const f = turnFilm([
+    { character: 'a', start: 210, face: { character: 'b' } }, // b ở bên phải → nhìn phải
+    { character: 'b', start: 175, face: { character: 'a' } }, // a ở bên trái, b đang nhìn trái → không đổi
+  ]);
+  assert.equal(characterState(f, 0, 259).fx, 1);
+  assert.equal(characterState(f, 1, 176).fx, -1);
+  assert.equal(characterState(f, 1, 259).fx, -1);
+});
+
+test('feet stay locked around a turn (no slide outside the flip frames)', () => {
+  const f = turnFilm([{ character: 'b', start: 175, face: 'right' }]);
+  const T = f.rigs.get('demo-cast')!.data.gait!.turnFrames;
+  const legs = legsOf(f.rigs.get('demo-cast')!, f.packs.get('demo-cast')!, 'lan');
+  const sole = (fr: number) => legs.map((l) => contactWorld(f, 1, fr, l.contact));
+  for (const [a, b] of [[171, 174], [175 + T, 175 + T + 20]] as const) {
+    for (let fr = a + 1; fr <= b; fr++) {
+      sole(fr).forEach((p, k) => assert.ok(Math.hypot(p[0] - sole(fr - 1)[k]![0], p[1] - sole(fr - 1)[k]![1]) <= 0.01, `frame ${fr}`));
+    }
+  }
+});
+
+const turnCases: [string, unknown[], (f: any) => void][] = [
+  ['FILM_TIMELINE_OVERLAP', [{ character: 'a', start: 60, face: 'left' }], () => {}],
+  ['FILM_UNKNOWN_REF', [{ character: 'a', start: 210, face: { character: 'z' } }], () => {}],
+  ['FILM_UNKNOWN_REF', [{ character: 'a', start: 210, face: { prop: 'cup' } }], () => {}],
+  ['FILM_FRAME_RANGE', [{ character: 'a', start: 255, face: 'right' }], () => {}],
+  ['FILM_SCHEMA', [{ character: 'a', start: 210, face: 'up' }], () => {}],
+];
+for (const [c, turns, extra] of turnCases) {
+  test(`${c} (turn): ${JSON.stringify(turns[0]).slice(0, 60)}`, () => assert.throws(() => turnFilm(turns, extra), code(c)));
+}

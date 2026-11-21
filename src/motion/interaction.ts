@@ -22,9 +22,8 @@ import { anchorOffset, propPivot } from './props.ts';
 import { activeItems, clipFor, keyValue } from './timeline.ts';
 
 const cache = new WeakMap<Film, Map<string, V2>>();
-/** Bước và bán kính tìm kiếm (px thế giới). */
+/** Bước tìm kiếm (px thế giới). Bán kính tối đa suy ra từ dữ liệu: tổng tầm với của các tay tham gia. */
 const STEP = 2;
-const MAX_RADIUS = 200;
 
 function spec(film: Film, id: string) {
   const s = film.data.points?.[id];
@@ -56,7 +55,27 @@ export function solvedPoint(film: Film, id: string): V2 {
   return p;
 }
 
+/** Lý do điểm P không khả thi cho điểm tương tác `id` (undefined = khả thi). Dùng để chẩn đoán/dàn cảnh. */
+export function explainPoint(film: Film, id: string, P: V2): string | undefined {
+  return context(film, id).why(P);
+}
+
 function solve(film: Film, id: string): V2 {
+  const { start, why, maxRadius, f } = context(film, id);
+  const reason = why(start);
+  if (!reason) return start;
+  for (let r = STEP; r <= maxRadius; r += STEP) {
+    const n = Math.max(8, Math.round((2 * Math.PI * r) / STEP));
+    for (let k = 0; k < n; k++) {
+      const a = (2 * Math.PI * k) / n;
+      const P: V2 = [start[0] + r * Math.cos(a), start[1] + r * Math.sin(a)];
+      if (!why(P)) return P;
+    }
+  }
+  return fail('INTERACTION_INFEASIBLE', `film.points.${id} frame ${f}`, `no feasible point within ${maxRadius.toFixed(0)} px of the anchors' mean (${reason}); move the characters closer`);
+}
+
+function context(film: Film, id: string) {
   const s = spec(film, id);
   const f = contactFrame(film, id);
   const ignore = new Set([id]);
@@ -175,15 +194,18 @@ function solve(film: Film, id: string): V2 {
     }
     return undefined;
   };
-  const reason = why(start);
-  if (!reason) return start;
-  for (let r = STEP; r <= MAX_RADIUS; r += STEP) {
-    const n = Math.max(8, Math.round((2 * Math.PI * r) / STEP));
-    for (let k = 0; k < n; k++) {
-      const a = (2 * Math.PI * k) / n;
-      const P: V2 = [start[0] + r * Math.cos(a), start[1] + r * Math.sin(a)];
-      if (!why(P)) return P;
-    }
+  // Bán kính tìm kiếm = tổng tầm với (px thế giới) của các tay tham gia — từ art + tỷ lệ, không hằng số.
+  let maxRadius = 0;
+  for (const r of s.reach) {
+    const ci = ciOf(r.character);
+    const c = film.data.characters[ci]!;
+    const rig = film.rigs.get(c.pack)!;
+    const chain = Object.values(rig.data.ik ?? {}).find((k) => k.contact === r.contact);
+    if (!chain) continue;
+    const parts = partsOf(ci);
+    const up = parts.find((p) => p.bone === chain.upper)!.pos;
+    const hand = contactPoint(rig, parts, r.contact);
+    maxRadius += Math.hypot(hand[0] - up[0], hand[1] - up[1]) * c.scale;
   }
-  return fail('INTERACTION_INFEASIBLE', `film.points.${id} frame ${f}`, `no feasible point within ${MAX_RADIUS} px of the anchors' mean (${reason}); move the characters closer`);
+  return { start, why, maxRadius, f };
 }

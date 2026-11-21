@@ -77,6 +77,16 @@ const PointSpec = z
   })
   .strict();
 
+/** Quay tại chỗ: hướng tuyệt đối hoặc về phía nhân vật/đạo cụ (tính tại frame bắt đầu). */
+const Turn = z
+  .object({
+    character: Id,
+    start: Frame,
+    durationFrames: z.number().int().min(2).optional(),
+    face: z.union([z.enum(['left', 'right']), z.object({ character: Id }).strict(), z.object({ prop: Id }).strict()]),
+  })
+  .strict();
+
 const Walk = z.object({ character: Id, start: Frame, durationFrames: z.number().int().min(2), toX: Finite }).strict();
 
 const FilmSchema = z
@@ -91,6 +101,7 @@ const FilmSchema = z
     camera: z.object({ keys: z.array(CameraKey).min(1) }).strict(),
     timeline: z.array(TimelineItem),
     walks: z.array(Walk),
+    turns: z.array(Turn).optional(),
     points: z.record(Id, PointSpec).optional(),
     physics: z.array(z.unknown()),
   })
@@ -254,10 +265,24 @@ export function validateFilm(
     if (w.toX < s.x0 || w.toX > s.x1) fail('FILM_NOT_ON_SURFACE', `${where}.toX`, `${w.toX} outside surface "${s.id}" [${s.x0}, ${s.x1}]`);
     walkBy.set(w.character, [...(walkBy.get(w.character) ?? []), { start: w.start, end: w.start + w.durationFrames, i }]);
   });
+  // Quay tại chỗ: cùng chuỗi locomotion với đi bộ — không chồng nhau trên cùng nhân vật.
+  (f.turns ?? []).forEach((t, k) => {
+    const where = `film.turns[${k}]`;
+    if (!chars.has(t.character)) fail('FILM_UNKNOWN_REF', `${where}.character`, `character "${t.character}" does not exist`);
+    if (typeof t.face === 'object' && ('character' in t.face ? !chars.has(t.face.character) : !props.has(t.face.prop))) {
+      fail('FILM_UNKNOWN_REF', `${where}.face`, 'face target does not exist');
+    }
+    const c = chars.get(t.character)!;
+    const dur = t.durationFrames ?? rigs.get(c.pack)?.data.gait?.turnFrames;
+    if (dur === undefined) fail('ACTION_PRECONDITION', where, `rig of "${t.character}" has no gait; set durationFrames`);
+    if (t.start + dur > N) fail('FILM_FRAME_RANGE', where, `ends at ${t.start + dur} > durationFrames ${N}`);
+    walkBy.set(t.character, [...(walkBy.get(t.character) ?? []), { start: t.start, end: t.start + dur, i: 1000 + k }]);
+  });
   for (const list of walkBy.values()) {
     list.sort((a, b) => a.start - b.start);
     for (let j = 1; j < list.length; j++) {
-      if (list[j]!.start < list[j - 1]!.end) fail('FILM_TIMELINE_OVERLAP', `film.walks[${list[j]!.i}]`, `overlaps walks[${list[j - 1]!.i}]`);
+      const name = (i: number) => (i >= 1000 ? `turns[${i - 1000}]` : `walks[${i}]`);
+      if (list[j]!.start < list[j - 1]!.end) fail('FILM_TIMELINE_OVERLAP', `film.${name(list[j]!.i)}`, `overlaps ${name(list[j - 1]!.i)}`);
     }
   }
 

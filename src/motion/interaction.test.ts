@@ -5,7 +5,8 @@ import { loadArtPack } from '../schema/art-pack.ts';
 import { loadPackMotion, validateFilm, type Film } from '../schema/film.ts';
 import { code } from '../schema/test-helpers.ts';
 import { characterState, contactWorld } from './character.ts';
-import { contactFrame, solvedPoint } from './interaction.ts';
+import { contactFrame, explainPoint, solvedPoint } from './interaction.ts';
+import { forwardKinematics } from '../rig/pose.ts';
 
 const packs = new Map(['sample-m0', 'demo-cast'].map((x) => [x, loadArtPack(`assets/${x}`)]));
 const raw = () => JSON.parse(readFileSync('examples/films/m2-handover.json', 'utf8'));
@@ -118,16 +119,35 @@ test('solved at the contact frame while the receiver is still walking', () => {
   if (atStart) assert.ok(dist(atStart, solvedPoint(f, 'handover')) > 1);
 });
 
-test('joint limits are part of feasibility: tighter elbow limits move the point, and the result respects them', () => {
-  const tight = (r: any) => {
-    // Đo thật: tam đạt forearm.l ≈ 122.5° đúng ở điểm gặp (đỉnh của cả phim); lan tối đa 117.1°.
-    // Siết max 118° chỉ ràng buộc tư thế trao đồ → bộ giải phải dời điểm.
-    for (const b of r.bones) if (b.id === 'forearm.l') b.limits = { min: b.limits.min, max: 118 };
+test('joint limits are part of feasibility: an over-folded elbow at the mean is rejected, the solved point is not', () => {
+  const d = raw();
+  // Neo 4:1 nghiêng về vai tam: lan vẫn với tới điểm trung bình, nhưng khuỷu tam phải gập quá giới hạn (~157° > 150°).
+  d.points.handover.anchors = [
+    { character: 'tam', bone: 'torso', anchor: 'shoulder.l', weight: 4 },
+    { character: 'lan', bone: 'torso', anchor: 'shoulder.l', weight: 1 },
+  ];
+  untilHandover(d);
+  const f = build(d);
+  const fr = contactFrame(f, 'handover');
+  const shoulderOf = (id: string) => {
+    const k = ci(f, id);
+    const s2 = characterState(f, k, fr, new Set(['handover']));
+    const cc = f.data.characters[k]!;
+    const part = forwardKinematics(f.rigs.get(cc.pack)!, f.packs.get(cc.pack)!, cc.character, { angle: (b) => s2.angles.get(b)!, variant: () => 'default' })
+      .find((p) => p.bone === 'upper-arm.l')!;
+    return [s2.root[0] + s2.fx * s2.scale * part.pos[0], s2.root[1] + s2.scale * part.pos[1]] as const;
   };
-  const f = build(raw(), tight);
-  const { fr } = handsMeet(f);
-  for (const id of ['lan', 'tam']) assert.ok(characterState(f, ci(f, id), fr).angles.get('forearm.l')! <= 118 + 1e-9);
-  assert.ok(dist(solvedPoint(f, 'handover'), solvedPoint(base, 'handover')) > 1);
+  const [t0, l0] = [shoulderOf('tam'), shoulderOf('lan')];
+  const mean: [number, number] = [(4 * t0[0] + l0[0]) / 5, (4 * t0[1] + l0[1]) / 5];
+  const why = explainPoint(f, 'handover', mean);
+  assert.ok(why && /^tam\.forearm\.l = .* outside \[/.test(why), `mean should violate tam's elbow limit, got: ${why}`);
+  const P = solvedPoint(f, 'handover');
+  assert.equal(explainPoint(f, 'handover', P), undefined);
+  handsMeet(f);
+  for (const id of ['lan', 'tam']) {
+    const a = characterState(f, ci(f, id), fr).angles;
+    for (const b of f.rigs.get('demo-cast')!.order) assert.ok(a.get(b.id)! >= b.limits.min - 1e-9 && a.get(b.id)! <= b.limits.max + 1e-9, `${id}.${b.id}`);
+  }
 });
 
 test('INTERACTION_INFEASIBLE when the characters stand too far apart', () => {

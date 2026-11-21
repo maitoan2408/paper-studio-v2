@@ -361,18 +361,21 @@
       ]
     }
   },
+  "turns": [
+    {
+      "character": "lan",
+      "start": 196,
+      "face": {
+        "character": "tam"
+      }
+    }
+  ],
   "walks": [
     {
       "character": "tam",
       "start": 0,
       "durationFrames": 115,
       "toX": -120
-    },
-    {
-      "character": "lan",
-      "start": 180,
-      "durationFrames": 34,
-      "toX": 120
     },
     {
       "character": "tam",
