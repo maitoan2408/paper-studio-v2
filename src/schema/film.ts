@@ -5,7 +5,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { fail, parseWith, readJsonFile } from '../core/errors.ts';
+import { fail, parseWith, readJsonFile, StudioError } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
 import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
@@ -326,25 +326,86 @@ export function validateFilm(
   const film: Film = { data: f, assets, packs, rigs, clips };
   propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
   // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
+  // Lỗi do quá ngắn (WALK_TOO_SHORT, ACTION_SPEED_EXCEEDED) kèm số frame tối thiểu của mục gây lỗi (E3).
   f.characters.forEach((c, ci) => {
-    const rig = rigs.get(c.pack)!;
-    let prev: Map<string, number> | undefined;
-    for (let fr = 0; fr < N; fr++) {
-      const pose = characterState(film, ci, fr);
-      for (const b of rig.order) {
-        const a = pose.angles.get(b.id)!;
-        const at = `film.characters[${ci}](${c.id}) frame ${fr}`;
-        if (a < b.limits.min - 1e-9 || a > b.limits.max + 1e-9) {
-          fail('ACTION_LIMIT_EXCEEDED', at, `${b.id} = ${a.toFixed(2)}° outside [${b.limits.min}, ${b.limits.max}]`);
-        }
-        const d = prev ? Math.abs(a - prev.get(b.id)!) : 0;
-        if (d > b.maxDegPerFrame + 1e-9) fail('ACTION_SPEED_EXCEEDED', at, `${b.id} turns ${d.toFixed(2)}°/frame > ${b.maxDegPerFrame}`);
-      }
-      prev = pose.angles;
+    const bad = motionFault(film, ci, 0, N);
+    if (!bad) return;
+    if (bad.code === 'WALK_TOO_SHORT') {
+      const wi = f.walks.findIndex((w) => bad.path === `film.walks(${c.id}@${w.start})`);
+      fail(bad.code, bad.path, `${bad.detail}${wi < 0 ? '' : hint(film, ci, 'walks', wi)}`);
     }
+    if (bad.code === 'ACTION_SPEED_EXCEEDED') {
+      const fr = bad.frame;
+      const cands: string[] = [];
+      f.walks.forEach((w, i) => { if (w.character === c.id && fr >= w.start && fr <= w.start + w.durationFrames) cands.push(hint(film, ci, 'walks', i)); });
+      f.timeline.forEach((t, i) => { if (t.character === c.id && fr >= t.start && fr <= t.start + t.durationFrames) cands.push(hint(film, ci, 'timeline', i)); });
+      fail(bad.code, bad.path, `${bad.detail}${cands.filter(Boolean).join(';') || '; no single item can be lengthened to fix this'}`);
+    }
+    fail(bad.code, bad.path, bad.detail);
   });
   for (let fr = 0; fr < N; fr++) checkHeldAboveSurface(film, fr, (ci, contact) => contactWorld(film, ci, fr, contact));
   checkLiftClearance(film, (ci, contact, f) => contactWorld(film, ci, f, contact));
   checkProps(film, (ci, contact, fr) => contactWorld(film, ci, fr, contact));
   return film;
+}
+
+interface MotionFault { code: string; path: string; detail: string; frame: number }
+
+/** Lỗi chuyển động đầu tiên của nhân vật trong [from, to): giới hạn khớp, tốc độ xoay, hoặc lỗi dựng (vd. WALK_TOO_SHORT). */
+function motionFault(film: Film, ci: number, from: number, to: number): MotionFault | undefined {
+  const c = film.data.characters[ci]!;
+  const rig = film.rigs.get(c.pack)!;
+  let prev: Map<string, number> | undefined;
+  for (let fr = Math.max(0, from); fr < to; fr++) {
+    let angles: Map<string, number>;
+    try {
+      angles = characterState(film, ci, fr).angles;
+    } catch (e) {
+      if (e instanceof StudioError) return { code: e.code, path: e.path, detail: e.detail, frame: fr };
+      throw e;
+    }
+    const at = `film.characters[${ci}](${c.id}) frame ${fr}`;
+    for (const b of rig.order) {
+      const a = angles.get(b.id)!;
+      if (a < b.limits.min - 1e-9 || a > b.limits.max + 1e-9) {
+        return { code: 'ACTION_LIMIT_EXCEEDED', path: at, detail: `${b.id} = ${a.toFixed(2)}° outside [${b.limits.min}, ${b.limits.max}]`, frame: fr };
+      }
+      const d = prev ? Math.abs(a - prev.get(b.id)!) : 0;
+      if (d > b.maxDegPerFrame + 1e-9) return { code: 'ACTION_SPEED_EXCEEDED', path: at, detail: `${b.id} turns ${d.toFixed(2)}°/frame > ${b.maxDegPerFrame}`, frame: fr };
+    }
+    prev = angles;
+  }
+  return undefined;
+}
+
+/**
+ * Số frame tối thiểu của một lần đi / một mục timeline để chuyển động của nhân vật trong đoạn đó qua được ràng buộc
+ * của gait (số bước, lật hướng) và ngưỡng xương (giới hạn + tốc độ) — các mục khác giữ nguyên. Tìm nhị phân trên chính
+ * bộ kiểm (không công thức xấp xỉ); trả '' nếu kéo dài tới max(4×, +10 s) vẫn không đủ (lỗi không do mục này).
+ */
+function hint(film: Film, ci: number, kind: 'walks' | 'timeline', index: number): string {
+  const item = film.data[kind][index]!;
+  const cur = item.durationFrames;
+  const ok = (D: number) => {
+    const data = {
+      ...film.data,
+      output: { ...film.data.output, durationFrames: Math.max(film.data.output.durationFrames, item.start + D + 2) },
+      [kind]: film.data[kind].map((x, i) => (i === index ? { ...x, durationFrames: D } : x)),
+    };
+    return !motionFault({ ...film, data }, ci, item.start - 1, item.start + D + 2);
+  };
+  let lo = cur;
+  let hi = cur;
+  do {
+    lo = hi;
+    hi = Math.ceil(hi * 1.25) + 1;
+    if (hi > Math.max(4 * cur, cur + 10 * film.data.output.fps)) return '';
+  } while (!ok(hi));
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (ok(mid)) hi = mid;
+    else lo = mid;
+  }
+  const what = kind === 'walks' ? `film.walks[${index}]` : `film.timeline[${index}] (${(item as { clip: string }).clip})`;
+  return `; ${what} minimum ${hi} frames (now ${cur}) at gait + bone limits`;
 }

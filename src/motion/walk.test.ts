@@ -186,3 +186,24 @@ const turnCases: [string, unknown[], (f: any) => void][] = [
 for (const [c, turns, extra] of turnCases) {
   test(`${c} (turn): ${JSON.stringify(turns[0]).slice(0, 60)}`, () => assert.throws(() => turnFilm(turns, extra), code(c)));
 }
+
+// ── E3: thông báo thiếu thời lượng nêu số frame tối thiểu (gait + ngưỡng xương), và con số đó đúng ──────────
+const minOf = (fn: () => unknown, codeName: string): number => {
+  try {
+    fn();
+  } catch (e: any) {
+    assert.equal(e.code, codeName, e.message);
+    const m = /minimum (\d+) frames/.exec(e.message);
+    assert.ok(m, `message lacks "minimum N frames": ${e.message}`);
+    return Number(m![1]);
+  }
+  return assert.fail(`expected ${codeName}`);
+};
+for (const [codeName, idx, dur] of [['WALK_TOO_SHORT', 2, 10], ['ACTION_SPEED_EXCEEDED', 0, 60]] as const) {
+  test(`${codeName} names the minimum walk length, and that minimum is exact (N passes, N−1 fails)`, () => {
+    const n = minOf(() => walkFilm((f) => (f.walks[idx].durationFrames = dur)), codeName);
+    assert.ok(n > dur, `minimum ${n} should exceed ${dur}`);
+    walkFilm((f) => (f.walks[idx].durationFrames = n));
+    assert.throws(() => walkFilm((f) => (f.walks[idx].durationFrames = n - 1)), (e: any) => ['WALK_TOO_SHORT', 'ACTION_SPEED_EXCEEDED'].includes(e.code));
+  });
+}

@@ -101,7 +101,7 @@ export function walkSegments(film: Film, ci: number, legLength: number): WalkSeg
     const turnFrames = dir !== sign ? gait!.turnFrames : 0;
     const steps = Math.max(2, 2 * Math.ceil(D / (gait!.strideRatio * legLength * c.scale)));
     if (w!.durationFrames - turnFrames < steps * 2) {
-      fail('WALK_TOO_SHORT', `film.walks(${c.id}@${w!.start})`, `${w!.durationFrames} frames for ${turnFrames} turn + ${steps} steps (need ≥ ${turnFrames + steps * 2})`);
+      fail('WALK_TOO_SHORT', `film.walks(${c.id}@${w!.start})`, `${w!.durationFrames} frames for ${turnFrames} turn + ${steps} steps (structural floor ${turnFrames + steps * 2}: ≥ 2 frames/step)`);
     }
     const seg: WalkSegment = { start: w!.start, end: w!.start + w!.durationFrames, fromX: x, toX: w!.toX, fromSign: sign, dir, turnFrames, steps };
     x = w!.toX;

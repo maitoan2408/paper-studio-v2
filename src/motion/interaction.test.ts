@@ -164,3 +164,19 @@ test('FILM_UNKNOWN_REF: bind uses an undefined point; spec names an unknown char
   d2.points.handover.reach[0].character = 'ghost';
   assert.throws(() => build(d2), code('FILM_UNKNOWN_REF'));
 });
+
+test('ACTION_SPEED_EXCEEDED for a too-short clip names its minimum length; N passes, N−1 fails (E3)', () => {
+  const wave = (n: number) => { const d = raw(); d.timeline.find((t: any) => t.clip === 'wave').durationFrames = n; return build(d); };
+  let n = 0;
+  try {
+    wave(24);
+    assert.fail('expected ACTION_SPEED_EXCEEDED');
+  } catch (e: any) {
+    assert.equal(e.code, 'ACTION_SPEED_EXCEEDED', e.message);
+    const m = /film\.timeline\[\d+\] \(wave\) minimum (\d+) frames/.exec(e.message);
+    assert.ok(m, e.message);
+    n = Number(m![1]);
+  }
+  wave(n);
+  assert.throws(() => wave(n - 1), code('ACTION_SPEED_EXCEEDED'));
+});
