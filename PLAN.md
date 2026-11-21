@@ -189,11 +189,15 @@ Mục đích: cho chủ dự án thấy sớm nhất toàn bộ đường đi **
 
 ### M2 — Hành động là dữ liệu
 
-- Clip: `idle-breath`, `turn-head`, `wave`, `walk-cycle` (bàn chân khóa sàn), `pick-up`/`place` (cầm, thả).
+Phạm vi chủ dự án duyệt (2026-11-20, lựa chọn B — vẫn dùng art tạm của demo, chưa làm art mới):
 
-- Ghép clip theo timeline, chuyển tiếp mượt; kiểm liên tục trong unit test (tốc độ xoay/di chuyển tối đa).
+- Đi bộ: bàn chân khóa sàn, không trượt; hướng nhìn theo hướng đi, kể cả khi đổi hướng (lật như tờ giấy).
+- Cầm và đặt đồ vật lên bàn/sàn (chưa có vật lý rơi); 2 nhân vật trao đồ cho nhau. Khi cả hai cùng nắm, đồ đi theo tay nắm gần nhất (người nhận) — quy tắc rõ ràng, tất định.
+- Chỉnh từ buổi duyệt demo: camera gần hơn; `wave` gập khuỷu/cổ tay; `turn-head` bớt nhảy hình (bóp ngang `squashX`); `idle-breath` rõ hơn.
+- Chân art tạm cắt thành đùi/ống chân/bàn chân; IK 2 xương; ngưỡng xoay thống nhất: mỗi xương có `maxDegPerFrame` trong `rig.json`.
+- Giới hạn chấp nhận cho vòng này: thân nhìn thẳng khi đi ngang.
 
-- **Đạt khi:** 3 phim mẫu khác nhau (≥2 nhân vật, ≥4 hành động khác nhau, cả 2 tay), render + audit PASS, chủ dự án duyệt video 1× và 0.5×.
+- **Đạt khi:** phim chính 15–20 giây đủ các hành động trên + 1 phim ngắn 8–10 giây dàn cảnh khác hẳn (đổi vai, tay kia, đạo cụ kia, đi chiều ngược lại) + test biến thể (≥2 nhân vật, cả 2 tay, 2 đạo cụ, 2 quãng/chiều đi); cả 2 phim render + audit PASS trên CI; chủ dự án duyệt video 1× và 0.5×. Mục tiêu "nhiều phim mẫu khác nhau" chuyển sang M6.
 
 ### M3 — Vật lý đạo cụ
 
