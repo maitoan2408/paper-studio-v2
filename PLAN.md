@@ -74,37 +74,34 @@ Repo cũ: `maitoan2408/ai-animation-studio-research-content`, nhánh `codex/m6-u
 
 9. **Cách làm việc với chủ dự án:** yêu cầu mơ hồ → hỏi lại và đưa thiết kế ngắn để duyệt **trước** khi code; chia task nhỏ, nêu file sửa và cách kiểm tra; code ít nhất có thể; chỉ nói "xong" sau khi chạy kiểm tra thật; báo cáo sau mỗi bước kèm ảnh/video thật trong chat.
 
+10. **Nghiệm thu hai lớp.** Validator và test chặn lỗi kỹ thuật (ngưỡng an toàn là dữ liệu trong rig, vd. `maxDegPerFrame` theo xương). Chất lượng chuyển động và hình ảnh do chủ dự án duyệt trên video thật (1× và 0.5×). Không dùng một ngưỡng số thay cho đánh giá hình ảnh; không nới ngưỡng an toàn để qua kiểm tra. Chạy được trên dữ liệu mới **không** đồng nghĩa với đạt nếu hình ảnh còn lỗi.
+
 ## 4. Kiến trúc
 
 ```
-
 src/
+  schema/   Hợp đồng dữ liệu + validator (zod): art pack, rig, action, film, storyboard
+  rig/      Ráp con rối từ rig data + pose → sprites (thuần)
+  motion/   Lấy mẫu action clip theo frame → pose; ghép nhiều clip; IK 2 xương; đi bộ / quay tại chỗ;
+            đạo cụ cầm/đặt/trao; bộ giải điểm tương tác (M2)
+  physics/  Bake Rapier tất định cho đạo cụ rơi/đặt; xác minh SHA. Là một TRẠNG THÁI của đạo cụ trong
+            pipeline tương tác (nằm yên → cầm → thả → mô phỏng → nằm yên), không phải hệ thống song song (M3)
+  scene/    film + frame → SceneFrame (sprites, camera, markers)
+  qa/       Kiểm từng frame: tiếp xúc, chân chạm sàn, liên tục, chồng lấn theo hình đã xoay
+  render/   Renderer Three.js trong Chromium, server tin cậy, encoder MP4 (+ track audio có SHA từ M4),
+            tự kiểm renderer
+  audit/    Audit độc lập sau render (decode toàn bộ, hash, nguồn, QA lại; audio từ M4)
+  studio/   Kịch bản → storyboard → revision → compile ra film.json; job queue; HTTP/UI.
+            Gồm capability catalog + compiler dàn cảnh + audio (M4); Script Interpreter + Director Core (M5).
+            Ranh giới: Script Interpreter (luật hôm nay; có thể AI sau này) chỉ xuất StoryIntent — dữ liệu có
+            schema, validate, SHA, lưu thành revision → Director Core tất định → storyboard → compiler → film.json.
+            Không phần nào sinh code chạy lúc render; phần không tất định (nếu có AI) dừng trước revision.
 
-  schema/      Hợp đồng dữ liệu + validator (zod): art pack, rig, action, film, storyboard
-
-  rig/         Ráp con rối từ rig data + pose → sprites (thuần)
-
-  motion/      Lấy mẫu action clip theo frame → pose; ghép nhiều clip; IK 2 xương
-
-  physics/     Bake Rapier tất định cho đạo cụ rơi/đặt; xác minh SHA
-
-  scene/       film + frame → SceneFrame (sprites, camera, markers)
-
-  qa/          Kiểm từng frame: tiếp xúc, chân chạm sàn, liên tục, chồng lấn theo hình đã xoay
-
-  render/      Renderer Three.js trong Chromium, server tin cậy, encoder MP4, tự kiểm renderer
-
-  audit/       Audit độc lập sau render (decode toàn bộ, hash, nguồn, QA lại)
-
-  studio/      Kịch bản → storyboard → revision → compile ra film.json; job queue; HTTP/UI
-
-assets/<pack>/  Art pack có version: SVG + manifest.json + rig.json
-
-examples/films/ Phim mẫu (JSON)
-
-docs/           ARCHITECTURE.md, STATE.json (trạng thái)
-PLAN.md         Kế hoạch duy nhất (ở thư mục gốc)
-
+assets/<pack>/   Art pack có version: SVG + manifest.json + rig.json (+ actions/*.json)
+examples/films/  Phim mẫu (JSON)
+config/          Ngưỡng audit (dữ liệu)
+docs/            ARCHITECTURE.md, STATE.json (trạng thái)
+PLAN.md          Kế hoạch duy nhất (ở thư mục gốc)
 ```
 
 ### Hợp đồng dữ liệu (phác thảo — chốt chi tiết ở M0)
@@ -147,11 +144,15 @@ Tham chiếu tại commit `006d629` của repo cũ (`production/` = engine, `src
 
 | Art `lantern-v2` (khớp tròn, tay 85%, `hand-half`) | `production/assets/lantern-v2/` | Chỉ làm điểm xuất phát cho art pack mới |
 
+**Ghi chú (chủ dự án duyệt D1, 2026-11-21):** chưa có quyền đọc repo cũ. Renderer, check-renderer và audit **đã viết mới** ở M0. Vật lý (M3) và store/queue của Studio (M4) cũng **viết mới** theo hợp đồng của repo này. Nếu sau này có quyền, đối chiếu để bổ sung kiểm tra còn thiếu — không mang sang nguyên trạng.
+
 **Không mang sang:** `performance-layer`, `arm-projection`, `arm-depth`, `joint-caps`, thuật toán tìm tư thế nghỉ, `cutoutStance`, mọi script/tài liệu theo giai đoạn cũ.
 
 ## 6. Các mốc
 
 Mỗi mốc: code + test + **render thật** + ảnh/video trong chat + chủ dự án duyệt. Không sang mốc sau khi chưa `ACCEPTED`.
+
+**Lượt chạy nghiệm thu (bắt buộc trước khi xin nghiệm thu mỗi mốc):** verify, check:renderer, render + audit **toàn bộ phim mẫu** trên CI, tại đúng commit bàn giao (code + dữ liệu). Ghi commit và link CI vào `docs/STATE.json`. Nghiệm thu kỹ thuật (lượt chạy này) và nghiệm thu thị giác (chủ dự án xem video) là hai bước riêng (nguyên tắc 10).
 
 **Thứ tự thực hiện** (chủ dự án quyết định sau Demo slice, 2026-11-20): M0 → Demo slice → **M2** → M1 → M3 → M4 → M5 → M6. Art mới (M1) làm sau M2; trong M2 tiếp tục dùng art tạm của demo.
 
@@ -177,15 +178,18 @@ Mục đích: cho chủ dự án thấy sớm nhất toàn bộ đường đi **
 - Giữ nguyên §3 (dữ liệu, tất định, fail closed, có test). **Ngoại lệ ghi rõ:** art của demo là art tạm, không qua bước "art trước motion"; không dùng nó làm art pack của M1.
 - **Đạt khi:** CI xanh; MP4 1080p24 dài 8–10 giây; audit PASS; chủ dự án đã xem video. Sau đó chủ dự án chọn phần làm kỹ tiếp theo (art, hành động, vật lý, Studio…); thứ tự M1–M6 có thể đổi theo quyết định đó và được cập nhật ngay trong file này.
 
-### M1 — Art pack + rig dữ liệu (art trước motion)
+### M1 — Art pack + rig dữ liệu (art trước motion; ưu tiên chất lượng hình ảnh)
 
-- Art pack chuẩn cho **2 nhân vật khác tỷ lệ** (ví dụ một người thấp đậm, một người cao gầy): khớp tròn chồng mép, nhiều hình bàn tay (nắm, thả lỏng, mở, chỉ), đầu 3 hướng, thân 3 hướng.
+Làm sau khi M2 `ACCEPTED`.
 
-- `rig.json`: xương, giới hạn khớp, tư thế nghỉ theo góc. Rig không có số đo trong code.
-
-- Model sheet + sheet tư thế cực hạn render tự động.
-
-- **Đạt khi:** chủ dự án duyệt model sheet; test: nhân vật thứ 3 chỉ bằng dữ liệu đứng đúng sàn, không lỗi IK.
+- **M1a — Art (chủ dự án duyệt TRƯỚC khi hoàn thiện motion trên art mới):** 2 nhân vật khác tỷ lệ (vd. thấp đậm, cao gầy); khớp tròn chồng mép, không lộ đường cắt ở mọi góc trong giới hạn khớp; đầu và thân 3 hướng (thẳng, 3/4, nghiêng); bàn tay 4 dạng (nắm, thả lỏng, mở, chỉ); anchor bê đồ/tương tác do art quyết định; bóng đổ gộp cho cả nhân vật (renderer). Model sheet + sheet tư thế cực hạn render tự động.
+- **M1b — Rig:** `rig.json` (xương, giới hạn khớp, tư thế nghỉ theo góc, không số đo trong code); xương cúi người (eo/hông) và chuỗi IK cho phép cúi khi với thấp nếu E0 (M2) chứng minh cần; đổi hướng/variant thân theo hướng nhìn và hành động bằng dữ liệu.
+- **M1c — Regression:** chạy lại TOÀN BỘ hành động M2 (đi bộ, quay tại chỗ, cầm, đặt, trao, vẫy, thở, quay đầu) trên art mới với ≥2 nhân vật khác tỷ lệ + nhân vật thứ 3 chỉ bằng dữ liệu. Không sửa engine riêng cho nhân vật nào.
+- **Đạt khi:**
+  - Kỹ thuật: lượt chạy nghiệm thu PASS; test: nhân vật thứ 3 chỉ bằng dữ liệu đứng đúng sàn, không lỗi IK.
+  - Thị giác (chủ dự án duyệt model sheet và video thật 1×/0.5×): khớp nối không lộ, tỷ lệ cơ thể, che khuất đúng, tư thế cầm/bê đồ tự nhiên (không vắt tay qua thân), đặt đồ ở khoảng cách tự nhiên, chuyển động tự nhiên.
+  - Các lỗi chuyển từ M2 (tay vắt qua thân, đặt đồ sát chân, chưa có bóng nhân vật, thân nhìn thẳng khi đi ngang) được giải quyết hoặc chủ dự án chấp nhận rõ ràng.
+  - Chạy được trên nhân vật mới KHÔNG đủ nếu hình ảnh còn lỗi.
 
 ### M2 — Hành động là dữ liệu
 
@@ -199,27 +203,43 @@ Phạm vi chủ dự án duyệt (2026-11-20, lựa chọn B — vẫn dùng art
 
 - **Đạt khi:** phim chính 15–20 giây đủ các hành động trên + 1 phim ngắn 8–10 giây dàn cảnh khác hẳn (đổi vai, tay kia, đạo cụ kia, đi chiều ngược lại) + test biến thể (≥2 nhân vật, cả 2 tay, 2 đạo cụ, 2 quãng/chiều đi); cả 2 phim render + audit PASS trên CI; chủ dự án duyệt video 1× và 0.5×. Mục tiêu "nhiều phim mẫu khác nhau" chuyển sang M6.
 
+**Vòng đóng M2** (chủ dự án duyệt 2026-11-21; dùng art tạm; thứ tự E0 → E1 → E4 → E2 → E3 → E5):
+
+- **E0 — Kiểm chứng nguyên nhân trước khi chuyển lỗi sang M1:** (Q1) tay vắt qua thân khi bê đồ — quét có hệ thống điểm bê trong khung art thân × hai chiều gập khuỷu, đo có nghiệm nào không vắt qua thân, giữ đồ trên sàn, trong giới hạn khớp không; (Q2) đặt đồ sát chân — đo tầm với xuống thấp nhất của rig hiện tại so với độ cao cần cho khoảng cách đặt tự nhiên. Có nghiệm → sửa trong M2; không có → ghi nguyên nhân bằng số liệu và chuyển sang M1.
+- **E1 — Bộ giải điểm tương tác tổng quát** (không công thức riêng cho cảnh nào): điểm tương tác khai báo bằng neo (anchor thân/contact nhân vật, anchor đạo cụ, có trọng số) + ràng buộc. Bộ giải phải kiểm: mọi chuỗi tay tham gia với tới được; **tính khả thi IK đầy đủ** (nghiệm tồn tại, trong **giới hạn khớp**, đúng **hướng gập** của rig); khoảng hở của đồ cầm tay với mặt đỡ. Điểm được xác định **tại frame tiếp xúc** (frame sự kiện grip/release/contact), dựa trên tư thế nhân vật ở chính frame đó (đã tính đi bộ/quay), không mặc định lấy đầu clip; sau đó giữ cố định trong thế giới. Không khả thi → `IK_UNREACHABLE`/`ACTION_LIMIT_EXCEEDED` kèm frame, khoảng thiếu và gợi ý dời nhân vật.
+- **E2 — Timing nâng/đặt đồ tự nhiên:** chỉnh dữ liệu clip (thời lượng, ease); nghiệm thu bằng ảnh từng giai đoạn + video 1×/0.5×, không thay bằng ngưỡng tốc độ.
+- **E3 — Thông báo thiếu thời lượng:** `WALK_TOO_SHORT` và lỗi vượt tốc độ do quá ngắn phải nêu số frame tối thiểu (tính từ `gait` và ngưỡng xương).
+- **E4 — Quay người tại chỗ** là hành động tổng quát: mục locomotion `turn` (`face: left|right` hoặc tương đối `face: {character}|{prop}`, tính tại frame bắt đầu), dùng chung cơ chế lật với `walk`, bàn chân giữ khóa sàn, không chồng `walk` cùng nhân vật.
+- **E5 — Render lại** 2 phim (quay tại chỗ thay cho bước đi chỉ để quay; điểm gặp qua bộ giải E1), lượt chạy nghiệm thu, gửi video.
+- **Đạt khi (bổ sung cho tiêu chí trên):** bài kiểm tổng quát hoá E1 — **dời vị trí, đổi scale nhân vật, đổi đạo cụ** mà phim vẫn hợp lệ không sửa tọa độ; điểm tương tác đúng tại frame tiếp xúc khi nhân vật đang di chuyển; quay tại chỗ có test trên 2 nhân vật, cả hai cách chỉ hướng; kết luận E0 có số liệu; lượt chạy nghiệm thu PASS; chủ dự án duyệt video.
+
 ### M3 — Vật lý đạo cụ
 
-- Mang Rapier bake sang; thả/đặt đạo cụ lên mặt đỡ; validator báo sớm khi dàn cảnh không với tới hoặc không chừa chỗ cho tay.
-
-- **Đạt khi:** 2 đạo cụ khác hình, 2 tay, 2 thời điểm thả; bake giả bị phát hiện; video duyệt.
+- Một pipeline tương tác thống nhất: vật lý là một trạng thái mới của đạo cụ trong `src/motion/props.ts` (nằm yên → cầm → thả → mô phỏng → nằm yên). Không hệ thống song song.
+- Tại frame thả: vị trí, vận tốc và góc liên tục với tay. Va chạm với mặt đỡ và đạo cụ khác. Bake Rapier tất định có SHA; audit mô phỏng lại để phát hiện bake giả/cũ.
+- Validator báo sớm khi không có chỗ rơi, rơi trúng nhân vật, hoặc dàn cảnh không với tới/không chừa chỗ cho tay.
+- **Đạt khi:** ≥2 đạo cụ khác hình, 2 tay, 2 thời điểm thả, 2 kiểu tiếp đất (bàn, sàn); kiểm liên tục tại frame thả; bake giả bị phát hiện; hash bake trùng giữa CI và máy tại chỗ; lượt chạy nghiệm thu PASS; chủ dự án duyệt video.
 
 ### M4 — Studio nối engine
 
-- Studio compile storyboard → `film.json`; job render dùng engine; giọng đọc nháp; revision/export.
+- **Capability catalog** (dữ liệu): mỗi hành động mô tả nó cần gì — tay, đạo cụ + anchor, tầm với, thời lượng tối thiểu/mặc định, có cần đối diện người khác.
+- **Compiler dàn cảnh:** storyboard → `film.json`; tự xác định vị trí nhân vật, điểm tương tác (bộ giải E1), thời lượng (từ catalog), camera và bố cục cơ bản sao cho thỏa validator. Người dùng chỉ ghi đè khi muốn, không phải nhập mọi tọa độ.
+- **Audio (bắt buộc):** nhập file âm thanh có SHA, đồng bộ theo beat; MP4 có track audio; audit kiểm thời lượng, đồng bộ, hash. **TTS cục bộ (tùy chọn):** chạy ở bước chuẩn bị, không gọi dịch vụ ngoài, sinh WAV có hash; không chạy lúc render.
+- Revision bất biến, job queue, export/import, UI tối thiểu; render bằng đúng engine hiện có.
+- **Đạt khi:** từ kịch bản mới trong UI ra video 20–30 giây, ≥3 cảnh, không nhập tọa độ thủ công; audio đồng bộ; sửa một cảnh → revision mới → video mới; test UI thật; lượt chạy nghiệm thu PASS; chủ dự án duyệt video.
 
-- **Đạt khi:** từ kịch bản mới trong UI ra được video 20–30 giây, ≥3 cảnh, sửa một cảnh → revision mới → video mới; test UI thật.
+### M5 — Director (không phụ thuộc API ngoài)
 
-### M5 — Director (AI có giới hạn)
-
-- Lập đồ thị việc từ kịch bản, chỉ dùng hành động/nhân vật có trong dữ liệu; người duyệt trước khi chạy.
-
-- **Đạt khi:** 2 kịch bản mới ra video; hành động không hỗ trợ bị từ chối rõ ràng.
+- **Ranh giới bắt buộc:** `Script Interpreter` → **StoryIntent** (schema có version: nhân vật, cảnh, beat, ý định hành động/tương tác, lời thoại, ràng buộc; validate, SHA, lưu thành revision) → `Director Core` (tất định, dựa trên luật + capability catalog) → storyboard → compiler M4 → pipeline đã kiểm thử.
+- M5 triển khai Script Interpreter **dựa trên luật** cho kịch bản tiếng Việt có cú pháp có cấu trúc. Kiến trúc **giữ chỗ** cho một Interpreter khác (vd. AI chuyển ngôn ngữ tự nhiên → StoryIntent) chỉ bằng cách thay nguồn StoryIntent: đầu ra của nó vẫn phải qua cùng schema/validator, và mọi phần không tất định dừng trước revision. M5 không bắt buộc LLM hay API; không phụ thuộc API tạo ảnh/video hoặc API LLM bên ngoài.
+- Chỉ dùng hành động có trong catalog; không sinh code chạy lúc render. Hành động không hỗ trợ bị từ chối với mã lỗi rõ và gợi ý hành động thay thế có trong catalog.
+- **Đạt khi:** 2 kịch bản mới ra video; ca từ chối rõ ràng; cùng kịch bản → cùng StoryIntent → cùng storyboard (tất định); test hợp đồng StoryIntent (Interpreter thay thế được mà không đổi Director Core); lượt chạy nghiệm thu PASS; chủ dự án duyệt video.
 
 ### M6 — Nhiều phim + chất lượng
 
-- ≥6 phim thực sự khác nhau chỉ khác dữ liệu; regression đầy đủ; chủ dự án duyệt tất cả.
+- ≥6 phim khác nhau thực sự về tình huống, hành động, tương tác và bố cục; chỉ khác dữ liệu, không sửa engine riêng cho từng phim; regression đầy đủ.
+- CI: PR thường chỉ render phim bị ảnh hưởng; render toàn bộ theo lịch; **lượt chạy nghiệm thu** đầy đủ trên commit bàn giao.
+- **Đạt khi:** chủ dự án duyệt cả 6 phim theo checklist thị giác cố định (bóng, khớp, tiếp xúc, che khuất, nhịp, bố cục, tự nhiên của chuyển động) + lượt chạy nghiệm thu PASS.
 
 ## 7. Vòng làm việc của agent
 
