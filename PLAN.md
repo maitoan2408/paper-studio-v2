@@ -257,4 +257,4 @@ Phạm vi chủ dự án duyệt (2026-11-20, lựa chọn B — vẫn dùng art
 
 ## 8. Câu lệnh mở đầu cho chat mới
 
-> Đọc `PLAN.md` trong repo này (kế hoạch duy nhất). Repo cũ `maitoan2408/ai-animation-studio-research-content` (nhánh `codex/m6-unified-integration-20261118`, commit `006d629`) chỉ dùng để tham khảo và mang sang các phần liệt kê ở mục 5. Bắt đầu mốc M0: đưa tôi thiết kế ngắn của các schema (art pack, rig, action, film) và danh sách task nhỏ kèm cách kiểm tra để tôi duyệt trước khi viết code.
+> Đọc toàn bộ `PLAN.md` (kế hoạch duy nhất) và `docs/STATE.json`. Kiểm tra `git status -sb` và `git rev-parse HEAD` trên nhánh làm việc. **Tiếp tục từ mốc đang mở** (`openMilestone` trong `docs/STATE.json`) và các task còn `NOT_RUN`/`BLOCKED` trong `checks`/`notes` của mốc đó — **không bắt đầu lại M0** và không làm lại mốc đã `ACCEPTED`. Nếu task kế tiếp đã được chủ dự án duyệt (ghi trong PLAN/STATE) thì triển khai; nếu còn mơ hồ thì gửi thiết kế ngắn để duyệt trước khi viết code. Repo cũ `maitoan2408/ai-animation-studio-research-content` (nhánh `codex/m6-unified-integration-20261118`, commit `006d629`) chỉ dùng để tham khảo nếu có quyền (xem §5).

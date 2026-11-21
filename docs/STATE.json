@@ -46,6 +46,11 @@
       "head": "25e962a96e6dbe3f3d2ba5a7c45b65d238529c52",
       "updated": "2026-11-21",
       "checks": {
+        "baselineVerify": "PASS_TECHNICAL",
+        "baselineCheckRenderer": "PASS_TECHNICAL",
+        "baselineRender": "PASS_TECHNICAL",
+        "baselineAudit": "PASS_TECHNICAL",
+        "baselineCi": "PASS_TECHNICAL",
         "rootCause": "NOT_RUN",
         "interactionSolver": "NOT_RUN",
         "turnInPlace": "NOT_RUN",
@@ -55,8 +60,8 @@
         "acceptanceRun": "NOT_RUN"
       },
       "notes": [
-        "2026-11-21: chủ dự án duyệt phương án sau review — thêm VÒNG ĐÓNG M2 (PLAN.md §6 M2): E0 kiểm chứng nguyên nhân tay vắt qua thân/đặt đồ sát chân; E1 bộ giải điểm tương tác tổng quát (khả thi IK, giới hạn khớp, hướng gập, tại frame tiếp xúc); E4 quay tại chỗ; E2 timing nâng/đặt đồ; E3 thông báo thiếu thời lượng; E5 render lại + lượt chạy nghiệm thu. Thứ tự E0 → E1 → E4 → E2 → E3 → E5. Trạng thái về NOT_RUN vì phạm vi mở rộng chưa làm; CHƯA bắt đầu — chờ chủ dự án xác nhận bản kế hoạch đã cập nhật.",
-        "Khóa checks ↔ task: rootCause=E0, interactionSolver=E1, turnInPlace=E4, liftTiming=E2, durationHints=E3, rerender=E5, acceptanceRun=lượt chạy nghiệm thu.",
+        "2026-11-21: chủ dự án duyệt phương án sau review — thêm VÒNG ĐÓNG M2 (PLAN.md §6 M2): E0 kiểm chứng nguyên nhân tay vắt qua thân/đặt đồ sát chân; E1 bộ giải điểm tương tác tổng quát (khả thi IK, giới hạn khớp, hướng gập, tại frame tiếp xúc); E4 quay tại chỗ; E2 timing nâng/đặt đồ; E3 thông báo thiếu thời lượng; E5 render lại + lượt chạy nghiệm thu. Thứ tự E0 → E1 → E4 → E2 → E3 → E5. Trạng thái về NOT_RUN vì phạm vi mở rộng chưa làm; Chủ dự án đã xác nhận kế hoạch @5503fed và phê duyệt bắt đầu vòng đóng (2026-11-21).",
+        "Khóa checks: baseline* = phần M2 đã làm TRƯỚC vòng đóng, PASS_TECHNICAL tại commit 25e962a (CI verify 44862810501/44862815771, render 44862815716; chưa được chủ dự án nghiệm thu). Vòng đóng: rootCause=E0, interactionSolver=E1, turnInPlace=E4, liftTiming=E2, durationHints=E3, rerender=E5, acceptanceRun=lượt chạy nghiệm thu. status = NOT_RUN phản ánh vòng đóng (chưa làm); không phủ định baseline.",
         "Lịch sử (phần đã làm trước vòng đóng): CI @25e962a xanh (verify run 44862810501/44862815771, render run 44862815716): check:renderer 8/8; m2-handover 480 frame audit PASS (PSNR min 41.33 dB); m2-plant 216 frame audit PASS (41.03 dB); demo-greeting, m0-static PASS. Hash SceneFrame CI = tại chỗ = golden cho cả 4 phim (tất định mức 1). Tại chỗ: verify 235/235, check:renderer 8/8, audit 2 phim M2 PASS.",
         "Quyết định đã duyệt: giới hạn vai demo-cast −60° (tầm vận động rig); tỷ lệ dàn cảnh m2-handover tam 1.35, đèn 0.9.",
         "Lỗi đã ghi nhận chờ E0 kết luận nguyên nhân (art/rig → M1, hay sửa được trong M2): tay vắt qua thân khi bê đồ (cả tam và lan); đèn đặt sát chân tam. Chuyển M1 (đã xác định): chưa có bóng đổ nhân vật; thân nhìn thẳng khi đi ngang."
