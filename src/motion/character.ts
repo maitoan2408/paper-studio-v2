@@ -6,7 +6,7 @@
  * reachRatio·L (gối hơi chùng), cộng rootY của clip. Hàm liên tục theo vị trí bàn chân → không giật.
  * Rig không có gait: giữ cách cũ (FK tư thế nghỉ, standingHeight).
  */
-import { fail } from '../core/errors.ts';
+import { fail, StudioError } from '../core/errors.ts';
 import { artToLocal, length, rotate, type V2 } from '../core/space.ts';
 import type { Film } from '../schema/film.ts';
 import type { Rig } from '../schema/rig.ts';
@@ -186,7 +186,14 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
         local = [(target![0] - root[0]) / (fx * scale), (target![1] - root[1]) / scale];
       }
       const pose: PoseInput = { angle: (b) => angles.get(b)!, variant: (b) => variants.get(b) ?? 'default' };
-      for (const [b, v] of solveChain(rig, pack, c.character, pose, chainName, local, weight)) angles.set(b, v);
+      let solved: Map<string, number>;
+      try {
+        solved = solveChain(rig, pack, c.character, pose, chainName, local, weight);
+      } catch (e) {
+        if (e instanceof StudioError) fail(e.code, `${where} (${a.item.clip})`, `${e.path}: ${e.detail}`);
+        throw e;
+      }
+      for (const [b, v] of solved) angles.set(b, v);
     }
   }
 }

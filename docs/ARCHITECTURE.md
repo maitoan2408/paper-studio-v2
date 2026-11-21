@@ -63,3 +63,15 @@ Revision bất biến (`revision`, `parentSha256`), `cast`, `scenes[].beats[]`. 
 - **Render** (`render/render.ts`): so state từng frame; ffprobe + decode toàn bộ; chụp lại frame thứ tự xáo trộn trong cùng phiên và phiên mới (`RENDER_NONDETERMINISTIC`).
 - **check:renderer**: 6 ca texture + tua mọi thứ tự + phiên mới.
 - **Audit** (`audit/audit.ts`): xem đầu file; ngưỡng ở `config/audit.json`.
+
+## Chuyển động (M2)
+
+Trạng thái nhân vật ở một frame (`src/motion/character.ts`) = clip theo timeline (lớp cộng dồn, blend) → đi bộ → khóa bàn chân bằng IK → kênh `reach` (IK tay). Mọi thứ là hàm thuần theo frame.
+
+- **Ngưỡng xoay thống nhất:** `rig.json` → mỗi xương có `maxDegPerFrame` (vd. bàn tay 22.5, khớp khác 12). Validator lấy mẫu mọi frame (kể cả góc do IK tạo) → `ACTION_SPEED_EXCEEDED`. Giới hạn khớp → `ACTION_LIMIT_EXCEEDED`.
+- **IK 2 xương** (`src/motion/ik.ts`): luật cos, độ dài từ anchor art, `bend` ±1 trong rig; bàn chân giữ `endWorldAngle`. Trộn FK↔IK tuyến tính trên góc chuẩn hoá (−180, 180]. Không với tới → `IK_UNREACHABLE` (kèm số px, frame, clip).
+- **Đi bộ** (`film.walks`, `src/motion/walk.ts`): n bước chẵn từ `gait.strideRatio`·chiều dài chân; bàn chân di chuyển trong `swingRatio` đầu mỗi bước (inOutSine, nhấc sin²), còn lại hai chân cùng trụ → chân trụ không trượt. Bàn chân luôn khóa sàn; độ cao hông = min theo chân của độ cao còn với tới `reachRatio`·L.
+- **Hướng nhìn:** = hướng của lần đi gần nhất (trước đó: `facing`). Đổi hướng → `turnFrames` frame lật như tờ giấy: `fx = hướng cũ·cos(π·inOutSine(u))`; sprite x/scaleX × fx, góc đổi dấu theo dấu fx.
+- **Đạo cụ** (`src/motion/props.ts`): phát lại `grip`/`release` (frame = start + round(t·(dur−1))). Đồ đi theo **tay nắm gần nhất**; khi trao đồ cả hai cùng nắm → theo **người nhận**. Không ai nắm → nằm ở `bind.place`. Đồ đang cầm vẽ trong lượt của người cầm, ngay trước sprite bàn tay; chiếu ở depth của người cầm.
+- **Kênh `reach`:** đích `{point}` (bind.points), `{role, anchor}` (đồ đang nằm yên, hoặc chỗ cũ nếu chính tay này đang cầm), `{role, anchor, at:'place'}`, `{bone, anchor}` (bám thân — dùng được khi đang lật).
+- Mã lỗi: `PROP_FLOATING`, `PROP_DISCONTINUITY` (≤ 0.5 px tại frame cầm/thả), `PROP_BELOW_SURFACE` (pivot đạo cụ = đáy), `PROP_TARGET_HELD`, `HAND_BUSY`, `WALK_TOO_SHORT`, `RIG_IK_INVALID`.

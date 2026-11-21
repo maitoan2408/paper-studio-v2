@@ -14,7 +14,7 @@ import { ease } from '../motion/easing.ts';
 import type { Film } from '../schema/film.ts';
 import type { Asset } from '../schema/art-pack.ts';
 import { characterState, contactWorld } from '../motion/character.ts';
-import { propPivot } from '../motion/props.ts';
+import { propPivot, segmentAt } from '../motion/props.ts';
 import { forwardKinematics } from '../rig/pose.ts';
 
 export interface Camera {
@@ -88,12 +88,17 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
   });
 
   type Item = (typeof film.data.stage.layers)[number] | (typeof film.data.props)[number];
-  const flat = (item: Item, isProp: boolean): Sprite[] => {
+  /** Người đang cầm đạo cụ ở frame này (tay nắm gần nhất), nếu có. */
+  const heldBy = (propId: string) => {
+    const s = segmentAt(film, propId, frame);
+    return s.holders.length > 0 ? s.holders[s.holders.length - 1]! : undefined;
+  };
+  const flat = (item: Item, isProp: boolean, depth = item.depth): Sprite[] => {
     const asset = film.assets.get(item.asset);
     if (!asset) return fail('SCENE_UNKNOWN_ASSET', `film.${item.id}`, `asset "${item.asset}" not resolved`);
     // Đạo cụ: vị trí theo trạng thái cầm/đặt ở frame này (nằm yên tại chỗ dàn cảnh nếu chưa ai cầm).
     const [x, y] = isProp ? propPivot(film, item.id, frame, (ci, contact) => contactWorld(film, ci, frame, contact)) : [item.x, item.y];
-    const { sx, sy, zoomL } = project(x, y, item.depth);
+    const { sx, sy, zoomL } = project(x, y, depth);
     const s: Sprite = {
       ...base(item.id, asset),
       x: sx,
@@ -125,13 +130,22 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
     });
     // fx ∈ [−1, 1]: x local nhân với fx (lật/co như tờ giấy); góc lật dấu theo dấu fx.
     const sign = st.fx >= 0 ? 1 : -1;
+    // Đồ đang cầm: vẽ trong lượt của người cầm, ngay TRƯỚC sprite xương chứa contact đang nắm
+    // (đồ đè lên thân/cánh tay nhưng nằm dưới bàn tay), chiếu ở depth của người cầm để bám tay khi parallax.
+    const held = new Map<string, Sprite[]>();
+    for (const p of film.data.props) {
+      const h = heldBy(p.id);
+      if (!h || h.ci !== ci) continue;
+      const bone = rig.data.contacts[h.contact]!.bone;
+      held.set(bone, [...(held.get(bone) ?? []), ...flat(p, true, c.depth)]);
+    }
     return parts
       .slice()
       .sort((a, b) => a.z - b.z || a.order - b.order)
-      .map((part): Sprite => {
+      .flatMap((part): Sprite[] => {
         const { sx, sy, zoomL } = project(st.root[0] + st.fx * part.pos[0] * c.scale, st.root[1] + part.pos[1] * c.scale, c.depth);
         const worldAngle = sign * part.angle; // lật gương: góc đổi dấu, art lật ngang
-        return {
+        const own: Sprite = {
           ...base(`${c.id}/${part.bone}`, part.asset),
           x: sx,
           y: sy,
@@ -139,12 +153,13 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
           scale: c.scale * zoomL,
           scaleX: st.fx * c.scale * zoomL * (st.squash.get(part.bone) ?? 1),
         };
+        return [...(held.get(part.bone) ?? []), own];
       });
   };
 
   const entries: { depth: number; kind: number; index: number; make: () => Sprite[] }[] = [
     ...film.data.stage.layers.map((it, index) => ({ depth: it.depth, kind: 0, index, make: () => flat(it, false) })),
-    ...film.data.props.map((it, index) => ({ depth: it.depth, kind: 1, index, make: () => flat(it, true) })),
+    ...film.data.props.map((it, index) => ({ depth: it.depth, kind: 1, index, make: () => (heldBy(it.id) ? [] : flat(it, true)) })),
     ...film.data.characters.map((it, index) => ({ depth: it.depth, kind: 2, index, make: () => puppet(index) })),
   ];
   // Xa trước; cùng depth: layer → prop → nhân vật; rồi theo thứ tự trong file. Sắp ổn định, tất định.

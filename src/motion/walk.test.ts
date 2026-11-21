@@ -96,12 +96,14 @@ test('walks end exactly at toX; facing follows the direction of travel', () => {
 });
 
 test('turning flips facing through 0 monotonically while the root stays put', () => {
-  // tam: lần đi thứ 2 (start 130) đổi hướng → 8 frame lật.
-  const fx = Array.from({ length: 10 }, (_, k) => characterState(film, 0, 129 + k).fx);
+  // tam: lần đi thứ 2 (start 130) đổi hướng → gait.turnFrames frame lật (đọc từ rig, không gắn số).
+  const T = film.rigs.get('demo-cast')!.data.gait!.turnFrames;
+  const fx = Array.from({ length: T + 2 }, (_, k) => characterState(film, 0, 129 + k).fx);
   assert.equal(fx[0], 1);
   for (let k = 1; k < fx.length; k++) assert.ok(fx[k]! <= fx[k - 1]! + 1e-12, `fx not monotonic at ${129 + k}`);
-  assert.equal(fx[8], -1);
-  for (let k = 0; k < 9; k++) assert.equal(characterState(film, 0, 129 + k).root[0], -300);
+  assert.ok(fx.slice(1, T).every((v) => Math.abs(v) < 1), 'facing must be mid-flip during the turn');
+  assert.equal(fx[T], -1);
+  for (let k = 0; k <= T; k++) assert.equal(characterState(film, 0, 129 + k).root[0], -300);
 });
 
 test('root moves smoothly (< 12 px/frame) for both characters', () => {

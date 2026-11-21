@@ -387,7 +387,7 @@
     "liftRatio": 0.035,
     "reachRatio": 0.985,
     "swingRatio": 0.85,
-    "turnFrames": 8,
+    "turnFrames": 14,
     "swingBones": [
       "upper-arm.l",
       "upper-arm.r"

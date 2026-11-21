@@ -1,7 +1,7 @@
 /**
  * IK giải tích 2 xương (luật cos). Không gian: local nhân vật (y-lên, gốc = pivot xương gốc, chưa lật/scale).
  * Độ dài lấy từ anchor art của đúng variant đang dùng. Không với tới → IK_UNREACHABLE (không kéo dài xương, không đoán).
- * Trả về góc KHỚP (local) mới cho upper/lower(/end); trộn với FK theo trọng số w, lấy đường quay ngắn nhất.
+ * Trả về góc KHỚP (local) mới cho upper/lower(/end); trộn tuyến tính với FK theo trọng số w (góc chuẩn hoá về (−180, 180]).
  */
 import { fail } from '../core/errors.ts';
 import { angleOf, artToLocal, length, rotate, type V2 } from '../core/space.ts';
@@ -62,9 +62,11 @@ export function solveChain(rig: Rig, pack: ArtPack, characterId: string, pose: P
   const worldLower = angleOf([goal[0] - E[0], goal[1] - E[1]]) - angleOf(v2);
   const parentWorld = up.angle - pose.angle(chain.upper);
 
+  // Góc khớp chuẩn hoá về (−180, 180] (miền chứa mọi giới hạn khớp) rồi nội suy TUYẾN TÍNH.
+  // Không dùng "đường quay ngắn nhất": khi hai nghiệm lệch ~180° nó đổi chiều giữa hai frame → giật.
   const set = (bone: string, ik: number) => {
     const fk = pose.angle(bone);
-    out.set(bone, fk + weight * wrap(ik - fk));
+    out.set(bone, fk + weight * (wrap(ik) - fk));
   };
   set(chain.upper, worldUpper - parentWorld);
   set(chain.lower, worldLower - worldUpper);

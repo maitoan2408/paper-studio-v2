@@ -75,7 +75,7 @@ export function walkState(film: Film, ci: number, frame: number, legLength: numb
     }
     const k = frame - s.start;
     if (k < s.turnFrames) {
-      const u = (k + 1) / s.turnFrames;
+      const u = ease('inOutSine', (k + 1) / s.turnFrames); // lật êm ở hai đầu (không giật đồ đang cầm)
       return { rootX: s.fromX, fx: s.fromSign * Math.cos(Math.PI * u), stepPhase: 0 };
     }
     const D = Math.abs(s.toX - s.fromX);
