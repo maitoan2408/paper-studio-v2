@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "id": "turn-head",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "bone": "head",
+      "prop": "variant",
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": "default"
+        },
+        {
+          "t": 0.2,
+          "v": "three-quarter",
+          "ease": "step"
+        },
+        {
+          "t": 0.35,
+          "v": "side",
+          "ease": "step"
+        },
+        {
+          "t": 0.72,
+          "v": "three-quarter",
+          "ease": "step"
+        },
+        {
+          "t": 0.88,
+          "v": "default",
+          "ease": "step"
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "prop": "squashX",
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.14,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.2,
+          "v": 0.6,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.26,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.29,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.35,
+          "v": 0.6,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.41,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.66,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.72,
+          "v": 0.6,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.78,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.82,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.88,
+          "v": 0.6,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.94,
+          "v": 1
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": -5,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.6,
+          "v": -5,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "torso",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.4,
+          "v": -2,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.7,
+          "v": -2,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [],
+  "requires": {}
+}

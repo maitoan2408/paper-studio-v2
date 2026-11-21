@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "openMilestone": "M2",
+  "milestones": {
+    "M0": {
+      "status": "ACCEPTED",
+      "head": "78295850c12adc0ef4543b199b79457d9e4fc84e",
+      "updated": "2026-11-20",
+      "checks": {
+        "verify": "PASS_TECHNICAL",
+        "render": "PASS_TECHNICAL",
+        "checkRenderer": "PASS_TECHNICAL",
+        "audit": "PASS_TECHNICAL"
+      },
+      "notes": [
+        "Đạt điều kiện kỹ thuật M0: CI verify + render xanh (run 44766857457 @dedc5f6), m0-static MP4 1080p24 48 frame, check:renderer 8/8, audit PASS (PSNR min 42.40 dB).",
+        "Renderer/check-renderer/audit VIẾT MỚI — chưa đối chiếu repo cũ (chưa có quyền).",
+        "Chưa kiểm: STORYBOARD_UNSUPPORTED_ACTION (M4).",
+        "Chờ chủ dự án xem ảnh/video và đặt ACCEPTED.",
+        "Phát hiện khi xác nhận CI @7829585: MP4 render trên CI (sha 2ef6d7eb…) khác MP4 render tại chỗ (45cb2f4f…) dù cùng Chrome 153.0.8010.12 + ffmpeg 6.1.1. Trong cùng một máy vẫn tất định (chụp lại cùng phiên/phiên mới trùng hash; 2 lần render tại chỗ trùng byte). Nguyên nhân chưa xác minh — giả thuyết: SwiftShader JIT khác theo CPU (AVX-512 vs AVX2). Cần xử lý trước khi coi hash pixel là bất biến giữa các máy.",
+        "ACCEPTED bởi chủ dự án (2026-11-20) sau xác nhận CI verify + render xanh @7829585. Khác biệt MP4 giữa máy được chấp nhận theo 3 mức tất định (PLAN.md §3.2)."
+      ]
+    },
+    "DEMO": {
+      "status": "ACCEPTED",
+      "head": "78295850c12adc0ef4543b199b79457d9e4fc84e",
+      "updated": "2026-11-20",
+      "checks": {
+        "render": "PASS_TECHNICAL",
+        "audit": "PASS_TECHNICAL"
+      },
+      "notes": [
+        "Đã làm theo yêu cầu chủ dự án (trước khi M0 ACCEPTED): demo-greeting 9 s, 2 nhân vật, 3 clip; render + audit PASS tại chỗ @e547c8a (PSNR min 41.79 dB).",
+        "Trạng thái giữ NOT_RUN vì validator thứ tự mốc (M0 chưa ACCEPTED); sẽ đặt READY_FOR_USER_REVIEW khi M0 được ACCEPTED.",
+        "Chủ dự án đã xem video demo; các điểm cần cải thiện:",
+        "- Camera: đặt gần hơn (nhân vật đang nhỏ trong khung).",
+        "- wave: cần gập khuỷu và cổ tay (hiện chủ yếu xoay vai, cẳng tay lắc ít, cổ tay cứng).",
+        "- turn-head: bị nhảy hình khi đổi variant đầu (front → 3/4 → side đổi tức thời, không có chuyển tiếp).",
+        "- idle-breath: biên độ quá nhẹ, gần như không thấy.",
+        "- Art tạm: cần art pack thật (thuộc M1, qua duyệt art trước motion).",
+        "ACCEPTED bởi chủ dự án (2026-11-20). CI @7829585: demo-greeting render 216 frame, audit PASS (PSNR min 41.77 dB)."
+      ]
+    },
+    "M2": {
+      "status": "READY_FOR_USER_REVIEW",
+      "head": "6a2df54c12d2504744a044618c5490f724ce7b5c",
+      "updated": "2026-11-21",
+      "checks": {
+        "baselineVerify": "PASS_TECHNICAL",
+        "baselineCheckRenderer": "PASS_TECHNICAL",
+        "baselineRender": "PASS_TECHNICAL",
+        "baselineAudit": "PASS_TECHNICAL",
+        "baselineCi": "PASS_TECHNICAL",
+        "rootCause": "PASS_TECHNICAL",
+        "interactionSolver": "PASS_TECHNICAL",
+        "turnInPlace": "PASS_TECHNICAL",
+        "liftTiming": "PASS_TECHNICAL",
+        "durationHints": "PASS_TECHNICAL",
+        "rerender": "PASS_TECHNICAL",
+        "acceptanceRun": "PASS_TECHNICAL"
+      },
+      "notes": [
+        "2026-11-21: chủ dự án duyệt phương án sau review — thêm VÒNG ĐÓNG M2 (PLAN.md §6 M2): E0 kiểm chứng nguyên nhân tay vắt qua thân/đặt đồ sát chân; E1 bộ giải điểm tương tác tổng quát (khả thi IK, giới hạn khớp, hướng gập, tại frame tiếp xúc); E4 quay tại chỗ; E2 timing nâng/đặt đồ; E3 thông báo thiếu thời lượng; E5 render lại + lượt chạy nghiệm thu. Thứ tự E0 → E1 → E4 → E2 → E3 → E5. Trạng thái về NOT_RUN vì phạm vi mở rộng chưa làm; Chủ dự án đã xác nhận kế hoạch @5503fed và phê duyệt bắt đầu vòng đóng (2026-11-21).",
+        "Khóa checks: baseline* = phần M2 đã làm TRƯỚC vòng đóng, PASS_TECHNICAL tại commit 25e962a (CI verify 44862810501/44862815771, render 44862815716; chưa được chủ dự án nghiệm thu). Vòng đóng: rootCause=E0, interactionSolver=E1, turnInPlace=E4, liftTiming=E2, durationHints=E3, rerender=E5, acceptanceRun=lượt chạy nghiệm thu. status = NOT_RUN phản ánh vòng đóng (chưa làm); không phủ định baseline.",
+        "Lịch sử (phần đã làm trước vòng đóng): CI @25e962a xanh (verify run 44862810501/44862815771, render run 44862815716): check:renderer 8/8; m2-handover 480 frame audit PASS (PSNR min 41.33 dB); m2-plant 216 frame audit PASS (41.03 dB); demo-greeting, m0-static PASS. Hash SceneFrame CI = tại chỗ = golden cho cả 4 phim (tất định mức 1). Tại chỗ: verify 235/235, check:renderer 8/8, audit 2 phim M2 PASS.",
+        "Quyết định đã duyệt: giới hạn vai demo-cast −60° (tầm vận động rig); tỷ lệ dàn cảnh m2-handover tam 1.35, đèn 0.9.",
+        "Lỗi đã ghi nhận chờ E0 kết luận nguyên nhân (art/rig → M1, hay sửa được trong M2): tay vắt qua thân khi bê đồ (cả tam và lan); đèn đặt sát chân tam. Chuyển M1 (đã xác định): chưa có bóng đổ nhân vật; thân nhìn thẳng khi đi ngang.",
+        "E0 (kết luận có số liệu, quét 1600 điểm bê × 2 chiều khuỷu × 4 tay): Q1 tay vắt qua thân KHÔNG do art — với chiều khuỷu của rig chỉ 0–1/1600 tư thế bê đạt (tay dưới vai, ở phía mình, đồ trên sàn, trong giới hạn khớp); với chiều đảo có 20–43 tư thế đạt (mép hông). Nguyên nhân: một chiều gập cố định/chuỗi + trộn 2 nghiệm ngược chiều. Đã sửa trong M2: reach.bend 'rig'|'flip' + IK_BEND_CONFLICT; trộn kênh reach theo đích (đường thẳng) thay vì theo góc; khi w<1 đích ngoài tầm → vươn tối đa (w=1 vẫn fail closed). Q2 đặt đồ sát chân: rig không hạ người — tam cần dx≥57 px (art) để đèn không chạm giày, ở đó tay chỉ hạ tới y=−8 so với cần −22.7; lan không hạ đủ ở mọi khoảng cách. Sửa một phần trong M2 bằng dữ liệu (place-low khuỵu gối 10 px, đặt xa thêm 30 px); phần còn lại (cúi người thật) chuyển M1b với bằng chứng này.",
+        "E1 (src/motion/interaction.ts): điểm tương tác = film.points[id] (neo anchor thân/đạo cụ có trọng số + ràng buộc: các tay phải chạm, chiều khuỷu, khoảng hở đồ treo). Giải tại frame tiếp xúc (sự kiện sớm nhất của các mục dùng điểm, hoặc `frame`), trên tư thế ở chính frame đó, bỏ qua reach nhắm vào chính điểm. Khả thi: IK có nghiệm đúng chiều khuỷu + giới hạn khớp, kiểm tại frame tiếp xúc rồi trên mọi frame kênh có trọng số > 0 (đúng phép trộn validator thấy); khoảng hở. Không khả thi → tìm vòng tròn đồng tâm (tất định) → INTERACTION_INFEASIBLE. Test: dời cả cảnh, đổi tỷ lệ, đổi đạo cụ (không sửa tọa độ), đang bước ở frame tiếp xúc, siết giới hạn khớp → điểm dời và tôn trọng giới hạn (kiểm ngược: bỏ kiểm cửa sổ → fail), khoảng hở đẩy điểm lên, tất định, mã lỗi.",
+        "E2 (một phần, làm sớm vì E1 cần): timing cầm/đặt/trao kéo dài + pha chuyển ~0.8 s (pick-up 104, give/receive 96, place-low 80, place 84 frame); place-low khuỵu muộn hơn. Đánh giá thị giác ở E5.",
+        "E4: film.turns {character, start, durationFrames?, face: left|right|{character}|{prop}} — chung chuỗi locomotion với walks (không chồng), lật như tờ giấy, x không đổi, chân khóa sàn ngoài các frame lật. Hướng tương đối tính tại frame bắt đầu theo vị trí suy từ các lần đi (không đệ quy qua lần quay). m2-handover: Lan quay tại chỗ về phía tam thay cho bước 60 px; bộ giải E1 tự dời điểm gặp (9.2 → 40.2). Bổ sung E1: explainPoint (chẩn đoán) + bán kính tìm kiếm = tổng tầm với các tay (dữ liệu) thay hằng số 200 px.",
+        "E2 (2026-11-21): xem dải khung hình thật (0.25 s/khung) → lỗi thị giác: ngay sau khi nắm, đồ bị kéo chéo xuống XUYÊN mặt bàn (đèn frame ~80–86, chậu cây ~75) vì trọng số reach giảm thẳng về FK. Sửa gốc: (1) kiểm tra mới PROP_THROUGH_SURFACE (props.ts checkLiftClearance): từ lúc nắm tới khi TÂM đạo cụ rời bề ngang chỗ cũ, đáy không thấp hơn chỗ cũ; từ lần cuối tâm vào chỗ đặt tới lúc thả, đáy không thấp hơn chỗ đặt (mặt đỡ chưa có chiều sâu 2.5D — va chạm đầy đủ thuộc M3); (2) đích reach có `offset` {x theo hướng nhìn, y lên; gương khi @active = r} và `clear` (× bề ngang của chính đạo cụ) — không gắn số px theo đạo cụ; (3) pick-up/place là chuỗi đoạn thẳng W = 1: nhấc lên → kéo về phía người (clear 0.6) → hạ cạnh thân (đích = tay theo FK + offset, tự theo tỷ lệ cơ thể) → (FK) → bê bên hông; place đảo ngược. Dàn cảnh: pick-up 144, place 144 frame; lan x 150; phim ngắn: tam scale 1.4, chậu 0.85 đặt ở x −330, dài 332 frame. Biên: tốc độ khớp ≤ 90% ngưỡng, giới hạn khớp ≥ 4.8°. Test: hành vi trên đường đi thật (cả hai phim, tay trái lan/tay phải tam) + đột biến bỏ chặng nhấc → PROP_THROUGH_SURFACE (cả hai nhân vật, cả nhặt và đặt). ĐÁNH ĐỔI CẦN CHỦ DỰ ÁN XEM: khi hạ/nâng đồ sát thân, cẳng tay vắt ngang thân ~0.5–0.75 s (thân chính diện + chiều khuỷu 'flip' chỉ gập được 60°); với tam tay ngắn, đặt lên mặt cao chỉ khả thi khi scale ≥ ~1.4 (không bước chân) — bước chân/cúi người thuộc M1b/M4.",
+        "E3 (2026-11-21): WALK_TOO_SHORT và ACTION_SPEED_EXCEEDED kèm '<mục> minimum N frames (now M) at gait + bone limits' cho từng lần đi / mục timeline đang hoạt động tại frame lỗi. N tìm nhị phân trên CHÍNH bộ kiểm chuyển động (gait: số bước/lật hướng; ngưỡng xương: giới hạn + tốc độ), các mục khác giữ nguyên — không công thức xấp xỉ. Không mục nào đủ khi kéo dài tới max(4×, +10 s) → nói rõ. Test: N hợp lệ và N−1 vẫn lỗi (walk thiếu bước, walk quá nhanh, clip wave quá ngắn). Giới hạn: gợi ý không dời các mục phía sau; kéo dài có thể chồng mục kế tiếp (validator báo FILM_TIMELINE_OVERLAP riêng).",
+        "E5 (2026-11-21) @6a2df54: lượt chạy nghiệm thu CI — verify 136785580219/136785592411 success (261 test); render run 44884124225 job 136785592627: check:renderer 8/8 PASS; m2-handover 480 frame AUDIT PASS_TECHNICAL minPSNR 41.34 dB, m2-plant 332 frame 41.16 dB; demo-greeting 41.75 dB, m0-static 42.37 dB (ngưỡng 40). SceneFrame sha256 CI = cục bộ = golden (m2-handover 4522a15f…, m2-plant 1dd97d66…) → tất định cấp 1. MP4 sha CI ≠ cục bộ (khác môi trường; cấp 3 dùng PSNR — đúng PLAN §3.2). Render cục bộ: audit 41.41 / 41.28 dB. Chờ chủ dự án xem video 1× và 0.5× — chỉ chủ dự án đặt ACCEPTED."
+      ]
+    },
+    "M1": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": [
+        "Phạm vi + tiêu chí nghiệm thu kỹ thuật và THỊ GIÁC: PLAN.md §6 M1 (M1a art duyệt trước, M1b rig, M1c regression toàn bộ hành động M2). Bắt đầu sau khi M2 ACCEPTED."
+      ]
+    },
+    "M3": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M4": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M5": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    },
+    "M6": {
+      "status": "NOT_RUN",
+      "head": null,
+      "updated": "2026-11-20",
+      "checks": {},
+      "notes": []
+    }
+  }
+}

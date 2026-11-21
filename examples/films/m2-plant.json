@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "id": "m2-plant",
+  "output": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 24,
+    "durationFrames": 332
+  },
+  "packs": [
+    {
+      "id": "sample-m0",
+      "version": "0.1.0",
+      "manifestSha256": "6c42177cfbc6d882cc3485f830a286557e5cdcb21de03f2c6f27c89d44acaa76"
+    },
+    {
+      "id": "demo-cast",
+      "version": "0.1.0",
+      "manifestSha256": "08f7ca7e35b1539605ec9f0005bf4b85603b06f80ffac6536d3d7a5c450109d0"
+    }
+  ],
+  "stage": {
+    "layers": [
+      {
+        "id": "sky",
+        "asset": "sky",
+        "x": 0,
+        "y": -260,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 20
+      },
+      {
+        "id": "sun",
+        "asset": "sun",
+        "x": -400,
+        "y": 560,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 15
+      },
+      {
+        "id": "hills-far",
+        "asset": "hills-far",
+        "x": -100,
+        "y": -10,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 8,
+        "shadow": {
+          "dx": 5,
+          "dy": -6,
+          "blur": 10,
+          "opacity": 0.25
+        }
+      },
+      {
+        "id": "hills-mid",
+        "asset": "hills-mid",
+        "x": 150,
+        "y": -10,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 4,
+        "shadow": {
+          "dx": 6,
+          "dy": -8,
+          "blur": 12,
+          "opacity": 0.3
+        }
+      },
+      {
+        "id": "hills-near",
+        "asset": "hills-near",
+        "x": -80,
+        "y": -10,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 2,
+        "shadow": {
+          "dx": 7,
+          "dy": -9,
+          "blur": 12,
+          "opacity": 0.35
+        }
+      },
+      {
+        "id": "ground",
+        "asset": "ground",
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 1,
+        "shadow": {
+          "dx": 0,
+          "dy": -10,
+          "blur": 14,
+          "opacity": 0.3
+        }
+      }
+    ],
+    "surfaces": [
+      {
+        "id": "floor",
+        "y": 0,
+        "x0": -1300,
+        "x1": 1300
+      },
+      {
+        "id": "table-top",
+        "y": 246,
+        "x0": -620,
+        "x1": -220
+      }
+    ]
+  },
+  "props": [
+    {
+      "id": "table-1",
+      "asset": "table",
+      "x": -420,
+      "y": 0,
+      "scale": 1,
+      "rotation": 0,
+      "depth": 1,
+      "on": "floor",
+      "shadow": {
+        "dx": 9,
+        "dy": -7,
+        "blur": 10,
+        "opacity": 0.35
+      }
+    },
+    {
+      "id": "plant-1",
+      "asset": "plant",
+      "x": -300,
+      "y": 246,
+      "scale": 0.85,
+      "rotation": 0,
+      "depth": 1,
+      "on": "table-top",
+      "shadow": {
+        "dx": 7,
+        "dy": -5,
+        "blur": 8,
+        "opacity": 0.35
+      }
+    },
+    {
+      "id": "lantern-1",
+      "asset": "lantern",
+      "x": -560,
+      "y": 246,
+      "scale": 1,
+      "rotation": 0,
+      "depth": 1,
+      "on": "table-top",
+      "shadow": {
+        "dx": 7,
+        "dy": -5,
+        "blur": 8,
+        "opacity": 0.35
+      }
+    }
+  ],
+  "characters": [
+    {
+      "id": "tam",
+      "pack": "demo-cast",
+      "rig": "biped-demo",
+      "character": "tam",
+      "x": -100,
+      "scale": 1.4,
+      "depth": 1,
+      "facing": "right",
+      "on": "floor"
+    },
+    {
+      "id": "lan",
+      "pack": "demo-cast",
+      "rig": "biped-demo",
+      "character": "lan",
+      "x": 520,
+      "scale": 1.1,
+      "depth": 1,
+      "facing": "left",
+      "on": "floor"
+    }
+  ],
+  "camera": {
+    "keys": [
+      {
+        "frame": 0,
+        "x": 40,
+        "y": 330,
+        "zoom": 1.3,
+        "ease": "inOutSine"
+      },
+      {
+        "frame": 331,
+        "x": -40,
+        "y": 330,
+        "zoom": 1.4
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "character": "tam",
+      "clip": "idle-breath",
+      "start": 0,
+      "durationFrames": 332,
+      "bind": {},
+      "repeat": 3
+    },
+    {
+      "character": "lan",
+      "clip": "idle-breath",
+      "start": 0,
+      "durationFrames": 332,
+      "bind": {},
+      "repeat": 3
+    },
+    {
+      "character": "tam",
+      "clip": "pick-up",
+      "start": 20,
+      "durationFrames": 144,
+      "bind": {
+        "active": "r",
+        "roles": {
+          "item": "plant-1"
+        }
+      },
+      "layer": 1
+    },
+    {
+      "character": "tam",
+      "clip": "carry",
+      "start": 164,
+      "durationFrames": 8,
+      "bind": {
+        "active": "r"
+      },
+      "layer": 1
+    },
+    {
+      "character": "tam",
+      "clip": "place",
+      "start": 172,
+      "durationFrames": 144,
+      "bind": {
+        "active": "r",
+        "roles": {
+          "item": "plant-1"
+        },
+        "place": {
+          "surface": "table-top",
+          "x": -330
+        }
+      },
+      "layer": 1
+    },
+    {
+      "character": "lan",
+      "clip": "turn-head",
+      "start": 140,
+      "durationFrames": 60,
+      "bind": {},
+      "layer": 1
+    }
+  ],
+  "walks": [
+    {
+      "character": "lan",
+      "start": 0,
+      "durationFrames": 125,
+      "toX": 250
+    }
+  ],
+  "physics": []
+}

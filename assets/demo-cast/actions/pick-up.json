@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "id": "pick-up",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.27,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.37,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.42,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip",
+        "offset": {
+          "x": 0,
+          "y": 20.0
+        }
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.33,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.37,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.5,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.55,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "role": "item",
+        "anchor": "grip",
+        "offset": {
+          "x": 0,
+          "y": 20.0
+        },
+        "clear": 0.6
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.42,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.7,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.8,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "hand.@active",
+        "anchor": "grip",
+        "offset": {
+          "x": 30.0,
+          "y": 25.0
+        }
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.55,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.7,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.8,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.87,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "pelvis",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "linear"
+        },
+        {
+          "t": 0.87,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.99,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 1,
+          "v": 1
+        }
+      ],
+      "bend": "flip"
+    },
+    {
+      "bone": "head",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.32,
+          "v": -6,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.42,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.31,
+      "type": "grip",
+      "contact": "grip.@active",
+      "target": "item",
+      "anchor": "grip"
+    }
+  ],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ],
+    "props": [
+      {
+        "role": "item",
+        "anchors": [
+          "grip"
+        ]
+      }
+    ]
+  }
+}
