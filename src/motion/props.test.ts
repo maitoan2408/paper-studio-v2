@@ -184,8 +184,13 @@ const cases: [string, () => void][] = [
   // Đèn to hơn một chút so với tầm tay của tam → chạm sàn khi đang bê (trước khi chạm giới hạn khớp).
   ['PROP_BELOW_SURFACE', mutate('m2-handover', (d) => (d.props.find((p: any) => p.id === 'lantern-1').scale = 0.92))],
   ['ACTION_PRECONDITION', mutate('m2-handover', (d) => delete item(d, 'pick-up').bind.roles)],
-  // Chậu cây đặt quá xa trên bàn: lúc chạm (w = 1) tay không với tới.
-  ['IK_UNREACHABLE', mutate('m2-plant', (d) => (d.props.find((p: any) => p.id === 'plant-1').x = -450))],
+  // Chậu cây quá xa người nhặt: lúc chạm (w = 1) tay không với tới. Dời tương đối (người lùi xa chậu 150 px theo
+  // phía đang đứng) để test không gắn tọa độ của một bố cục cụ thể.
+  ['IK_UNREACHABLE', mutate('m2-plant', (d) => {
+    const tam = d.characters.find((c: any) => c.id === 'tam');
+    const plant = d.props.find((p: any) => p.id === 'plant-1');
+    tam.x += Math.sign(tam.x - plant.x) * 150;
+  })],
 ];
 for (const [c, run] of cases) {
   test(`${c} (props)`, () => assert.throws(run, code(c)));

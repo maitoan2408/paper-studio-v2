@@ -5,7 +5,7 @@
     "width": 1920,
     "height": 1080,
     "fps": 24,
-    "durationFrames": 332
+    "durationFrames": 240
   },
   "packs": [
     {
@@ -135,7 +135,7 @@
     {
       "id": "plant-1",
       "asset": "plant",
-      "x": -300,
+      "x": -480,
       "y": 246,
       "scale": 0.85,
       "rotation": 0,
@@ -151,7 +151,7 @@
     {
       "id": "lantern-1",
       "asset": "lantern",
-      "x": -560,
+      "x": -590,
       "y": 246,
       "scale": 1,
       "rotation": 0,
@@ -171,7 +171,7 @@
       "pack": "demo-cast",
       "rig": "biped-demo",
       "character": "tam",
-      "x": -100,
+      "x": -250,
       "scale": 1.4,
       "depth": 1,
       "facing": "right",
@@ -193,14 +193,14 @@
     "keys": [
       {
         "frame": 0,
-        "x": 40,
+        "x": -20,
         "y": 330,
         "zoom": 1.3,
         "ease": "inOutSine"
       },
       {
-        "frame": 331,
-        "x": -40,
+        "frame": 239,
+        "x": -60,
         "y": 330,
         "zoom": 1.4
       }
@@ -211,23 +211,23 @@
       "character": "tam",
       "clip": "idle-breath",
       "start": 0,
-      "durationFrames": 332,
+      "durationFrames": 240,
       "bind": {},
-      "repeat": 3
+      "repeat": 2
     },
     {
       "character": "lan",
       "clip": "idle-breath",
       "start": 0,
-      "durationFrames": 332,
+      "durationFrames": 240,
       "bind": {},
-      "repeat": 3
+      "repeat": 2
     },
     {
       "character": "tam",
       "clip": "pick-up",
-      "start": 20,
-      "durationFrames": 144,
+      "start": 2,
+      "durationFrames": 106,
       "bind": {
         "active": "r",
         "roles": {
@@ -239,7 +239,7 @@
     {
       "character": "tam",
       "clip": "carry",
-      "start": 164,
+      "start": 108,
       "durationFrames": 8,
       "bind": {
         "active": "r"
@@ -249,8 +249,8 @@
     {
       "character": "tam",
       "clip": "place",
-      "start": 172,
-      "durationFrames": 144,
+      "start": 116,
+      "durationFrames": 116,
       "bind": {
         "active": "r",
         "roles": {
@@ -258,7 +258,7 @@
         },
         "place": {
           "surface": "table-top",
-          "x": -330
+          "x": -340
         }
       },
       "layer": 1
@@ -266,7 +266,7 @@
     {
       "character": "lan",
       "clip": "turn-head",
-      "start": 140,
+      "start": 150,
       "durationFrames": 60,
       "bind": {},
       "layer": 1
@@ -274,9 +274,15 @@
   ],
   "walks": [
     {
+      "character": "tam",
+      "start": 91,
+      "durationFrames": 50,
+      "toX": -110
+    },
+    {
       "character": "lan",
       "start": 0,
-      "durationFrames": 125,
+      "durationFrames": 100,
       "toX": 250
     }
   ],
