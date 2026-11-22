@@ -30,8 +30,16 @@ export interface RenderManifest {
   review: { halfSpeed: string; contactSheet: string; audited: false };
 }
 
-/** -0 → 0 và chuẩn hóa kiểu dữ liệu trình duyệt trả về trước khi băm. */
-export const stateSha = (s: DrawnFrame) => canonicalSha256(JSON.parse(JSON.stringify(s)));
+/**
+ * Hash trạng thái đã vẽ (render, audit, check:renderer dùng chung). -0 → 0 và chuẩn hóa kiểu dữ liệu trình duyệt
+ * trả về trước khi băm. Biểu diễn để băm: `paperX` = 1 (không co trên màn hình) được BỎ khỏi sprite — trùng định
+ * dạng trước khi có paperX, nên manifest cũ vẫn audit được; paperX ≠ 1 giữ nguyên giá trị thật trong hash.
+ * Chỉ đổi biểu diễn để băm: state đọc từ renderer và phép so với expectedState (compareState) không đổi.
+ */
+export const stateSha = (s: DrawnFrame) =>
+  canonicalSha256(
+    JSON.parse(JSON.stringify({ ...s, sprites: s.sprites.map(({ paperX, ...rest }) => (paperX === 1 || paperX === undefined ? rest : { ...rest, paperX })) })),
+  );
 
 /** Hash gộp của mọi SceneFrame — mức tất định 1: phải giống hệt trên mọi máy. */
 export function sceneFramesSha256(frames: SceneFrame[]): string {
