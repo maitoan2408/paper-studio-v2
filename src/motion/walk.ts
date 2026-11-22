@@ -3,7 +3,8 @@
  *
  * Một lần đi `{character, start, durationFrames, toX}`:
  *  1. Nếu hướng đi ngược hướng đang nhìn: LẬT trong gait.turnFrames frame đầu — facing fx đi từ hướng cũ
- *     qua 0 tới hướng mới theo cos (như lật tờ giấy); chân không bước.
+ *     qua 0 tới hướng mới theo cos (như lật tờ giấy); chân không bước. Xem flipFx: khoảnh khắc nghiêng hẳn
+ *     (fx = 0, hình bề ngang 0) luôn nằm đúng GIỮA hai frame, không bao giờ được lấy mẫu.
  *  2. Bước: n bước (chẵn, xen kẽ, chân phía trước theo hướng nhìn bước trước). Trong swingRatio đầu của
  *     mỗi bước, một bàn chân dời 2D/n theo inOutSine và nhấc liftRatio·L·sin²(πu); phần còn lại cả hai chân
  *     cùng trụ. Bàn chân trụ ĐỨNG YÊN (khóa sàn).
@@ -123,10 +124,7 @@ export function walkState(film: Film, ci: number, frame: number, legLength: numb
       continue;
     }
     const k = frame - s.start;
-    if (k < s.turnFrames) {
-      const u = ease('inOutSine', (k + 1) / s.turnFrames); // lật êm ở hai đầu (không giật đồ đang cầm)
-      return { rootX: s.fromX, fx: s.fromSign * Math.cos(Math.PI * u), stepPhase: 0 };
-    }
+    if (k < s.turnFrames) return { rootX: s.fromX, fx: flipFx(s.fromSign, k, s.turnFrames), stepPhase: 0 };
     if (s.steps === 0) return { rootX: s.fromX, fx: s.dir, stepPhase: 0 }; // quay tại chỗ đã xong / không cần lật
     const D = Math.abs(s.toX - s.fromX);
     const stride = (2 * D) / s.steps;
@@ -146,4 +144,21 @@ export function walkState(film: Film, ci: number, frame: number, legLength: numb
     return { rootX: rx, fx: s.dir, step: { lead, shift, lift, seg: s }, stepPhase: tau };
   }
   return { rootX, fx, stepPhase: 0 };
+}
+
+/**
+ * Hệ số hướng nhìn ở frame thứ k (0-based) của một lần lật dài T frame — dùng chung cho `turns` và `walks` đổi chiều.
+ * fx = from·cos(π·inOutSine(u)), u = w((k+1)/T): co như tờ giấy, êm ở hai đầu; frame cuối (k = T−1) u = 1 → ±1.
+ *
+ * Điểm đổi mặt u = ½ (fx = 0) là lúc tờ giấy nghiêng hẳn: hình bề ngang 0 — vẽ ra là MẤT nhân vật, nên không bao giờ
+ * được lấy mẫu. T lẻ: (k+1)/T không bao giờ bằng ½ — điểm đó nằm đúng giữa hai frame; w(x) = x. T chẵn: mẫu
+ * k+1 = T/2 rơi đúng vào ½, nên thời gian được dời mượt nửa frame ở giữa:
+ *   w(x) = x + (½/T)·sin²(πx)   (w(0) = 0, w(1) = 1, đơn điệu vì π/(2T) < 1; dời 0 ở hai đầu, ½ frame ở giữa).
+ * Đổi mặt khi đó nằm giữa hai frame (cách ½/T và ≈ ½/T), mẫu gần nhất cách điểm nghiêng hẳn ≥ nửa frame như T lẻ,
+ * và bước thời gian đổi mượt (không có bước dài đột ngột làm đồ cầm tay giật). Không hằng số: chỉ suy từ T.
+ */
+export function flipFx(from: number, k: number, T: number): number {
+  const x = (k + 1) / T;
+  const u = T % 2 === 0 ? x + (0.5 / T) * Math.sin(Math.PI * x) ** 2 : x;
+  return from * Math.cos(Math.PI * ease('inOutSine', u));
 }

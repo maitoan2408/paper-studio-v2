@@ -41,6 +41,12 @@ export interface Sprite {
   scale: number;
   /** px màn hình trên mỗi px art theo chiều ngang, CÓ DẤU: âm = lật gương; |scaleX| < scale = bóp ngang. */
   scaleX: number;
+  /**
+   * Co ngang TRÊN MÀN HÌNH, áp SAU khi xoay, quanh pivot của sprite (0 < paperX < 1). Chỉ có khi nhân vật đang lật
+   * như tờ giấy: cả con rối co theo trục x thế giới với hệ số |fx| — cùng phép co mà vị trí khớp, contact và đồ cầm
+   * tay dùng, nên hình vẽ ra khớp đúng các điểm đó. Vắng mặt = 1.
+   */
+  paperX?: number;
   opacity: number;
   /** Bóng đổ ở không gian màn hình (dy dương = xuống). */
   shadow?: { dx: number; dy: number; blur: number; opacity: number };
@@ -128,8 +134,11 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
       angle: (b) => st.angles.get(b)!,
       variant: (b) => st.variants.get(b) ?? 'default',
     });
-    // fx ∈ [−1, 1]: x local nhân với fx (lật/co như tờ giấy); góc lật dấu theo dấu fx.
+    // fx ∈ [−1, 1]: x local nhân với fx (lật/co như tờ giấy quanh gốc, theo trục x THẾ GIỚI); góc lật dấu theo dấu fx.
+    // Sprite: gương (dấu) nằm trong scaleX/rot; phần co |fx| là paperX — áp sau khi xoay, giống hệt phép co của
+    // vị trí khớp/contact (contactWorld), nên khớp và đồ cầm tay nằm đúng trên hình ở mọi frame lật.
     const sign = st.fx >= 0 ? 1 : -1;
+    const paper = Math.abs(st.fx);
     // Đồ đang cầm: vẽ trong lượt của người cầm, ngay TRƯỚC sprite xương chứa contact đang nắm
     // (đồ đè lên thân/cánh tay nhưng nằm dưới bàn tay), chiếu ở depth của người cầm để bám tay khi parallax.
     const held = new Map<string, Sprite[]>();
@@ -151,7 +160,8 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
           y: sy,
           rot: worldAngle === 0 ? 0 : -worldAngle,
           scale: c.scale * zoomL,
-          scaleX: st.fx * c.scale * zoomL * (st.squash.get(part.bone) ?? 1),
+          scaleX: sign * c.scale * zoomL * (st.squash.get(part.bone) ?? 1),
+          ...(paper < 1 ? { paperX: paper } : {}),
         };
         return [...(held.get(part.bone) ?? []), own];
       });
@@ -176,5 +186,5 @@ export function spriteToScreen(s: Sprite, artPoint: V2): V2 {
   const r = (s.rot * Math.PI) / 180;
   const c = Math.cos(r);
   const n = Math.sin(r);
-  return [s.x + vx * c - vy * n, s.y + vx * n + vy * c];
+  return [s.x + (s.paperX ?? 1) * (vx * c - vy * n), s.y + vx * n + vy * c];
 }

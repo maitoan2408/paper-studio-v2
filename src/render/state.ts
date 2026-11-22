@@ -20,6 +20,7 @@ export function expectedState(f: SceneFrame): DrawnFrame {
         rot: s.rot,
         scale: s.scale,
         scaleX: s.scaleX,
+        paperX: s.paperX ?? 1,
         opacity: s.opacity,
         shadow: s.shadow ? { dx: s.shadow.dx, dy: s.shadow.dy, blurArt: shadowBlurArt(s), opacity: s.shadow.opacity } : null,
       }),
@@ -42,7 +43,7 @@ export function compareState(expected: DrawnFrame, drawn: DrawnFrame): void {
     if (d.id !== e.id || d.sha256 !== e.sha256) {
       fail('RENDER_STATE_MISMATCH', where, `drew ${d.id}/${d.sha256.slice(0, 12)}`);
     }
-    for (const k of ['x', 'y', 'rot', 'scale', 'scaleX', 'opacity'] as const) {
+    for (const k of ['x', 'y', 'rot', 'scale', 'scaleX', 'paperX', 'opacity'] as const) {
       if (!(Math.abs(d[k] - e[k]) <= EPS)) fail('RENDER_STATE_MISMATCH', `${where}.${k}`, `drew ${d[k]}, expected ${e[k]}`);
     }
     if ((d.shadow === null) !== (e.shadow === null)) fail('RENDER_STATE_MISMATCH', `${where}.shadow`, 'presence differs');

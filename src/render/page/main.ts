@@ -140,7 +140,9 @@ async function init(): Promise<void> {
   const draw = (f: SceneFrame): THREE.Scene => {
     const scene = new THREE.Scene();
     let order = 0;
-    const mesh = (t: { texture: THREE.Texture; geometry: THREE.PlaneGeometry }, s: Sprite, opacity: number, color: number) => {
+    // Mỗi sprite = node (vị trí pivot + co ngang paperX trên màn hình) chứa mesh (xoay + scaleX/scale theo art).
+    // Co của node áp SAU khi xoay — đúng spriteToScreen (lật như tờ giấy); paperX = 1 → node chỉ tịnh tiến.
+    const mesh = (t: { texture: THREE.Texture; geometry: THREE.PlaneGeometry }, s: Sprite, opacity: number, color: number, x: number, y: number) => {
       const m = new THREE.Mesh(
         t.geometry,
         new THREE.MeshBasicMaterial({ map: t.texture, color, transparent: true, opacity, depthTest: false, depthWrite: false, side: THREE.DoubleSide }),
@@ -148,24 +150,27 @@ async function init(): Promise<void> {
       m.renderOrder = order++;
       m.rotation.z = (s.rot * Math.PI) / 180;
       m.scale.set(s.scaleX, s.scale, 1);
-      return m;
+      const node = new THREE.Object3D();
+      node.position.set(x, y, 0);
+      node.scale.set(s.paperX ?? 1, 1, 1);
+      node.add(m);
+      return { node, m };
     };
     for (const s of f.sprites) {
       const t = tex.get(s.assetSha256);
       if (!t) throw err('RENDER_CONFIG', `frame ${f.frame}: texture ${s.assetSha256} not loaded`);
-      const main = mesh(t, s, s.opacity, 0xffffff);
-      main.position.set(s.x, s.y, 0);
-      main.userData = { id: s.id };
+      // Thứ tự tạo (renderOrder) giữ như trước: mesh chính rồi mới tới bóng.
+      const main = mesh(t, s, s.opacity, 0xffffff, s.x, s.y);
+      main.node.userData = { id: s.id, mesh: main.m };
       if (s.shadow) {
         const blurArt = Math.round(s.shadow.blur / s.scale);
         const st = shadows.get(`${s.assetSha256}:${blurArt}`);
         if (!st) throw err('RENDER_CONFIG', `frame ${f.frame}: shadow ${s.assetSha256}:${blurArt} not prepared`);
-        const sh = mesh(st, s, s.shadow.opacity, 0x000000);
-        sh.position.set(s.x + s.shadow.dx, s.y + s.shadow.dy, 0);
-        main.userData.shadow = sh;
-        scene.add(sh);
+        const sh = mesh(st, s, s.shadow.opacity, 0x000000, s.x + s.shadow.dx, s.y + s.shadow.dy);
+        main.node.userData.shadow = sh.node;
+        scene.add(sh.node);
       }
-      scene.add(main);
+      scene.add(main.node);
     }
     return scene;
   };
@@ -173,23 +178,27 @@ async function init(): Promise<void> {
   /** Đọc state từ chính các đối tượng Three.js đã vẽ. */
   const readBack = (frame: number, scene: THREE.Scene): DrawnFrame => {
     const sprites: DrawnSprite[] = [];
-    const meshes = (scene.children as THREE.Mesh[]).filter((m) => m.userData.id !== undefined).sort((p, q) => p.renderOrder - q.renderOrder);
-    for (const m of meshes) {
+    const nodes = scene.children
+      .filter((n) => n.userData.id !== undefined)
+      .sort((p, q) => (p.userData.mesh as THREE.Mesh).renderOrder - (q.userData.mesh as THREE.Mesh).renderOrder);
+    for (const n of nodes) {
+      const m = n.userData.mesh as THREE.Mesh;
       const mat = m.material as THREE.MeshBasicMaterial;
-      const sh = m.userData.shadow as THREE.Mesh | undefined;
-      const shMat = sh?.material as THREE.MeshBasicMaterial | undefined;
+      const sh = n.userData.shadow as THREE.Object3D | undefined;
+      const shMat = (sh?.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial | undefined;
       sprites.push({
-        id: m.userData.id as string,
+        id: n.userData.id as string,
         sha256: mat.map!.userData.sha256 as string,
-        x: m.position.x,
-        y: m.position.y,
+        x: n.position.x,
+        y: n.position.y,
         rot: (m.rotation.z * 180) / Math.PI,
         scale: m.scale.y,
         scaleX: m.scale.x,
+        paperX: n.scale.x,
         opacity: mat.opacity,
         shadow:
           sh && shMat
-            ? { dx: sh.position.x - m.position.x, dy: sh.position.y - m.position.y, blurArt: shMat.map!.userData.blurArt as number, opacity: shMat.opacity }
+            ? { dx: sh.position.x - n.position.x, dy: sh.position.y - n.position.y, blurArt: shMat.map!.userData.blurArt as number, opacity: shMat.opacity }
             : null,
       });
     }
