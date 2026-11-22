@@ -25,6 +25,7 @@ const cases: [string, (d: ReturnType<typeof frame>) => void][] = [
   ['scale', (d) => (d.sprites[4]!.scale *= 1.001)],
   ['flip', (d) => (d.sprites[1]!.scaleX = -d.sprites[1]!.scaleX)],
   ['squash', (d) => (d.sprites[1]!.scaleX *= 0.9)],
+  ['paper squash (flip) not drawn', (d) => (d.sprites[1]!.paperX = 0.5)],
   ['shadow dropped', (d) => (d.sprites[6]!.shadow = null)],
   ['shadow blur', (d) => (d.sprites[6]!.shadow!.blurArt += 1)],
   ['shadow offset', (d) => (d.sprites[6]!.shadow!.dy = -d.sprites[6]!.shadow!.dy)],
@@ -37,6 +38,15 @@ for (const [name, mutate] of cases) {
     assert.throws(() => compareState(e, d), code('RENDER_STATE_MISMATCH'));
   });
 }
+
+test('mid-flip character sprites carry paperX into the expected state; other sprites have paperX = 1', () => {
+  const f = loadFilm('examples/films/m2-handover.json', 'assets');
+  const e = expectedState(sampleFrame(f, 202)); // lan đang lật (M2/E4)
+  const lan = e.sprites.filter((s) => s.id.startsWith('lan/'));
+  assert.ok(lan.length > 0 && lan.every((s) => s.paperX > 0 && s.paperX < 1), 'lan sprites must be squashed on screen');
+  assert.ok(e.sprites.filter((s) => !s.id.startsWith('lan/')).every((s) => s.paperX === 1));
+  assert.ok(frame().sprites.every((s) => s.paperX === 1));
+});
 
 test('shuffledPick: deterministic, includes first and last, not sorted, no duplicates', () => {
   const a = shuffledPick(48, 8, 'deadbeef');

@@ -36,6 +36,8 @@ export interface DrawnSprite {
   rot: number;
   scale: number;
   scaleX: number;
+  /** Co ngang trên màn hình sau khi xoay (Sprite.paperX; 1 khi vắng mặt) — đọc từ node cha của mesh. */
+  paperX: number;
   opacity: number;
   shadow: { dx: number; dy: number; blurArt: number; opacity: number } | null;
 }
