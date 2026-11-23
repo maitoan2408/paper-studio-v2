@@ -21,7 +21,7 @@
 </head>
 <body class="bg-[var(--background)] text-[var(--foreground)] antialiased m-0 p-0">
   <div class="min-h-screen flex flex-col">
-    <!-- Top Bar -->
+    <!-- Header -->
     <header class="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--card)] flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div id="badgeIcon" class="w-8 h-8 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center font-bold text-sm">✂</div>
@@ -44,21 +44,22 @@
       </div>
     </header>
 
-    <!-- Main Split -->
+    <!-- Main Workspace -->
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12">
-      <!-- Shadow-Box Stage -->
       <main class="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-[var(--border)]">
         <div id="stageWrap" class="relative flex-1 min-h-[520px] bg-[var(--content)] flex items-center justify-center p-3 sm:p-5 overflow-hidden select-none">
-          <div class="w-full max-w-[920px] aspect-[4/3] rounded-xl shadow-2xl border-[5px] border-[#f4f4f2] overflow-hidden relative" id="stageBox">
-            <svg id="sceneSvg" viewBox="0 0 960 720" class="w-full h-full block">
+          <div class="w-full max-w-[960px] aspect-[16/9] rounded-xl shadow-2xl border border-[var(--border)] overflow-hidden relative" id="stageBox">
+            <svg id="sceneSvg" viewBox="0 0 960 540" class="w-full h-full block">
               <defs id="svgDefs"></defs>
-              <clipPath id="stageClip"><rect x="0" y="0" width="960" height="720"/></clipPath>
+              <clipPath id="stageClip"><rect id="stageClipRect" x="0" y="0" width="960" height="540"/></clipPath>
               <g clip-path="url(#stageClip)">
                 <g id="layerSky"></g>
+                <g id="layerFocalGlow"></g>
                 <g id="layerAmbientBack"></g>
                 <g id="layerCelestial"></g>
                 <g id="layerLightShafts"></g>
                 <g id="layerBackScenery"></g>
+                <g id="layerClustersBack"></g>
                 <g id="layerMistMid"></g>
                 <g id="layerSwarmBack"></g>
                 <g id="layerFallingBack"></g>
@@ -66,12 +67,13 @@
                 <g id="layerHeroes"></g>
                 <g id="layerVfx"></g>
                 <g id="layerFrontScenery"></g>
+                <g id="layerClustersFront"></g>
                 <g id="layerSwarmFront"></g>
                 <g id="layerFallingFront"></g>
+                <g id="layerOverlayProps"></g>
                 <g id="layerAtmosphereFore"></g>
                 <g id="layerFrame"></g>
                 <g id="layerCorners"></g>
-                <g id="layerOverlayProps"></g>
                 <g id="layerDiag"></g>
                 <g id="layerIk"></g>
               </g>
@@ -83,8 +85,7 @@
               <label class="flex items-center gap-1 cursor-pointer"><input id="chkAnchors" type="checkbox" class="accent-[var(--primary)]"> Anchors</label>
               <label class="flex items-center gap-1 cursor-pointer"><input id="chkParallax" type="checkbox" checked class="accent-[var(--primary)]"> Parallax 3D</label>
               <label class="flex items-center gap-1 cursor-pointer"><input id="chkAtmos" type="checkbox" checked class="accent-[var(--primary)]"> Ánh sáng</label>
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkFrame" type="checkbox" checked class="accent-[var(--primary)]"> Khung giấy</label>
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkCorners" type="checkbox" checked class="accent-[var(--primary)]"> Mây/Góc</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input id="chkFrame" type="checkbox" checked class="accent-[var(--primary)]"> Khung hộp</label>
             </div>
 
             <div class="absolute bottom-3 right-3 flex items-center gap-1 text-xs bg-[var(--card)]/90 backdrop-blur px-2 py-1 rounded-lg border border-[var(--border)] shadow">
@@ -107,11 +108,10 @@
         </div>
 
         <div id="tab-rig" class="p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
-          <!-- Multi-rig switcher -->
           <div id="rigSwitcher" class="hidden flex flex-wrap gap-1.5 pb-2 border-b border-[var(--border)]"></div>
           <div id="variantSection" class="space-y-2 hidden pb-2 border-b border-[var(--border)]"></div>
           <div class="flex items-center justify-between text-[var(--muted-foreground)]">
-            <span>Kéo thanh trượt để chỉnh từng khớp (FK)</span>
+            <span>Chỉnh trực tiếp góc từng khớp (FK)</span>
             <button id="btnRest" class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--primary)]">↺ Nghỉ</button>
           </div>
           <div id="rootControls" class="space-y-2 pb-2 border-b border-[var(--border)]"></div>
@@ -120,23 +120,23 @@
 
         <div id="tab-scene" class="hidden p-3.5 space-y-3.5 overflow-y-auto scroll-thin flex-1 text-xs">
           <div class="space-y-2">
-            <div class="font-semibold">Ánh sáng &amp; Bóng cắt giấy</div>
+            <div class="font-semibold">Ánh sáng &amp; Chất liệu giấy</div>
             <label class="flex items-center gap-2">
               <span class="w-28 text-[var(--muted-foreground)]">Độ sâu bóng giấy</span>
               <input id="rngShadow" type="range" min="0.2" max="1.8" step="0.1" value="1" class="flex-1 accent-[var(--primary)]"/>
               <span id="valShadow" class="w-10 text-right font-mono">1.0×</span>
             </label>
             <label class="flex items-center gap-2">
-              <span class="w-28 text-[var(--muted-foreground)]">Nhịp gió &amp; cảnh</span>
+              <span class="w-28 text-[var(--muted-foreground)]">Nhịp gió &amp; chuyển động</span>
               <input id="rngAmbient" type="range" min="0" max="2.2" step="0.1" value="1" class="flex-1 accent-[var(--primary)]"/>
               <span id="valAmbient" class="w-10 text-right font-mono">1.0×</span>
             </label>
             <label class="flex items-center justify-between pt-1">
-              <span class="text-[var(--muted-foreground)]">Hiệu ứng trời (Sao băng / Đom đóm / Lá rơi)</span>
+              <span class="text-[var(--muted-foreground)]">Hạt bay (Lá / Tuyết / Bọt / Đom đóm)</span>
               <input id="chkAmbient" type="checkbox" checked class="accent-[var(--primary)]"/>
             </label>
             <label class="flex items-center justify-between">
-              <span class="text-[var(--muted-foreground)]">Đàn sinh vật nhỏ (Chim / Cá)</span>
+              <span class="text-[var(--muted-foreground)]">Đàn sinh vật nhỏ (Chim / Cá / Bướm)</span>
               <input id="chkSwarm" type="checkbox" checked class="accent-[var(--primary)]"/>
             </label>
             <label class="flex items-center justify-between">
@@ -177,52 +177,45 @@
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const lerp = (a, b, t) => a + (b - a) * t;
     const smoothstep = (t) => { const c = clamp(t, 0, 1); return c * c * (3 - 2 * c); };
-    const easeOutBack = (t) => {
-      const c = clamp(t, 0, 1);
-      const c1 = 1.35, c3 = c1 + 1;
-      return 1 + c3 * Math.pow(c - 1, 3) + c1 * Math.pow(c - 1, 2);
-    };
+    const easeOutBack = (t) => { const c = clamp(t, 0, 1), c1 = 1.35, c3 = c1 + 1; return 1 + c3 * Math.pow(c - 1, 3) + c1 * Math.pow(c - 1, 2); };
+
+    // Canvas dimensions (supports 16:9 [960,540] or 4:3 [960,720] from blueprint!)
+    const VW = BLUEPRINT.scene?.width ?? 960;
+    const VH = BLUEPRINT.scene?.height ?? 540;
+    const stageBox = document.getElementById('stageBox');
+    stageBox.style.aspectRatio = `${VW} / ${VH}`;
+    const sceneSvg = document.getElementById('sceneSvg');
+    sceneSvg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    const clipRect = document.getElementById('stageClipRect');
+    clipRect.setAttribute('width', String(VW));
+    clipRect.setAttribute('height', String(VH));
 
     // Normalize single rig or multi-rig rigs[]
-    const RAW_RIGS = Array.isArray(BLUEPRINT.rigs) && BLUEPRINT.rigs.length > 0
-      ? BLUEPRINT.rigs
-      : [BLUEPRINT.rig];
+    const RAW_RIGS = Array.isArray(BLUEPRINT.rigs) && BLUEPRINT.rigs.length > 0 ? BLUEPRINT.rigs : [BLUEPRINT.rig];
     const PART_BY_ID = Object.fromEntries(BLUEPRINT.parts.map(p => [p.id, p]));
 
     function topoSort(rawBones) {
-      const out = [];
-      const byParent = new Map();
+      const out = [], byP = new Map();
       for (const b of rawBones) {
         const k = b.parent ?? '__root__';
-        byParent.set(k, [...(byParent.get(k) ?? []), b]);
+        byP.set(k, [...(byP.get(k) ?? []), b]);
       }
-      const visit = (pid) => {
-        for (const b of byParent.get(pid) ?? []) {
-          out.push(b);
-          visit(b.id);
-        }
-      };
+      const visit = (pid) => { for (const b of byP.get(pid) ?? []) { out.push(b); visit(b.id); } };
       visit('__root__');
       return out;
     }
 
     const RIGS = RAW_RIGS.map((r) => {
       const bones = topoSort(r.bones);
-      return {
-        ...r,
-        label: r.label ?? r.characterId ?? r.id,
-        bones,
-        boneById: Object.fromEntries(bones.map(b => [b.id, b])),
-      };
+      return { ...r, label: r.label ?? r.characterId ?? r.id, bones, boneById: Object.fromEntries(bones.map(b => [b.id, b])) };
     });
     const RIG_BY_ID = Object.fromEntries(RIGS.map(r => [r.id, r]));
 
-    // Per-rig runtime state
     const rigStates = {};
     for (const r of RIGS) {
       rigStates[r.id] = {
-        rootX: r.rootPos?.x ?? 480,
-        rootY: r.rootPos?.y ?? 420,
+        rootX: r.rootPos?.x ?? VW * 0.5,
+        rootY: r.rootPos?.y ?? VH * 0.72,
         facing: r.facing ?? 1,
         scale: r.scale ?? 1,
         breath: 0,
@@ -235,111 +228,169 @@
     const state = {
       activeRigId: RIGS[0].id,
       preset: BLUEPRINT.motions?.[0]?.id ?? 'manual',
-      playing: true,
-      speed: 1,
-      time: 0,
-      zoom: 1,
-      showBones: false,
-      showAnchors: false,
-      parallax: true,
-      showAtmos: true,
-      showFrame: true,
-      showCorners: true,
-      showAmbient: true,
-      showSwarm: true,
-      camBreath: true,
-      shadowScale: 1,
-      ambientAmp: 1,
-      pointer: { x: 0, y: 0 },
-      smoothPtr: { x: 0, y: 0 },
+      playing: true, speed: 1, time: 0, zoom: 1,
+      showBones: false, showAnchors: false, parallax: true, showAtmos: true,
+      showFrame: true, showAmbient: true, showSwarm: true, camBreath: true,
+      shadowScale: 1, ambientAmp: 1,
+      pointer: { x: 0, y: 0 }, smoothPtr: { x: 0, y: 0 },
       draggingIk: null,
-      vfx: { splash: 0, splashX: 480, bubbles: 0, glowSpot: 0, glowX: 520, glowY: 460 },
+      vfx: { splash: 0, splashX: VW * 0.5, bubbles: 0, glowSpot: 0, glowX: VW * 0.55, glowY: VH * 0.7 },
     };
 
-    // Header & Defs setup
     document.getElementById('badgeIcon').textContent = BLUEPRINT.meta.icon ?? '✂';
     document.getElementById('hdrTitle').textContent = BLUEPRINT.meta.title;
     document.getElementById('hdrSub').textContent = BLUEPRINT.meta.subtitle ?? '';
-    document.getElementById('stageBox').style.background = BLUEPRINT.scene.bgColor ?? '#0b1326';
+    stageBox.style.background = BLUEPRINT.scene.bgColor ?? '#0b1326';
 
-    const baseDefs = `
+    // Universal Cardstock Paper Fibres + 4 Shadow Tiers + Data-Driven Lighting Gradients
+    const lit = BLUEPRINT.scene.lighting ?? {};
+    const fg = lit.focalGlow;
+    const fgDef = fg ? `<radialGradient id="autoFocalGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${fg.color ?? '#ffe9a3'}" stop-opacity="${fg.opacity ?? 0.65}"/><stop offset="55%" stop-color="${fg.midColor ?? fg.color ?? '#f5a855'}" stop-opacity="${(fg.opacity ?? 0.65) * 0.35}"/><stop offset="100%" stop-color="${fg.color ?? '#f5a855'}" stop-opacity="0"/></radialGradient>` : '';
+    const mst = lit.mist;
+    const mstDef = mst ? `<linearGradient id="autoMistGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/><stop offset="52%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="${mst.opacity ?? 0.24}"/><stop offset="100%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/></linearGradient>` : '';
+
+    document.getElementById('svgDefs').innerHTML = `
+      <!-- Fine Cardstock Paper Texture (tactile horizontal fibre + grain) -->
       <filter id="paperTex" x="-5%" y="-5%" width="110%" height="110%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="2" seed="${BLUEPRINT.meta.seed ?? 13}" result="n"/>
-        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.10  0 0 0 0.08 0" result="g"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.06 0.72" numOctaves="2" seed="${BLUEPRINT.meta.seed ?? 13}" result="fibre"/>
+        <feColorMatrix in="fibre" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0.11 0" result="g"/>
         <feComposite in="g" in2="SourceGraphic" operator="in" result="gc"/>
         <feBlend in="SourceGraphic" in2="gc" mode="multiply"/>
       </filter>
       <filter id="shadowDeep" x="-25%" y="-25%" width="150%" height="150%">
-        <feDropShadow id="fDeep" dx="0" dy="8" stdDeviation="9" flood-color="#050712" flood-opacity="0.56"/>
+        <feDropShadow id="fDeep" dx="0" dy="7" stdDeviation="8" flood-color="#050712" flood-opacity="0.58"/>
       </filter>
       <filter id="shadowMed" x="-25%" y="-25%" width="150%" height="150%">
-        <feDropShadow id="fMed" dx="2" dy="5" stdDeviation="5.5" flood-color="#070a16" flood-opacity="0.40"/>
+        <feDropShadow id="fMed" dx="1.5" dy="4.5" stdDeviation="4.8" flood-color="#060914" flood-opacity="0.42"/>
       </filter>
       <filter id="shadowSoft" x="-25%" y="-25%" width="150%" height="150%">
-        <feDropShadow id="fSoft" dx="0" dy="4" stdDeviation="5" flood-color="#141828" flood-opacity="0.24"/>
+        <feDropShadow id="fSoft" dx="0" dy="3" stdDeviation="4" flood-color="#0c1020" flood-opacity="0.28"/>
       </filter>
-      <!-- Ultra-subtle internal depth crease (never cuts ugly black seams across limbs/tails!) -->
       <filter id="shadowInner" x="-15%" y="-15%" width="130%" height="130%">
-        <feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-color="#1a0d12" flood-opacity="0.14"/>
+        <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#140a10" flood-opacity="0.16"/>
       </filter>
       <filter id="softGlow" x="-45%" y="-45%" width="190%" height="190%">
-        <feGaussianBlur stdDeviation="10" result="b"/>
+        <feGaussianBlur stdDeviation="9" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
       <radialGradient id="groundShadowGrad" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stop-color="#120810" stop-opacity="0.42"/>
-        <stop offset="60%" stop-color="#120810" stop-opacity="0.16"/>
+        <stop offset="62%" stop-color="#120810" stop-opacity="0.14"/>
         <stop offset="100%" stop-color="#120810" stop-opacity="0"/>
       </radialGradient>
       <radialGradient id="warmMomentGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#ffe799" stop-opacity="0.42"/>
-        <stop offset="55%" stop-color="#f79f4d" stop-opacity="0.14"/>
-        <stop offset="100%" stop-color="#f79f4d" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#fff0ad" stop-opacity="0.44"/>
+        <stop offset="55%" stop-color="#f7a854" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#f7a854" stop-opacity="0"/>
       </radialGradient>
-      ${BLUEPRINT.scene.defsSvg ?? ''}`;
-    document.getElementById('svgDefs').innerHTML = baseDefs;
+      <radialGradient id="autoVignette" cx="50%" cy="52%" r="70%">
+        <stop offset="60%" stop-color="#0a0612" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#080510" stop-opacity="${lit.vignetteOpacity ?? 0.34}"/>
+      </radialGradient>
+      ${fgDef}${mstDef}${BLUEPRINT.scene.defsSvg ?? ''}`;
 
-    document.getElementById('layerFrame').innerHTML = BLUEPRINT.scene.frameSvg ?? '';
+    // Universal Data-Driven Proscenium Shadow-Box Frame Builder!
+    function buildProsceniumFrame() {
+      const f = BLUEPRINT.scene.frame;
+      if (!f || f.style === 'none') return BLUEPRINT.scene.frameSvg ?? '';
+      if (f.style === 'proscenium') {
+        const colors = f.layers ?? ['#0e344c', '#3d2247', '#b5502c'];
+        const baseInset = f.inset ?? 10;
+        const step = f.step ?? 12;
+        const baseR = f.radius ?? 56;
+        // Draw inner layers first, outer layer last? In SVG evenodd cutout, outer layers should sit ON TOP with wider cutout or INNER sits deeper!
+        // Specifically: outermost color covers edge, each deeper tier peeks inward with its own recessed shadow!
+        let html = '';
+        for (let i = colors.length - 1; i >= 0; i--) {
+          const pad = baseInset + i * step;
+          const r = Math.max(12, baseR - i * 6);
+          const x = pad, y = pad, w = VW - pad * 2, h = VH - pad * 2;
+          const inner = `M${x + r} ${y} H${x + w - r} Q${x + w} ${y} ${x + w} ${y + r} V${y + h - r} Q${x + w} ${y + h} ${x + w - r} ${y + h} H${x + r} Q${x} ${y + h} ${x} ${y + h - r} V${y + r} Q${x} ${y} ${x + r} ${y} Z`;
+          const outer = `M-20 -20 H${VW + 20} V${VH + 20} H-20 Z`;
+          html += `<path d="${outer} ${inner}" fill="${colors[i]}" fill-rule="evenodd" filter="url(#shadowDeep)"/>`;
+        }
+        return `<g filter="url(#paperTex)">${html}</g>`;
+      }
+      return BLUEPRINT.scene.frameSvg ?? '';
+    }
+    document.getElementById('layerFrame').innerHTML = buildProsceniumFrame();
     document.getElementById('layerCorners').innerHTML = BLUEPRINT.scene.cornersSvg ?? '';
 
-    // Pre-generate deterministic stars & falling particles
+    // Universal Procedural Botanical / Motif Cluster Builder (100% Theme-Agnostic!)
+    function buildClusters() {
+      const backItems = [], frontItems = [];
+      for (const cl of BLUEPRINT.scene.clusters ?? []) {
+        const cr = makeRng(cl.seed ?? 3011);
+        const count = cl.count ?? 24;
+        const pal = cl.palette ?? [['#d94432', '#b53224'], ['#f27a38', '#cf5c24'], ['#f7bd48', '#d9982b']];
+        const shape = cl.shapeSvg ?? '<path d="M0 -12 L3 -4 L11 -6 L5 1 L9 8 L2 5 L0 12 Z" fill="FILL_A"/><path d="M0 -12 L-3 -4 L-11 -6 L-5 1 L-9 8 L-2 5 L0 12 Z" fill="FILL_B"/>';
+        const items = [];
+        for (let i = 0; i < count; i++) {
+          let x, y;
+          if (cl.mode === 'arc') {
+            const ang = lerp(cl.a0 ?? -Math.PI, cl.a1 ?? 0, cr());
+            const radX = (cl.rx ?? 140) * (0.35 + 0.65 * Math.sqrt(cr()));
+            const radY = (cl.ry ?? 90) * (0.35 + 0.65 * Math.sqrt(cr()));
+            x = cl.cx + Math.cos(ang) * radX;
+            y = cl.cy + Math.sin(ang) * radY;
+          } else if (cl.mode === 'line') {
+            const u = cr();
+            x = lerp(cl.x0, cl.x1, u) + (cr() - 0.5) * (cl.spread ?? 40);
+            y = lerp(cl.y0, cl.y1, u) + (cr() - 0.5) * (cl.spread ?? 40);
+          } else {
+            // ellipse / box scatter
+            const ang = cr() * Math.PI * 2;
+            const r = Math.sqrt(cr());
+            x = cl.cx + Math.cos(ang) * (cl.rx ?? 100) * r;
+            y = cl.cy + Math.sin(ang) * (cl.ry ?? 70) * r;
+          }
+          const rot = (cl.rotMin ?? -180) + cr() * ((cl.rotMax ?? 180) - (cl.rotMin ?? -180));
+          const sc = (cl.scaleMin ?? 0.7) + cr() * ((cl.scaleMax ?? 1.3) - (cl.scaleMin ?? 0.7));
+          const pair = pal[Math.floor(cr() * pal.length)];
+          const cA = Array.isArray(pair) ? pair[0] : pair;
+          const cB = Array.isArray(pair) ? pair[1] : pair;
+          const svg = shape.replace(/FILL_A/g, cA).replace(/FILL_B/g, cB);
+          items.push({ x, y, rot, sc, svg, ph: cr() * 6.28 });
+        }
+        const entry = { lane: cl.lane ?? 'back', parallax: cl.parallax ?? (cl.lane === 'front' ? 22 : 14), sway: cl.sway ?? 3.5, filter: cl.filter ?? 'shadowSoft', items };
+        if (entry.lane === 'front') frontItems.push(entry); else backItems.push(entry);
+      }
+      return { backItems, frontItems };
+    }
+    const CLUSTERS = buildClusters();
+
+    // Seeded Stars & Falling/Rising Particles
     const rng = makeRng(BLUEPRINT.meta.seed ?? 4219);
     const STARS = [];
-    const starCount = BLUEPRINT.scene.stars?.count ?? 0;
-    for (let i = 0; i < starCount; i++) {
+    for (let i = 0; i < (BLUEPRINT.scene.stars?.count ?? 0); i++) {
       STARS.push({
-        x: 35 + rng() * 890,
-        y: 35 + rng() * (BLUEPRINT.scene.stars.maxY ?? 440),
-        r: 0.7 + rng() * 1.9,
-        op: 0.3 + rng() * 0.65,
-        phase: rng() * 6.28,
-        freq: 1.2 + rng() * 2.2,
+        x: 30 + rng() * (VW - 60),
+        y: 25 + rng() * (BLUEPRINT.scene.stars.maxY ?? VH * 0.55),
+        r: 0.7 + rng() * 1.8, op: 0.3 + rng() * 0.65, phase: rng() * 6.28, freq: 1.2 + rng() * 2.2,
       });
     }
 
-    // Pre-generate falling leaves/petals/snow particles deterministically
-    const FALLING_PARTICLES = [];
+    const FALLING = [];
     for (const em of (BLUEPRINT.scene.emitters ?? []).filter(e => e.type === 'falling')) {
       const fr = makeRng(em.seed ?? 5511);
-      const shapes = em.shapesSvg ?? [
-        '<path d="M0 -8 C3 -4 7 -3 8 0 C5 2 4 6 0 9 C-4 6 -5 2 -8 0 C-7 -3 -3 -4 0 -8 Z" fill="CURRENT"/>'
-      ];
-      const colors = em.colors ?? ['#f27138', '#f7b249', '#d94432', '#ffd166'];
-      const count = em.count ?? 22;
-      for (let i = 0; i < count; i++) {
-        FALLING_PARTICLES.push({
+      const pal = em.palette ?? (em.colors ?? ['#f27138', '#f7b249']).map(c => [c, c]);
+      const shapes = em.shapesSvg ?? ['<path d="M0 -8 L2 -2 L8 -4 L4 1 L7 6 L1 4 L0 9 Z" fill="FILL_A"/><path d="M0 -8 L-2 -2 L-8 -4 L-4 1 L-7 6 L-1 4 L0 9 Z" fill="FILL_B"/>'];
+      for (let i = 0; i < (em.count ?? 22); i++) {
+        const pair = pal[i % pal.length];
+        const cA = Array.isArray(pair) ? pair[0] : pair;
+        const cB = Array.isArray(pair) ? pair[1] : pair;
+        FALLING.push({
           lane: i % 3 === 0 ? 'front' : 'back',
-          x0: fr() * 1100 - 70,
-          y0: fr() * 760 - 40,
-          vy: (em.speedY ?? 32) * (0.65 + fr() * 0.7),
-          vx: (em.windX ?? -26) * (0.7 + fr() * 0.6),
-          swayAmp: (em.swayAmp ?? 24) * (0.6 + fr() * 0.8),
-          swayFreq: 1.1 + fr() * 1.4,
-          spinFreq: (fr() > 0.5 ? 1 : -1) * (1.2 + fr() * 1.8),
-          tumbleFreq: 1.5 + fr() * 1.6,
+          x0: fr() * (VW + 140) - 70, y0: fr() * (VH + 80) - 40,
+          vy: (em.speedY ?? 28) * (0.65 + fr() * 0.7),
+          vx: (em.windX ?? -24) * (0.7 + fr() * 0.6),
+          swayAmp: (em.swayAmp ?? 22) * (0.6 + fr() * 0.8),
+          swayFreq: 1.0 + fr() * 1.4,
+          spinFreq: (fr() > 0.5 ? 1 : -1) * (1.1 + fr() * 1.7),
+          tumbleFreq: 1.4 + fr() * 1.5,
           phase: fr() * 6.28,
-          scale: (em.scale ?? 1) * (0.62 + fr() * 0.65),
-          svg: shapes[i % shapes.length].replace(/CURRENT/g, colors[i % colors.length]),
+          scale: (em.scale ?? 1) * (0.6 + fr() * 0.65),
+          svg: shapes[i % shapes.length].replace(/FILL_A|CURRENT/g, cA).replace(/FILL_B/g, cB),
         });
       }
     }
@@ -354,58 +405,42 @@
     }
 
     function computeWorld(rigObj) {
-      const rs = rigStates[rigObj.id];
-      const world = {};
+      const rs = rigStates[rigObj.id], world = {};
       for (const b of rigObj.bones) {
         const localDeg = rs.angles[b.id] ?? 0;
-        if (b.parent === null) {
-          world[b.id] = { x: rs.rootX, y: rs.rootY, deg: localDeg };
-        } else {
-          const pWorld = world[b.parent];
-          const pBone = rigObj.boneById[b.parent];
-          const pPart = PART_BY_ID[resolvePartId(rigObj, pBone)];
-          const anc = pPart?.anchors?.[b.attach] ?? pPart?.pivot ?? [0, 0];
-          const piv = pPart?.pivot ?? [0, 0];
-          const lx = (anc[0] - piv[0]) * rs.scale;
-          const ly = (anc[1] - piv[1]) * rs.scale;
-          const r = pWorld.deg * DEG;
-          const c = Math.cos(r), s = Math.sin(r);
-          world[b.id] = {
-            x: pWorld.x + lx * c - ly * s,
-            y: pWorld.y + lx * s + ly * c,
-            deg: pWorld.deg + localDeg,
-          };
+        if (b.parent === null) world[b.id] = { x: rs.rootX, y: rs.rootY, deg: localDeg };
+        else {
+          const pw = world[b.parent], pb = rigObj.boneById[b.parent];
+          const pp = PART_BY_ID[resolvePartId(rigObj, pb)];
+          const anc = pp?.anchors?.[b.attach] ?? pp?.pivot ?? [0, 0];
+          const piv = pp?.pivot ?? [0, 0];
+          const lx = (anc[0] - piv[0]) * rs.scale, ly = (anc[1] - piv[1]) * rs.scale;
+          const r = pw.deg * DEG, c = Math.cos(r), s = Math.sin(r);
+          world[b.id] = { x: pw.x + lx * c - ly * s, y: pw.y + lx * s + ly * c, deg: pw.deg + localDeg };
         }
       }
       return world;
     }
 
     function solveIk(rigObj, chain, target) {
-      const rs = rigStates[rigObj.id];
-      const world = computeWorld(rigObj);
-      const uBone = rigObj.boneById[chain.upper];
-      const lBone = rigObj.boneById[chain.lower];
-      const uPart = PART_BY_ID[resolvePartId(rigObj, uBone)];
-      const lPart = PART_BY_ID[resolvePartId(rigObj, lBone)];
-      const uAnc = uPart.anchors[lBone.attach];
-      const lAnc = lPart.anchors[rigObj.boneById[chain.end].attach];
-      const L1 = Math.hypot(uAnc[0] - uPart.pivot[0], uAnc[1] - uPart.pivot[1]) * rs.scale;
-      const L2 = Math.hypot(lAnc[0] - lPart.pivot[0], lAnc[1] - lPart.pivot[1]) * rs.scale;
-      const baseAngleOffset = Math.atan2(uAnc[1] - uPart.pivot[1], uAnc[0] - uPart.pivot[0]);
-      const origin = world[chain.upper];
-      const pDeg = world[uBone.parent].deg;
-      const dx = target.x - origin.x, dy = target.y - origin.y;
+      const rs = rigStates[rigObj.id], world = computeWorld(rigObj);
+      const uB = rigObj.boneById[chain.upper], lB = rigObj.boneById[chain.lower];
+      const uP = PART_BY_ID[resolvePartId(rigObj, uB)], lP = PART_BY_ID[resolvePartId(rigObj, lB)];
+      const uA = uP.anchors[lB.attach], lA = lP.anchors[rigObj.boneById[chain.end].attach];
+      const L1 = Math.hypot(uA[0] - uP.pivot[0], uA[1] - uP.pivot[1]) * rs.scale;
+      const L2 = Math.hypot(lA[0] - lP.pivot[0], lA[1] - lP.pivot[1]) * rs.scale;
+      const off = Math.atan2(uA[1] - uP.pivot[1], uA[0] - uP.pivot[0]);
+      const org = world[chain.upper], pDeg = world[uB.parent].deg;
+      const dx = target.x - org.x, dy = target.y - org.y;
       const d = clamp(Math.hypot(dx, dy), Math.abs(L1 - L2) + 1, L1 + L2 - 0.5);
       const aim = Math.atan2(dy, dx);
       const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
       const b = Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
       const bend = chain.bend ?? 1;
-      let uLocal = (aim + bend * a - baseAngleOffset) * RAD - pDeg;
-      while (uLocal > 180) uLocal -= 360;
-      while (uLocal < -180) uLocal += 360;
-      const lLocal = -bend * (Math.PI - b) * RAD;
-      rs.angles[chain.upper] = clamp(uLocal, uBone.limits.min, uBone.limits.max);
-      rs.angles[chain.lower] = clamp(lLocal, lBone.limits.min, lBone.limits.max);
+      let uLocal = (aim + bend * a - off) * RAD - pDeg;
+      while (uLocal > 180) uLocal -= 360; while (uLocal < -180) uLocal += 360;
+      rs.angles[chain.upper] = clamp(uLocal, uB.limits.min, uB.limits.max);
+      rs.angles[chain.lower] = clamp(-bend * (Math.PI - b) * RAD, lB.limits.min, lB.limits.max);
     }
 
     function applyPhaseToRig(rigObj, spec, localT, t) {
@@ -416,8 +451,7 @@
       if (spec.rootY) rs.rootY = lerp(spec.rootY[0], spec.rootY[1], e) - (spec.arcY ? Math.sin(localT * Math.PI) * spec.arcY : 0);
       if (spec.facing != null) rs.facing = spec.facing;
       rs.emote = spec.emote ?? null;
-      rs.breath = Math.sin(t * 2.4 + (rigObj.id.length * 0.7)) * 0.018;
-
+      rs.breath = Math.sin(t * 2.3 + rigObj.id.length * 0.7) * 0.015;
       for (const b of rigObj.bones) {
         const k = spec.bones?.[b.id];
         if (Array.isArray(k)) rs.angles[b.id] = lerp(k[0], k[1], e);
@@ -432,49 +466,34 @@
       const m = (BLUEPRINT.motions ?? []).find(x => x.id === state.preset);
       if (!m) return;
       state.vfx.splash = 0; state.vfx.bubbles = 0; state.vfx.glowSpot = 0;
-
       if (m.type === 'cycle' && Array.isArray(m.phases)) {
         const period = m.period ?? 10;
         const u = ((t % period) + period) % period / period;
-        let phase = m.phases[m.phases.length - 1];
-        let localT = 0;
+        let phase = m.phases[m.phases.length - 1], lt = 0;
         for (const ph of m.phases) {
-          if (u >= ph.from && u <= ph.to) {
-            phase = ph;
-            localT = (u - ph.from) / Math.max(0.0001, ph.to - ph.from);
-            break;
-          }
+          if (u >= ph.from && u <= ph.to) { phase = ph; lt = (u - ph.from) / Math.max(0.0001, ph.to - ph.from); break; }
         }
         if (phase.label) document.getElementById('phaseBadge').textContent = phase.label;
-
-        if (phase.rigs) {
-          for (const r of RIGS) applyPhaseToRig(r, phase.rigs[r.id], localT, t);
-        } else {
-          applyPhaseToRig(RIGS[0], phase, localT, t);
+        if (phase.rigs) for (const r of RIGS) applyPhaseToRig(r, phase.rigs[r.id], lt, t);
+        else applyPhaseToRig(RIGS[0], phase, lt, t);
+        if (phase.vfx?.splashAtY != null) {
+          const r0 = rigStates[RIGS[0].id], d = Math.abs(r0.rootY - phase.vfx.splashAtY);
+          if (d < 90) { state.vfx.splash = 1 - d / 90; state.vfx.splashX = r0.rootX; }
         }
-
-        if (phase.vfx) {
-          if (phase.vfx.splashAtY != null) {
-            const r0 = rigStates[RIGS[0].id];
-            const dist = Math.abs(r0.rootY - phase.vfx.splashAtY);
-            if (dist < 95) { state.vfx.splash = 1 - dist / 95; state.vfx.splashX = r0.rootX; }
-          }
-          if (phase.vfx.bubbles) state.vfx.bubbles = Math.sin(localT * Math.PI) * phase.vfx.bubbles;
-          if (phase.vfx.warmGlow) {
-            state.vfx.glowSpot = Math.sin(localT * Math.PI) * (phase.vfx.warmGlow.intensity ?? 1);
-            state.vfx.glowX = phase.vfx.warmGlow.x ?? 520;
-            state.vfx.glowY = phase.vfx.warmGlow.y ?? 470;
-          }
+        if (phase.vfx?.bubbles) state.vfx.bubbles = Math.sin(lt * Math.PI) * phase.vfx.bubbles;
+        if (phase.vfx?.warmGlow) {
+          state.vfx.glowSpot = Math.sin(lt * Math.PI) * (phase.vfx.warmGlow.intensity ?? 1);
+          state.vfx.glowX = phase.vfx.warmGlow.x ?? VW * 0.55;
+          state.vfx.glowY = phase.vfx.warmGlow.y ?? VH * 0.72;
         }
       } else if (m.type === 'harmonic') {
         if (m.label) document.getElementById('phaseBadge').textContent = m.label;
-        const applyHarmonic = (r, hm) => {
+        const applyH = (r, hm) => {
           if (!hm) return;
           const rs = rigStates[r.id];
-          const bx = r.rootPos?.x ?? 480, by = r.rootPos?.y ?? 420;
-          rs.rootX = bx + (hm.rootWaveX ? Math.sin(t * hm.rootWaveX.freq + (hm.rootWaveX.phase ?? 0)) * hm.rootWaveX.amp : 0);
-          rs.rootY = by + (hm.rootWaveY ? Math.sin(t * hm.rootWaveY.freq + (hm.rootWaveY.phase ?? 0)) * hm.rootWaveY.amp : 0);
-          rs.breath = Math.sin(t * 2.2) * 0.02;
+          rs.rootX = (r.rootPos?.x ?? VW * 0.5) + (hm.rootWaveX ? Math.sin(t * hm.rootWaveX.freq + (hm.rootWaveX.phase ?? 0)) * hm.rootWaveX.amp : 0);
+          rs.rootY = (r.rootPos?.y ?? VH * 0.7) + (hm.rootWaveY ? Math.sin(t * hm.rootWaveY.freq + (hm.rootWaveY.phase ?? 0)) * hm.rootWaveY.amp : 0);
+          rs.breath = Math.sin(t * 2.2) * 0.016;
           for (const b of r.bones) {
             let deg = hm.base?.[b.id] ?? b.rest ?? 0;
             const wv = hm.waves?.[b.id];
@@ -482,294 +501,235 @@
             rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
           }
         };
-        if (m.rigs) {
-          for (const r of RIGS) applyHarmonic(r, m.rigs[r.id]);
-        } else {
-          applyHarmonic(RIGS[0], m);
-        }
+        if (m.rigs) for (const r of RIGS) applyH(r, m.rigs[r.id]);
+        else applyH(RIGS[0], m);
       }
+    }
+
+    function renderClusters(list, t, px, py) {
+      return list.map(cl => {
+        const dx = px * cl.parallax, dy = py * cl.parallax * 0.7;
+        let inner = '';
+        for (const it of cl.items) {
+          const w = cl.sway ? Math.sin(t * 1.4 * state.ambientAmp + it.ph) * cl.sway : 0;
+          inner += `<g transform="translate(${it.x.toFixed(1)},${it.y.toFixed(1)}) rotate(${(it.rot + w).toFixed(1)}) scale(${it.sc.toFixed(2)})">${it.svg}</g>`;
+        }
+        return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" filter="url(#${cl.filter})">${inner}</g>`;
+      }).join('');
     }
 
     function renderAll(t, px, py) {
       const sc = BLUEPRINT.scene;
-      // Subtle organic cinematic camera breathing
-      const cbx = state.camBreath ? Math.sin(t * 0.45) * 4.5 : 0;
-      const cby = state.camBreath ? Math.cos(t * 0.35) * 2.5 : 0;
-      const effPx = px + cbx * 0.04;
-      const effPy = py + cby * 0.04;
+      const epx = px + (state.camBreath ? Math.sin(t * 0.42) * 0.16 : 0);
+      const epy = py + (state.camBreath ? Math.cos(t * 0.34) * 0.10 : 0);
 
-      // 1. Sky + twinkling stars
-      let skyHtml = sc.skySvg ?? `<rect x="-40" y="-40" width="1040" height="800" fill="${sc.bgColor ?? '#0b1326'}"/>`;
+      // 1. Sky + stars
+      let sky = sc.skySvg ?? `<rect x="-40" y="-40" width="${VW + 80}" height="${VH + 80}" fill="${sc.bgColor ?? '#0b1326'}"/>`;
       if (STARS.length) {
-        skyHtml += `<g transform="translate(${(effPx * 4).toFixed(1)}, ${(effPy * 4).toFixed(1)})">`;
-        for (const s of STARS) {
-          const op = clamp(s.op + Math.sin(t * s.freq + s.phase) * 0.25, 0.12, 1);
-          skyHtml += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${s.r.toFixed(2)}" fill="${sc.stars.color ?? '#ffffff'}" opacity="${op.toFixed(2)}"/>`;
-        }
-        skyHtml += `</g>`;
+        sky += `<g transform="translate(${(epx * 4).toFixed(1)},${(epy * 4).toFixed(1)})">`;
+        for (const s of STARS) sky += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${s.r.toFixed(2)}" fill="${sc.stars.color ?? '#fff'}" opacity="${clamp(s.op + Math.sin(t * s.freq + s.phase) * 0.25, 0.12, 1).toFixed(2)}"/>`;
+        sky += '</g>';
       }
-      document.getElementById('layerSky').innerHTML = skyHtml;
+      document.getElementById('layerSky').innerHTML = sky;
 
-      // 2. Ambient Sky Effects (meteor & fireflies)
-      let ambHtml = '';
+      // 2. Data-driven Backlit Focal Glow (Shadow-Box Light-Box Heart!)
+      document.getElementById('layerFocalGlow').innerHTML = (state.showAtmos && fg)
+        ? `<circle cx="${(fg.x + epx * 6).toFixed(1)}" cy="${(fg.y + epy * 5).toFixed(1)}" r="${(fg.r ?? 260) * (1 + Math.sin(t * 1.1) * 0.03)}" fill="url(#autoFocalGlow)"/>` : '';
+
+      // 3. Ambient emitters (meteor & fireflies)
+      let amb = '';
       if (state.showAmbient && Array.isArray(sc.emitters)) {
         for (const em of sc.emitters) {
           if (em.type === 'meteor') {
-            const local = (t * state.ambientAmp + (em.offset ?? 0)) % (em.period ?? 6);
-            const dur = em.dur ?? 1.0;
-            if (local <= dur) {
-              const p = local / dur;
-              const ease = 1 - Math.pow(1 - p, 2);
-              const hx = em.x0 + em.dx * ease + effPx * 6;
-              const hy = em.y0 + em.dy * ease + effPy * 6;
+            const loc = (t * state.ambientAmp + (em.offset ?? 0)) % (em.period ?? 6);
+            if (loc <= (em.dur ?? 1)) {
+              const p = loc / (em.dur ?? 1), ease = 1 - Math.pow(1 - p, 2);
+              const hx = em.x0 + em.dx * ease + epx * 6, hy = em.y0 + em.dy * ease + epy * 6;
               const ang = Math.atan2(em.dy, em.dx) * RAD;
               const fade = p < 0.2 ? p / 0.2 : (p > 0.72 ? (1 - p) / 0.28 : 1);
               const len = (em.len ?? 110) * Math.sin(p * Math.PI);
-              ambHtml += `
-                <g transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${fade.toFixed(2)}">
-                  <polygon points="${(-len).toFixed(1)},0 0,-2.6 0,2.6" fill="url(#${em.gradId ?? 'meteorTrail'})"/>
-                  <path d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" fill="${em.color ?? '#fff7c2'}" filter="url(#softGlow)"/>
-                </g>`;
+              amb += `<g transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${fade.toFixed(2)}"><polygon points="${(-len).toFixed(1)},0 0,-2.4 0,2.4" fill="url(#${em.gradId ?? 'meteorTrail'})"/><path d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" fill="${em.color ?? '#fff7c2'}" filter="url(#softGlow)"/></g>`;
             }
           } else if (em.type === 'fireflies') {
             const fr = makeRng(em.seed ?? 901);
             for (let i = 0; i < (em.count ?? 18); i++) {
-              const bx = (em.xMin ?? 80) + fr() * ((em.xMax ?? 880) - (em.xMin ?? 80));
-              const by = (em.yMin ?? 160) + fr() * ((em.yMax ?? 580) - (em.yMin ?? 160));
+              const bx = (em.xMin ?? 60) + fr() * ((em.xMax ?? VW - 60) - (em.xMin ?? 60));
+              const by = (em.yMin ?? VH * 0.35) + fr() * ((em.yMax ?? VH * 0.92) - (em.yMin ?? VH * 0.35));
               const ph = fr() * 6.28;
-              const fx = bx + Math.sin(t * 0.75 * state.ambientAmp + ph) * 28 + effPx * 14;
-              const fy = by + Math.cos(t * 1.05 * state.ambientAmp + ph) * 18 + effPy * 11;
-              const glow = 0.2 + 0.8 * Math.pow((Math.sin(t * 2.1 + ph) + 1) * 0.5, 2);
-              ambHtml += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(2.0 + glow * 2.6).toFixed(1)}" fill="${em.color ?? '#ffe985'}" opacity="${glow.toFixed(2)}" filter="url(#softGlow)"/>`;
+              const fx = bx + Math.sin(t * 0.7 * state.ambientAmp + ph) * 24 + epx * 13;
+              const fy = by + Math.cos(t * 1.0 * state.ambientAmp + ph) * 14 + epy * 9;
+              const g = 0.22 + 0.78 * Math.pow((Math.sin(t * 2.1 + ph) + 1) * 0.5, 2);
+              amb += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(1.8 + g * 2.4).toFixed(1)}" fill="${em.color ?? '#ffe985'}" opacity="${g.toFixed(2)}" filter="url(#softGlow)"/>`;
             }
           }
         }
       }
-      document.getElementById('layerAmbientBack').innerHTML = ambHtml;
+      document.getElementById('layerAmbientBack').innerHTML = amb;
 
-      // 3. Concentric Celestial Rig
-      let celHtml = '';
+      // 4. Celestial Rig (Concentric Moon/Sun + Optional Crescent!)
+      let cel = '';
       if (sc.celestial) {
-        const c = sc.celestial;
-        const pulse = Math.sin(t * 1.3 * state.ambientAmp) * 0.032;
-        celHtml += `<g transform="translate(${(c.x + effPx * 8).toFixed(1)}, ${(c.y + effPy * 8).toFixed(1)})">`;
-        (c.rings ?? []).forEach((rg, idx) => {
-          celHtml += `<circle cx="${(effPx * idx * 1.3).toFixed(1)}" cy="${(effPy * idx * 1.3).toFixed(1)}" r="${(rg.r * (1 + pulse * (0.6 + idx * 0.14))).toFixed(1)}" fill="${rg.fill}" filter="url(#shadowMed)"/>`;
+        const c = sc.celestial, pulse = Math.sin(t * 1.2 * state.ambientAmp) * 0.028;
+        cel += `<g transform="translate(${(c.x + epx * 7).toFixed(1)},${(c.y + epy * 6).toFixed(1)})">`;
+        (c.rings ?? []).forEach((rg, i) => {
+          cel += `<circle cx="${(epx * i * 1.2).toFixed(1)}" cy="${(epy * i * 1.2).toFixed(1)}" r="${(rg.r * (1 + pulse * (0.6 + i * 0.14))).toFixed(1)}" fill="${rg.fill}" filter="url(#shadowMed)"/>`;
         });
-        celHtml += `<g transform="translate(${(effPx * 8).toFixed(1)}, ${(effPy * 8).toFixed(1)})">${c.coreSvg ?? ''}</g>`;
-        if (c.orbitSvg) celHtml += `<g transform="rotate(${(t * (c.orbitSpeed ?? 12) * state.ambientAmp).toFixed(1)})">${c.orbitSvg}</g>`;
-        celHtml += `</g>`;
+        cel += `<g transform="translate(${(epx * 7).toFixed(1)},${(epy * 6).toFixed(1)})">${c.coreSvg ?? ''}</g>`;
+        if (c.orbitSvg) cel += `<g transform="rotate(${(t * (c.orbitSpeed ?? 10) * state.ambientAmp).toFixed(1)})">${c.orbitSvg}</g>`;
+        cel += '</g>';
       }
-      document.getElementById('layerCelestial').innerHTML = celHtml;
+      document.getElementById('layerCelestial').innerHTML = cel;
 
-      // 4. Cinematic Atmosphere (Volumetric Light Shafts, Horizon Mist, Fore Vignette)
+      // 5. Atmosphere (Shafts, Mist, Vignette)
       const atm = sc.atmosphere ?? {};
       document.getElementById('layerLightShafts').innerHTML = state.showAtmos && atm.lightShaftsSvg
-        ? `<g transform="translate(${(effPx * 9).toFixed(1)}, ${(effPy * 6).toFixed(1)})" opacity="${(0.82 + Math.sin(t * 0.9) * 0.14).toFixed(2)}">${atm.lightShaftsSvg}</g>` : '';
-      document.getElementById('layerMistMid').innerHTML = state.showAtmos && atm.midMistSvg ? atm.midMistSvg : '';
-      document.getElementById('layerAtmosphereFore').innerHTML = state.showAtmos && atm.foregroundGlowSvg ? atm.foregroundGlowSvg : '';
+        ? `<g transform="translate(${(epx * 8).toFixed(1)},${(epy * 5).toFixed(1)})" opacity="${(0.84 + Math.sin(t * 0.9) * 0.12).toFixed(2)}">${atm.lightShaftsSvg}</g>` : '';
+      document.getElementById('layerMistMid').innerHTML = state.showAtmos
+        ? (atm.midMistSvg ?? (mst ? `<rect x="-40" y="${mst.y ?? VH * 0.52}" width="${VW + 80}" height="${mst.height ?? VH * 0.32}" fill="url(#autoMistGrad)"/>` : '')) : '';
+      document.getElementById('layerAtmosphereFore').innerHTML = state.showAtmos
+        ? (atm.foregroundGlowSvg ?? `<rect x="0" y="0" width="${VW}" height="${VH}" fill="url(#autoVignette)" pointer-events="none"/>`) : '';
 
-      // 5. Back & Front Multiplane Scenery
-      const renderPlaneList = (list) => (list ?? []).map((pl) => {
-        const dx = effPx * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.5) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
-        const dy = effPy * ((pl.parallax ?? 12) * 0.7);
-        return `<g transform="translate(${dx.toFixed(1)}, ${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
+      // 6. Back & Front Multiplane Scenery + Procedural Botanical/Motif Clusters!
+      const renderPlanes = (list) => (list ?? []).map(pl => {
+        const dx = epx * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.4) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
+        const dy = epy * ((pl.parallax ?? 12) * 0.7);
+        return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
       }).join('');
-      document.getElementById('layerBackScenery').innerHTML = renderPlaneList(sc.backLayers);
-      document.getElementById('layerFrontScenery').innerHTML = renderPlaneList(sc.frontLayers);
+      document.getElementById('layerBackScenery').innerHTML = renderPlanes(sc.backLayers);
+      document.getElementById('layerFrontScenery').innerHTML = renderPlanes(sc.frontLayers);
+      document.getElementById('layerClustersBack').innerHTML = renderClusters(CLUSTERS.backItems, t, epx, epy);
+      document.getElementById('layerClustersFront').innerHTML = renderClusters(CLUSTERS.frontItems, t, epx, epy);
 
-      // 6. Mini-Swarms (2-bone fish / flapping birds)
-      let swBack = '', swFront = '';
+      // 7. Perspective Swarms
+      let swB = '', swF = '';
       if (state.showSwarm && Array.isArray(sc.swarms)) {
+        const span = VW + 120;
         for (const sw of sc.swarms) {
-          const span = 1060;
-          const rawX = (sw.x0 + (sw.dir ?? 1) * t * (sw.speed ?? 55) * state.ambientAmp) % span;
-          const x = (rawX < -50 ? rawX + span : rawX) - 50;
-          let y = sw.y0 + Math.sin(t * 2.4 * state.ambientAmp + (sw.phase ?? 0)) * (sw.amp ?? 14);
-          let pitch = Math.cos(t * 2.4 * state.ambientAmp + (sw.phase ?? 0)) * 11;
+          const rawX = (sw.x0 + (sw.dir ?? 1) * t * (sw.speed ?? 50) * state.ambientAmp) % span;
+          const x = (rawX < -60 ? rawX + span : rawX) - 60;
+          let y = sw.y0 + Math.sin(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * (sw.amp ?? 12);
+          let pitch = Math.cos(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * 10;
           if (sw.jump) {
             const jt = (t * state.ambientAmp + (sw.jumpOffset ?? 0)) % (sw.jumpPeriod ?? 6);
-            if (jt < 1.4) {
-              const u = jt / 1.4;
-              y -= Math.sin(u * Math.PI) * (sw.jumpHeight ?? 80);
-              pitch = -Math.cos(u * Math.PI) * 42;
-            }
+            if (jt < 1.4) { const u = jt / 1.4; y -= Math.sin(u * Math.PI) * (sw.jumpHeight ?? 70); pitch = -Math.cos(u * Math.PI) * 40; }
           }
-          const wag = Math.sin(t * (sw.wagFreq ?? 13) * state.ambientAmp + (sw.phase ?? 0)) * (sw.wagAmp ?? 24);
-          const ox = effPx * (sw.lane === 'front' ? 20 : 14);
-          const oy = effPy * (sw.lane === 'front' ? 13 : 10);
-          const item = `
-            <g transform="translate(${(x + ox).toFixed(1)}, ${(y + oy).toFixed(1)}) scale(${(sw.dir ?? 1) * (sw.scale ?? 1)}, ${sw.scale ?? 1}) rotate(${pitch.toFixed(1)})" filter="url(#shadowSoft)">
-              <g transform="translate(${sw.tailPivotX ?? -14}, ${sw.tailPivotY ?? 0}) rotate(${wag.toFixed(1)})">${sw.tailSvg}</g>
-              ${sw.bodySvg}
-            </g>`;
-          if (sw.lane === 'front') swFront += item; else swBack += item;
+          const wag = Math.sin(t * (sw.wagFreq ?? 12) * state.ambientAmp + (sw.phase ?? 0)) * (sw.wagAmp ?? 28);
+          const ox = epx * (sw.lane === 'front' ? 19 : 12), oy = epy * (sw.lane === 'front' ? 12 : 8);
+          const item = `<g transform="translate(${(x + ox).toFixed(1)},${(y + oy).toFixed(1)}) scale(${(sw.dir ?? 1) * (sw.scale ?? 1)},${sw.scale ?? 1}) rotate(${pitch.toFixed(1)})" filter="url(#shadowSoft)"><g transform="translate(${sw.tailPivotX ?? -12},${sw.tailPivotY ?? 0}) rotate(${wag.toFixed(1)})">${sw.tailSvg}</g>${sw.bodySvg}</g>`;
+          if (sw.lane === 'front') swF += item; else swB += item;
         }
       }
-      document.getElementById('layerSwarmBack').innerHTML = swBack;
-      document.getElementById('layerSwarmFront').innerHTML = swFront;
+      document.getElementById('layerSwarmBack').innerHTML = swB;
+      document.getElementById('layerSwarmFront').innerHTML = swF;
 
-      // 7. Falling Leaves / Petals / Snow (3D-tumble + wind drift across back & front lanes!)
-      let fBack = '', fFront = '';
-      if (state.showAmbient && FALLING_PARTICLES.length > 0) {
-        for (const p of FALLING_PARTICLES) {
-          const spanY = 780, spanX = 1120;
-          const rawY = (p.y0 + t * p.vy * state.ambientAmp) % spanY;
-          const y = (rawY < -30 ? rawY + spanY : rawY) - 30;
-          const rawX = (p.x0 + t * p.vx * state.ambientAmp + Math.sin(t * p.swayFreq + p.phase) * p.swayAmp) % spanX;
-          const x = (rawX < -60 ? rawX + spanX : rawX) - 60;
-          const rot = (t * p.spinFreq * 45 + p.phase * 40) % 360;
-          const flipX = 0.45 + 0.55 * Math.cos(t * p.tumbleFreq + p.phase);
-          const pxMul = p.lane === 'front' ? 22 : 12;
-          const item = `<g transform="translate(${(x + effPx * pxMul).toFixed(1)}, ${(y + effPy * pxMul * 0.7).toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(p.scale * flipX).toFixed(2)}, ${p.scale.toFixed(2)})" filter="url(#shadowSoft)">${p.svg}</g>`;
-          if (p.lane === 'front') fFront += item; else fBack += item;
+      // 8. Falling / Rising Particles (Leaves, Petals, Snow, Rising Bubbles!)
+      let fB = '', fF = '';
+      if (state.showAmbient && FALLING.length > 0) {
+        const sY = VH + 80, sX = VW + 140;
+        for (const p of FALLING) {
+          const rY = ((p.y0 + t * p.vy * state.ambientAmp) % sY + sY) % sY;
+          const y = rY - 40;
+          const rX = ((p.x0 + t * p.vx * state.ambientAmp + Math.sin(t * p.swayFreq + p.phase) * p.swayAmp) % sX + sX) % sX;
+          const x = rX - 70;
+          const rot = (t * p.spinFreq * 42 + p.phase * 40) % 360;
+          const fx = 0.45 + 0.55 * Math.cos(t * p.tumbleFreq + p.phase);
+          const pm = p.lane === 'front' ? 21 : 12;
+          const item = `<g transform="translate(${(x + epx * pm).toFixed(1)},${(y + epy * pm * 0.7).toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(p.scale * fx).toFixed(2)},${p.scale.toFixed(2)})" filter="url(#shadowSoft)">${p.svg}</g>`;
+          if (p.lane === 'front') fF += item; else fB += item;
         }
       }
-      document.getElementById('layerFallingBack').innerHTML = fBack;
-      document.getElementById('layerFallingFront').innerHTML = fFront;
+      document.getElementById('layerFallingBack').innerHTML = fB;
+      document.getElementById('layerFallingFront').innerHTML = fF;
 
-      // 8. Ground Contact Shadows + Cohesive Silhouette Hero Rigs!
-      let gsHtml = '', heroesHtml = '', diagHtml = '', ikHtml = '';
-      const orderedRigs = [...RIGS].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+      // 9. Ground Contact Shadows + Cohesive Hero Rigs (with optional Paper Brad Pins!)
+      let gs = '', heroes = '', diag = '', ik = '';
+      for (const rigObj of [...RIGS].sort((a, b) => (a.z ?? 0) - (b.z ?? 0))) {
+        const rs = rigStates[rigObj.id], world = computeWorld(rigObj);
+        const hox = epx * (rigObj.parallax ?? 15), hoy = epy * ((rigObj.parallax ?? 15) * 0.75);
 
-      for (const rigObj of orderedRigs) {
-        const rs = rigStates[rigObj.id];
-        const world = computeWorld(rigObj);
-        const hox = effPx * (rigObj.parallax ?? 15);
-        const hoy = effPy * ((rigObj.parallax ?? 15) * 0.75);
-
-        // Dynamic Ground Contact Shadow (scales & softens with height!)
         if (rigObj.groundY != null) {
-          const baseRootY = rigObj.rootPos?.y ?? rigObj.groundY - 50;
-          const lift = Math.max(0, baseRootY - rs.rootY);
-          const shScale = clamp(1 - lift / 220, 0.35, 1.05);
-          const shOp = clamp(1 - lift / 240, 0.22, 1);
-          const rx = (rigObj.shadowRx ?? 56) * shScale;
-          const ry = (rigObj.shadowRy ?? 11) * shScale;
-          gsHtml += `<ellipse cx="${(rs.rootX + hox + (rigObj.shadowOffsetX ?? 0)).toFixed(1)}" cy="${(rigObj.groundY + hoy).toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="url(#groundShadowGrad)" opacity="${shOp.toFixed(2)}"/>`;
+          const lift = Math.max(0, (rigObj.rootPos?.y ?? rigObj.groundY - 50) - rs.rootY);
+          const scS = clamp(1 - lift / 220, 0.35, 1.05), opS = clamp(1 - lift / 240, 0.22, 1);
+          gs += `<ellipse cx="${(rs.rootX + hox + (rigObj.shadowOffsetX ?? 0)).toFixed(1)}" cy="${(rigObj.groundY + hoy).toFixed(1)}" rx="${((rigObj.shadowRx ?? 54) * scS).toFixed(1)}" ry="${((rigObj.shadowRy ?? 10) * scS).toFixed(1)}" fill="url(#groundShadowGrad)" opacity="${opS.toFixed(2)}"/>`;
         }
 
-        // Cohesive silhouette shadow on the ENTIRE character group (eliminates plastic joint seams!)
-        const groupShadow = rigObj.groupShadow === false ? '' : `filter="url(#${rigObj.groupShadow ?? 'shadowDeep'})"`;
-        const sortedBones = [...rigObj.bones].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
-        const pxFlip = rs.rootX;
-        const brY = 1 + rs.breath;
-        const brX = 1 - rs.breath * 0.5;
-
-        heroesHtml += `<g ${groupShadow}><g transform="translate(${(pxFlip + hox).toFixed(1)}, ${(rs.rootY + hoy).toFixed(1)}) scale(${(rs.facing * brX).toFixed(3)}, ${brY.toFixed(3)}) translate(${(-pxFlip).toFixed(1)}, ${(-rs.rootY).toFixed(1)})" filter="url(#paperTex)">`;
-        for (const b of sortedBones) {
-          const w = world[b.id];
-          const part = PART_BY_ID[resolvePartId(rigObj, b)];
+        const gSh = rigObj.groupShadow === false ? '' : `filter="url(#${rigObj.groupShadow ?? 'shadowDeep'})"`;
+        const brY = 1 + rs.breath, brX = 1 - rs.breath * 0.5;
+        heroes += `<g ${gSh}><g transform="translate(${(rs.rootX + hox).toFixed(1)},${(rs.rootY + hoy).toFixed(1)}) scale(${(rs.facing * brX).toFixed(3)},${brY.toFixed(3)}) translate(${(-rs.rootX).toFixed(1)},${(-rs.rootY).toFixed(1)})" filter="url(#paperTex)">`;
+        for (const b of [...rigObj.bones].sort((a, c) => (a.z ?? 0) - (c.z ?? 0))) {
+          const w = world[b.id], part = PART_BY_ID[resolvePartId(rigObj, b)];
           if (!part) continue;
-          // Default to subtle internal crease (none or shadowInner) instead of heavy black shadowMed!
-          const boneSh = b.shadow && b.shadow !== 'none' ? `filter="url(#${b.shadow})"` : '';
-          heroesHtml += `<g transform="translate(${w.x.toFixed(2)}, ${w.y.toFixed(2)}) scale(${rs.scale}) rotate(${w.deg.toFixed(2)})" ${boneSh}>${part.svg}</g>`;
+          const bSh = b.shadow && b.shadow !== 'none' ? `filter="url(#${b.shadow})"` : '';
+          const brad = b.brad ? `<circle cx="0" cy="0" r="${b.brad.r ?? 4.2}" fill="${b.brad.fill ?? '#e8c49a'}" stroke="${b.brad.stroke ?? '#6e3a1f'}" stroke-width="1.3"/><circle cx="-0.8" cy="-0.8" r="${(b.brad.r ?? 4.2) * 0.35}" fill="#ffffff" opacity="0.5"/>` : '';
+          heroes += `<g transform="translate(${w.x.toFixed(2)},${w.y.toFixed(2)}) scale(${rs.scale}) rotate(${w.deg.toFixed(2)})" ${bSh}>${part.svg}${brad}</g>`;
         }
-        heroesHtml += `</g></g>`;
+        heroes += '</g></g>';
 
-        // Gentle floating emotional cue (warm heart/sparkle during greeting beat!)
         if (rs.emote === 'warm' || rs.emote === 'heart') {
-          const ex = rs.rootX + hox + (rs.facing * 26);
-          const ey = rs.rootY + hoy - 68 - Math.sin(t * 3.2) * 8;
-          const op = 0.65 + Math.sin(t * 4) * 0.3;
-          heroesHtml += `<g transform="translate(${ex.toFixed(1)}, ${ey.toFixed(1)})" opacity="${op.toFixed(2)}" filter="url(#softGlow)">
-            ${rs.emote === 'heart'
-              ? '<path d="M0 5 C-8 -2 -10 -10 -4 -12 C-1 -13 0 -9 0 -9 C0 -9 1 -13 4 -12 C10 -10 8 -2 0 5 Z" fill="#ffb38a"/>'
-              : '<path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z" fill="#ffe98a"/>'}
-          </g>`;
+          const ex = rs.rootX + hox + rs.facing * 26, ey = rs.rootY + hoy - 60 - Math.sin(t * 3.1) * 7;
+          heroes += `<g transform="translate(${ex.toFixed(1)},${ey.toFixed(1)})" opacity="${(0.65 + Math.sin(t * 3.8) * 0.3).toFixed(2)}" filter="url(#softGlow)">${rs.emote === 'heart' ? '<path d="M0 5 C-8 -2 -10 -10 -4 -12 C-1 -13 0 -9 0 -9 C0 -9 1 -13 4 -12 C10 -10 8 -2 0 5 Z" fill="#ffb38a"/>' : '<path d="M0 -7.5 L2 -2 L7.5 0 L2 2 L0 7.5 L-2 2 L-7.5 0 L-2 -2 Z" fill="#ffe98a"/>'}</g>`;
         }
 
-        // Diagnostics for ALL rigs
         if (state.showBones || state.showAnchors) {
-          diagHtml += `<g transform="translate(${(pxFlip + hox).toFixed(1)}, ${hoy.toFixed(1)}) scale(${rs.facing}, 1) translate(${(-pxFlip).toFixed(1)}, 0)">`;
+          diag += `<g transform="translate(${(rs.rootX + hox).toFixed(1)},${hoy.toFixed(1)}) scale(${rs.facing},1) translate(${(-rs.rootX).toFixed(1)},0)">`;
           if (state.showBones) {
-            const col = rigObj.id === state.activeRigId ? '#38bdf8' : '#a78bfa';
-            for (const b of rigObj.bones) {
-              if (!b.parent) continue;
-              const p = world[b.parent], c = world[b.id];
-              diagHtml += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${c.x.toFixed(1)}" y2="${c.y.toFixed(1)}" stroke="${col}" stroke-width="2" opacity="0.9"/>`;
-            }
-            for (const b of rigObj.bones) {
-              const w = world[b.id];
-              diagHtml += `<circle cx="${w.x.toFixed(1)}" cy="${w.y.toFixed(1)}" r="3.6" fill="#fff" stroke="${col}" stroke-width="1.8"/>`;
-              diagHtml += `<text x="${(w.x + 6).toFixed(1)}" y="${(w.y - 4).toFixed(1)}" font-size="9.5" font-family="monospace" fill="#e0f2fe" font-weight="bold">${b.id}</text>`;
-            }
+            const col = rigObj.id === state.activeRigId ? '#38bdf8' : '#c084fc';
+            for (const b of rigObj.bones) if (b.parent) diag += `<line x1="${world[b.parent].x.toFixed(1)}" y1="${world[b.parent].y.toFixed(1)}" x2="${world[b.id].x.toFixed(1)}" y2="${world[b.id].y.toFixed(1)}" stroke="${col}" stroke-width="2" opacity="0.9"/>`;
+            for (const b of rigObj.bones) diag += `<circle cx="${world[b.id].x.toFixed(1)}" cy="${world[b.id].y.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/><text x="${(world[b.id].x + 5).toFixed(1)}" y="${(world[b.id].y - 3).toFixed(1)}" font-size="9" font-family="monospace" fill="#e0f2fe" font-weight="bold">${b.id}</text>`;
           }
           if (state.showAnchors) {
             for (const b of rigObj.bones) {
-              const part = PART_BY_ID[resolvePartId(rigObj, b)];
-              const w = world[b.id];
-              const rad = w.deg * DEG, cs = Math.cos(rad), sn = Math.sin(rad);
-              for (const pt of Object.values(part?.anchors ?? {})) {
-                const lx = (pt[0] - part.pivot[0]) * rs.scale, ly = (pt[1] - part.pivot[1]) * rs.scale;
-                const wx = w.x + lx * cs - ly * sn, wy = w.y + lx * sn + ly * cs;
-                diagHtml += `<circle cx="${wx.toFixed(1)}" cy="${wy.toFixed(1)}" r="3" fill="#f97316" stroke="#fff" stroke-width="1"/>`;
+              const p = PART_BY_ID[resolvePartId(rigObj, b)], w = world[b.id], rd = w.deg * DEG, cs = Math.cos(rd), sn = Math.sin(rd);
+              for (const pt of Object.values(p?.anchors ?? {})) {
+                const lx = (pt[0] - p.pivot[0]) * rs.scale, ly = (pt[1] - p.pivot[1]) * rs.scale;
+                diag += `<circle cx="${(w.x + lx * cs - ly * sn).toFixed(1)}" cy="${(w.y + lx * sn + ly * cs).toFixed(1)}" r="2.8" fill="#f97316" stroke="#fff" stroke-width="1"/>`;
               }
             }
           }
-          diagHtml += `</g>`;
+          diag += '</g>';
         }
-
-        // IK Handles for active rig
         if (rigObj.id === state.activeRigId && rigObj.ik) {
           for (const [ikId, ch] of Object.entries(rigObj.ik)) {
-            const endW = world[ch.end];
-            const hx = pxFlip + (endW.x - pxFlip) * rs.facing + hox;
-            const hy = endW.y + hoy;
-            ikHtml += `<g class="ik-handle" data-rig="${rigObj.id}" data-ik="${ikId}"><circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="8" fill="#ef4444" fill-opacity="0.32" stroke="#ef4444" stroke-width="2"/><circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="2.5" fill="#fff"/></g>`;
+            const ew = world[ch.end];
+            ik += `<g class="ik-handle" data-rig="${rigObj.id}" data-ik="${ikId}"><circle cx="${(rs.rootX + (ew.x - rs.rootX) * rs.facing + hox).toFixed(1)}" cy="${(ew.y + hoy).toFixed(1)}" r="8" fill="#ef4444" fill-opacity="0.32" stroke="#ef4444" stroke-width="2"/><circle cx="${(rs.rootX + (ew.x - rs.rootX) * rs.facing + hox).toFixed(1)}" cy="${(ew.y + hoy).toFixed(1)}" r="2.5" fill="#fff"/></g>`;
           }
         }
       }
-      document.getElementById('layerGroundShadows').innerHTML = gsHtml;
-      document.getElementById('layerHeroes').innerHTML = heroesHtml;
-      document.getElementById('layerDiag').innerHTML = diagHtml;
-      document.getElementById('layerIk').innerHTML = ikHtml;
+      document.getElementById('layerGroundShadows').innerHTML = gs;
+      document.getElementById('layerHeroes').innerHTML = heroes;
+      document.getElementById('layerDiag').innerHTML = diag;
+      document.getElementById('layerIk').innerHTML = ik;
 
-      // 9. Dynamic VFX (splash, bubbles, warm meeting glow!)
-      let vfxHtml = '';
-      if (state.vfx.glowSpot > 0.04 && state.showAtmos) {
-        vfxHtml += `<circle cx="${(state.vfx.glowX + effPx * 15).toFixed(1)}" cy="${(state.vfx.glowY + effPy * 11).toFixed(1)}" r="125" fill="url(#warmMomentGlow)" opacity="${state.vfx.glowSpot.toFixed(2)}"/>`;
-      }
+      // 10. Dynamic VFX + Overlay Props
+      let vfx = '';
+      if (state.vfx.glowSpot > 0.04 && state.showAtmos) vfx += `<circle cx="${(state.vfx.glowX + epx * 15).toFixed(1)}" cy="${(state.vfx.glowY + epy * 11).toFixed(1)}" r="120" fill="url(#warmMomentGlow)" opacity="${state.vfx.glowSpot.toFixed(2)}"/>`;
       if (state.vfx.splash > 0.04) {
-        const s = state.vfx.splash, sy = sc.waterlineY ?? 516;
-        vfxHtml += `<g transform="translate(${(state.vfx.splashX + effPx * 15).toFixed(1)}, ${(sy + effPy * 11).toFixed(1)})" opacity="${Math.min(1, s * 1.15).toFixed(2)}">
-          <circle cx="${(-46 * s).toFixed(1)}" cy="${(-44 * s).toFixed(1)}" r="5" fill="#e6f7ff"/>
-          <circle cx="${(-18 * s).toFixed(1)}" cy="${(-64 * s).toFixed(1)}" r="4.5" fill="#ffffff"/>
-          <circle cx="${(22 * s).toFixed(1)}" cy="${(-60 * s).toFixed(1)}" r="5.5" fill="#e6f7ff"/>
-          <circle cx="${(48 * s).toFixed(1)}" cy="${(-38 * s).toFixed(1)}" r="4" fill="#ffffff"/>
-          <path d="M${(-64 * s).toFixed(1)} 4 Q0 ${(-24 * s).toFixed(1)} ${(64 * s).toFixed(1)} 4 Q0 ${(-8 * s).toFixed(1)} ${(-64 * s).toFixed(1)} 4 Z" fill="#d4f1ff" opacity="0.85"/>
-        </g>`;
+        const s = state.vfx.splash, sy = sc.waterlineY ?? VH * 0.74;
+        vfx += `<g transform="translate(${(state.vfx.splashX + epx * 15).toFixed(1)},${(sy + epy * 11).toFixed(1)})" opacity="${Math.min(1, s * 1.15).toFixed(2)}"><circle cx="${(-42 * s).toFixed(1)}" cy="${(-40 * s).toFixed(1)}" r="4.5" fill="#e6f7ff"/><circle cx="${(20 * s).toFixed(1)}" cy="${(-56 * s).toFixed(1)}" r="5" fill="#ffffff"/><path d="M${(-58 * s).toFixed(1)} 4 Q0 ${(-22 * s).toFixed(1)} ${(58 * s).toFixed(1)} 4 Q0 ${(-7 * s).toFixed(1)} ${(-58 * s).toFixed(1)} 4 Z" fill="#d4f1ff" opacity="0.85"/></g>`;
       }
       if (state.vfx.bubbles > 0.05) {
         const r0 = rigStates[RIGS[0].id];
         for (let i = 0; i < 6; i++) {
-          const rise = (t * 48 + i * 24) % 90;
-          const bx = r0.rootX - 28 + i * 15 + Math.sin(t * 4 + i) * 6 + effPx * 15;
-          const by = (sc.waterlineY ?? 520) + 36 - rise + effPy * 11;
-          vfxHtml += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${(2.5 + (i % 3) * 1.3).toFixed(1)}" fill="#c8efff" opacity="${(state.vfx.bubbles * (1 - rise / 95) * 0.75).toFixed(2)}"/>`;
+          const rise = (t * 46 + i * 22) % 85;
+          vfx += `<circle cx="${(r0.rootX - 24 + i * 13 + Math.sin(t * 4 + i) * 5 + epx * 15).toFixed(1)}" cy="${((sc.waterlineY ?? VH * 0.74) + 32 - rise + epy * 11).toFixed(1)}" r="${(2.4 + (i % 3) * 1.2).toFixed(1)}" fill="#c8efff" opacity="${(state.vfx.bubbles * (1 - rise / 90) * 0.75).toFixed(2)}"/>`;
         }
       }
-      document.getElementById('layerVfx').innerHTML = vfxHtml;
+      document.getElementById('layerVfx').innerHTML = vfx;
 
-      // 10. Overlay Pendulum Props
-      let ovHtml = '';
-      for (const op of sc.overlayProps ?? []) {
-        const ox = op.x + effPx * (op.parallax ?? 22) + Math.sin(t * (op.freqX ?? 0.8) * state.ambientAmp) * (op.ampX ?? 8);
-        const oy = op.y + effPy * ((op.parallax ?? 22) * 0.8) + Math.cos(t * (op.freqY ?? 1.1) * state.ambientAmp) * (op.ampY ?? 6);
-        const tilt = Math.sin(t * (op.freqX ?? 0.9) * state.ambientAmp) * (op.tiltAmp ?? 3.2);
-        ovHtml += `<g transform="translate(${ox.toFixed(1)}, ${oy.toFixed(1)}) scale(${op.scale ?? 1}) rotate(${tilt.toFixed(2)})" filter="url(#shadowDeep)">${op.svg}</g>`;
-      }
-      document.getElementById('layerOverlayProps').innerHTML = ovHtml;
+      document.getElementById('layerOverlayProps').innerHTML = (sc.overlayProps ?? []).map(op => {
+        const ox = op.x + epx * (op.parallax ?? 18) + Math.sin(t * (op.freqX ?? 0.85) * state.ambientAmp) * (op.ampX ?? 4);
+        const oy = op.y + epy * ((op.parallax ?? 18) * 0.75) + Math.cos(t * (op.freqY ?? 1.05) * state.ambientAmp) * (op.ampY ?? 3);
+        const tilt = Math.sin(t * (op.freqX ?? 0.9) * state.ambientAmp) * (op.tiltAmp ?? 3.4);
+        return `<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)}) scale(${op.scale ?? 1}) rotate(${tilt.toFixed(2)})" filter="url(#shadowDeep)">${op.svg}</g>`;
+      }).join('');
     }
 
-    // Build Inspector UI (supports switching between multiple rigs!)
+    // Inspector UI
     const presetBar = document.getElementById('presetBar');
     for (const m of [...(BLUEPRINT.motions ?? []), { id: 'manual', name: '🎛️ Tự chỉnh Rig' }]) {
       const btn = document.createElement('button');
       btn.className = 'pill-btn px-2.5 py-1.5 rounded-md border border-[var(--border)] font-medium';
-      btn.dataset.preset = m.id;
-      btn.dataset.active = String(m.id === state.preset);
-      btn.textContent = m.name;
+      btn.dataset.preset = m.id; btn.dataset.active = String(m.id === state.preset); btn.textContent = m.name;
       btn.addEventListener('click', () => {
         state.preset = m.id;
         document.querySelectorAll('[data-preset]').forEach(x => x.dataset.active = String(x.dataset.preset === m.id));
@@ -779,13 +739,11 @@
     }
 
     if (RIGS.length > 1) {
-      const sw = document.getElementById('rigSwitcher');
-      sw.classList.remove('hidden');
+      const sw = document.getElementById('rigSwitcher'); sw.classList.remove('hidden');
       for (const r of RIGS) {
         const b = document.createElement('button');
         b.className = 'pill-btn px-2.5 py-1 rounded-md border border-[var(--border)] font-medium';
-        b.dataset.rigbtn = r.id;
-        b.dataset.active = String(r.id === state.activeRigId);
+        b.dataset.rigbtn = r.id; b.dataset.active = String(r.id === state.activeRigId);
         b.textContent = `${r.label} (${r.bones.length} xương)`;
         b.addEventListener('click', () => {
           state.activeRigId = r.id;
@@ -798,104 +756,69 @@
 
     let sliderRefs = {};
     function rebuildRigInspector() {
-      const rigObj = RIG_BY_ID[state.activeRigId];
-      const rs = rigStates[rigObj.id];
+      const rigObj = RIG_BY_ID[state.activeRigId], rs = rigStates[rigObj.id];
       sliderRefs = {};
-
-      // Variants
-      const vs = document.getElementById('variantSection');
-      vs.innerHTML = '';
-      const varEntries = Object.entries(rigObj.variants ?? {});
-      vs.classList.toggle('hidden', varEntries.length === 0);
-      for (const [grp, opts] of varEntries) {
-        const block = document.createElement('div');
-        block.className = 'space-y-1';
-        block.innerHTML = `<div class="font-semibold">${grp}</div><div class="flex flex-wrap gap-1"></div>`;
-        const row = block.lastChild;
+      const vs = document.getElementById('variantSection'); vs.innerHTML = '';
+      const ve = Object.entries(rigObj.variants ?? {});
+      vs.classList.toggle('hidden', ve.length === 0);
+      for (const [grp, opts] of ve) {
+        const blk = document.createElement('div'); blk.className = 'space-y-1';
+        blk.innerHTML = `<div class="font-semibold">${grp}</div><div class="flex flex-wrap gap-1"></div>`;
         for (const opt of opts) {
           const b = document.createElement('button');
           b.className = 'pill-btn px-2 py-1 rounded border border-[var(--border)]';
-          b.dataset.active = String(rs.variants[grp] === opt);
-          b.textContent = opt;
-          b.addEventListener('click', () => {
-            rs.variants[grp] = opt;
-            row.querySelectorAll('button').forEach(x => x.dataset.active = String(x.textContent === opt));
-          });
-          row.appendChild(b);
+          b.dataset.active = String(rs.variants[grp] === opt); b.textContent = opt;
+          b.addEventListener('click', () => { rs.variants[grp] = opt; blk.lastChild.querySelectorAll('button').forEach(x => x.dataset.active = String(x.textContent === opt)); });
+          blk.lastChild.appendChild(b);
         }
-        vs.appendChild(block);
+        vs.appendChild(blk);
       }
-
-      const addSlider = (parentEl, key, label, min, max, val, unit, onSet) => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2';
-        row.innerHTML = `<span class="w-32 truncate text-[var(--muted-foreground)]" title="${key}">${label}</span><input type="range" min="${min}" max="${max}" step="1" value="${val}" class="flex-1 accent-[var(--primary)]"/><span class="w-12 text-right font-mono tabular-nums">${Math.round(val)}${unit}</span>`;
+      const addS = (p, k, lbl, min, max, val, u, fn) => {
+        const row = document.createElement('div'); row.className = 'flex items-center gap-2';
+        row.innerHTML = `<span class="w-32 truncate text-[var(--muted-foreground)]" title="${k}">${lbl}</span><input type="range" min="${min}" max="${max}" step="1" value="${val}" class="flex-1 accent-[var(--primary)]"/><span class="w-12 text-right font-mono tabular-nums">${Math.round(val)}${u}</span>`;
         const inp = row.querySelector('input'), out = row.querySelectorAll('span')[1];
         inp.addEventListener('input', () => {
           state.preset = 'manual';
           document.querySelectorAll('[data-preset]').forEach(x => x.dataset.active = String(x.dataset.preset === 'manual'));
-          onSet(Number(inp.value));
-          out.textContent = `${Math.round(inp.value)}${unit}`;
+          fn(Number(inp.value)); out.textContent = `${Math.round(inp.value)}${u}`;
         });
-        parentEl.appendChild(row);
-        sliderRefs[key] = { inp, out, unit };
+        p.appendChild(row); sliderRefs[k] = { inp, out, u };
       };
-
-      const rootCtrl = document.getElementById('rootControls');
-      rootCtrl.innerHTML = '';
-      addSlider(rootCtrl, '__rootX', 'Vị trí X', 80, 880, rs.rootX, 'px', v => rs.rootX = v);
-      addSlider(rootCtrl, '__rootY', 'Vị trí Y', 80, 680, rs.rootY, 'px', v => rs.rootY = v);
-
-      const boneSliders = document.getElementById('boneSliders');
-      boneSliders.innerHTML = '';
-      for (const b of rigObj.bones) {
-        addSlider(boneSliders, b.id, b.label ?? b.id, b.limits.min, b.limits.max, rs.angles[b.id], '°', v => rs.angles[b.id] = v);
-      }
+      const rc = document.getElementById('rootControls'); rc.innerHTML = '';
+      addS(rc, '__rootX', 'Vị trí X', 60, VW - 60, rs.rootX, 'px', v => rs.rootX = v);
+      addS(rc, '__rootY', 'Vị trí Y', 60, VH - 40, rs.rootY, 'px', v => rs.rootY = v);
+      const bs = document.getElementById('boneSliders'); bs.innerHTML = '';
+      for (const b of rigObj.bones) addS(bs, b.id, b.label ?? b.id, b.limits.min, b.limits.max, rs.angles[b.id], '°', v => rs.angles[b.id] = v);
       updateSpecTab();
     }
 
     function syncSliders() {
-      const rigObj = RIG_BY_ID[state.activeRigId];
-      const rs = rigStates[rigObj.id];
+      const rigObj = RIG_BY_ID[state.activeRigId], rs = rigStates[rigObj.id];
       if (!sliderRefs.__rootX) return;
       sliderRefs.__rootX.inp.value = rs.rootX; sliderRefs.__rootX.out.textContent = `${Math.round(rs.rootX)}px`;
       sliderRefs.__rootY.inp.value = rs.rootY; sliderRefs.__rootY.out.textContent = `${Math.round(rs.rootY)}px`;
-      for (const b of rigObj.bones) {
-        const ref = sliderRefs[b.id];
-        if (!ref) continue;
-        ref.inp.value = rs.angles[b.id];
-        ref.out.textContent = `${Math.round(rs.angles[b.id])}°`;
-      }
+      for (const b of rigObj.bones) { const r = sliderRefs[b.id]; if (r) { r.inp.value = rs.angles[b.id]; r.out.textContent = `${Math.round(rs.angles[b.id])}°`; } }
     }
 
     function updateSpecTab() {
-      const totalBones = RIGS.reduce((s, r) => s + r.bones.length, 0);
-      document.getElementById('specSummary').innerHTML = `
-        <div class="font-semibold">${BLUEPRINT.meta.title}</div>
-        <div class="text-[var(--muted-foreground)]">${RIGS.length} nhân vật Rig · ${totalBones} xương · ${BLUEPRINT.parts.length} SVG parts · Seed ${BLUEPRINT.meta.seed ?? 4219}</div>`;
-      const trees = RIGS.map((r) => {
-        const fmt = (pid, pref) => r.bones.filter(b => b.parent === pid).map((k, i, arr) => {
-          const last = i === arr.length - 1;
-          return `${pref}${pid === null ? '' : (last ? '└─ ' : '├─ ')}${k.id} [${k.limits.min}°..${k.limits.max}°]\n` +
-            fmt(k.id, pid === null ? ' ' : pref + (last ? '   ' : '│  '));
-        }).join('');
+      const tot = RIGS.reduce((s, r) => s + r.bones.length, 0);
+      document.getElementById('specSummary').innerHTML = `<div class="font-semibold">${BLUEPRINT.meta.title}</div><div class="text-[var(--muted-foreground)]">${RIGS.length} Rig · ${tot} xương · ${BLUEPRINT.parts.length} SVG parts · Canvas ${VW}×${VH}</div>`;
+      document.getElementById('boneTreeOut').textContent = RIGS.map(r => {
+        const fmt = (pid, pref) => r.bones.filter(b => b.parent === pid).map((k, i, arr) => `${pref}${pid === null ? '' : (i === arr.length - 1 ? '└─ ' : '├─ ')}${k.id} [${k.limits.min}°..${k.limits.max}°]\n` + fmt(k.id, pid === null ? ' ' : pref + (i === arr.length - 1 ? '   ' : '│  '))).join('');
         return `[${r.label}]\n` + fmt(null, '').trim();
       }).join('\n\n');
-      document.getElementById('boneTreeOut').textContent = trees;
     }
 
     function updatePoseJson() {
       const out = {};
       for (const r of RIGS) {
-        const rs = rigStates[r.id];
-        const a = {};
+        const rs = rigStates[r.id], a = {};
         for (const b of r.bones) a[b.id] = Number(rs.angles[b.id].toFixed(1));
         out[r.id] = { root: { x: Math.round(rs.rootX), y: Math.round(rs.rootY) }, facing: rs.facing, angles: a };
       }
       document.getElementById('poseJsonOut').textContent = JSON.stringify(out, null, 2);
     }
 
-    // Wire events
     document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
       document.querySelectorAll('[data-tab]').forEach(b => b.dataset.active = String(b === btn));
@@ -909,7 +832,7 @@
       state.preset = 'manual';
       const r = RIG_BY_ID[state.activeRigId], rs = rigStates[r.id];
       for (const b of r.bones) rs.angles[b.id] = b.rest ?? 0;
-      rs.rootX = r.rootPos?.x ?? 480; rs.rootY = r.rootPos?.y ?? 420;
+      rs.rootX = r.rootPos?.x ?? VW * 0.5; rs.rootY = r.rootPos?.y ?? VH * 0.72;
       syncSliders();
     });
     document.getElementById('selSpeed').addEventListener('change', e => state.speed = Number(e.target.value));
@@ -917,77 +840,53 @@
     document.getElementById('chkAnchors').addEventListener('change', e => state.showAnchors = e.target.checked);
     document.getElementById('chkParallax').addEventListener('change', e => state.parallax = e.target.checked);
     document.getElementById('chkAtmos').addEventListener('change', e => state.showAtmos = e.target.checked);
-    document.getElementById('chkFrame').addEventListener('change', e => { state.showFrame = e.target.checked; document.getElementById('layerFrame').style.display = e.target.checked ? 'inline' : 'none'; });
-    document.getElementById('chkCorners').addEventListener('change', e => { state.showCorners = e.target.checked; document.getElementById('layerCorners').style.display = e.target.checked ? 'inline' : 'none'; });
+    document.getElementById('chkFrame').addEventListener('change', e => { document.getElementById('layerFrame').style.display = e.target.checked ? 'inline' : 'none'; document.getElementById('layerCorners').style.display = e.target.checked ? 'inline' : 'none'; });
     document.getElementById('chkAmbient').addEventListener('change', e => state.showAmbient = e.target.checked);
     document.getElementById('chkSwarm').addEventListener('change', e => state.showSwarm = e.target.checked);
     document.getElementById('chkCamBreath').addEventListener('change', e => state.camBreath = e.target.checked);
     document.getElementById('rngAmbient').addEventListener('input', e => { state.ambientAmp = Number(e.target.value); document.getElementById('valAmbient').textContent = state.ambientAmp.toFixed(1) + '×'; });
     document.getElementById('rngShadow').addEventListener('input', e => {
-      const v = Number(e.target.value); state.shadowScale = v;
-      document.getElementById('valShadow').textContent = v.toFixed(1) + '×';
-      document.getElementById('fDeep').setAttribute('stdDeviation', (9 * v).toFixed(1));
-      document.getElementById('fDeep').setAttribute('dy', (8 * v).toFixed(1));
-      document.getElementById('fMed').setAttribute('stdDeviation', (5.5 * v).toFixed(1));
+      const v = Number(e.target.value); document.getElementById('valShadow').textContent = v.toFixed(1) + '×';
+      document.getElementById('fDeep').setAttribute('stdDeviation', (8 * v).toFixed(1));
+      document.getElementById('fDeep').setAttribute('dy', (7 * v).toFixed(1));
+      document.getElementById('fMed').setAttribute('stdDeviation', (4.8 * v).toFixed(1));
     });
 
-    const sceneSvg = document.getElementById('sceneSvg');
     const setZoom = (d) => {
       state.zoom = clamp(state.zoom + d, 0.7, 2.2);
-      const w = 960 / state.zoom, h = 720 / state.zoom;
-      sceneSvg.setAttribute('viewBox', `${(480 - w / 2).toFixed(1)} ${(360 - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+      const w = VW / state.zoom, h = VH / state.zoom;
+      sceneSvg.setAttribute('viewBox', `${(VW / 2 - w / 2).toFixed(1)} ${(VH / 2 - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
       document.getElementById('zoomLabel').textContent = `${Math.round(state.zoom * 100)}%`;
     };
     document.getElementById('btnZoomIn').addEventListener('click', () => setZoom(0.2));
     document.getElementById('btnZoomOut').addEventListener('click', () => setZoom(-0.2));
 
-    sceneSvg.addEventListener('pointerdown', e => {
-      const h = e.target.closest('.ik-handle');
-      if (!h) return;
-      state.draggingIk = { rigId: h.dataset.rig, ikId: h.dataset.ik };
-      state.preset = 'manual';
-      sceneSvg.setPointerCapture(e.pointerId);
-    });
+    sceneSvg.addEventListener('pointerdown', e => { const h = e.target.closest('.ik-handle'); if (!h) return; state.draggingIk = { rigId: h.dataset.rig, ikId: h.dataset.ik }; state.preset = 'manual'; sceneSvg.setPointerCapture(e.pointerId); });
     sceneSvg.addEventListener('pointermove', e => {
       if (!state.draggingIk) return;
-      const rigObj = RIG_BY_ID[state.draggingIk.rigId];
-      const rs = rigStates[rigObj.id];
+      const r = RIG_BY_ID[state.draggingIk.rigId], rs = rigStates[r.id];
       const pt = sceneSvg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
       const sp = pt.matrixTransform(sceneSvg.getScreenCTM().inverse());
-      const hox = state.smoothPtr.x * (rigObj.parallax ?? 15);
-      const hoy = state.smoothPtr.y * ((rigObj.parallax ?? 15) * 0.75);
-      const tx = rs.rootX + (sp.x - hox - rs.rootX) * rs.facing;
-      const ty = sp.y - hoy;
-      solveIk(rigObj, rigObj.ik[state.draggingIk.ikId], { x: tx, y: ty });
+      const hox = state.smoothPtr.x * (r.parallax ?? 15), hoy = state.smoothPtr.y * ((r.parallax ?? 15) * 0.75);
+      solveIk(r, r.ik[state.draggingIk.ikId], { x: rs.rootX + (sp.x - hox - rs.rootX) * rs.facing, y: sp.y - hoy });
       syncSliders();
     });
     sceneSvg.addEventListener('pointerup', () => state.draggingIk = null);
 
     const stageWrap = document.getElementById('stageWrap');
-    stageWrap.addEventListener('pointermove', e => {
-      const r = stageWrap.getBoundingClientRect();
-      state.pointer.x = ((e.clientX - r.left) / r.width - 0.5) * 2;
-      state.pointer.y = ((e.clientY - r.top) / r.height - 0.5) * 2;
-    });
+    stageWrap.addEventListener('pointermove', e => { const r = stageWrap.getBoundingClientRect(); state.pointer.x = ((e.clientX - r.left) / r.width - 0.5) * 2; state.pointer.y = ((e.clientY - r.top) / r.height - 0.5) * 2; });
     stageWrap.addEventListener('pointerleave', () => { state.pointer.x = 0; state.pointer.y = 0; });
 
     rebuildRigInspector();
-
     let last = performance.now();
     function tick(now) {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
+      const dt = Math.min((now - last) / 1000, 0.05); last = now;
       if (state.playing) {
         state.time += dt * state.speed;
-        if (state.preset !== 'manual') {
-          evalMotion(state.time);
-          syncSliders();
-        }
+        if (state.preset !== 'manual') { evalMotion(state.time); syncSliders(); }
       }
-      const tpx = state.parallax ? state.pointer.x : 0;
-      const tpy = state.parallax ? state.pointer.y : 0;
-      state.smoothPtr.x += (tpx - state.smoothPtr.x) * 0.08;
-      state.smoothPtr.y += (tpy - state.smoothPtr.y) * 0.08;
+      const tpx = state.parallax ? state.pointer.x : 0, tpy = state.parallax ? state.pointer.y : 0;
+      state.smoothPtr.x += (tpx - state.smoothPtr.x) * 0.08; state.smoothPtr.y += (tpy - state.smoothPtr.y) * 0.08;
       renderAll(state.time, state.smoothPtr.x, state.smoothPtr.y);
       requestAnimationFrame(tick);
     }
