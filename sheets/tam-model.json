@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "id": "tam-model",
+  "title": "M1a — model sheet Tam (Xưởng Giấy, mẫu đợt 1)",
+  "columns": 4,
+  "panels": [
+    {
+      "label": "Tam — thẳng",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {},
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "body",
+        "size": [
+          360,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "Tam — 3/4 (quay phải)",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {},
+          "scale": 1.35
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          360,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "Tam — nghiêng (quay phải)",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.l": 0,
+            "upper-arm.r": 0,
+            "forearm.l": 0,
+            "forearm.r": 0
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {
+        "torso": "side",
+        "pelvis": "side",
+        "head": "side"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          360,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      },
+      "note": "tay đặt 0° để thấy ý art (tay gần che tay xa); góc nghỉ rig ±8° không đổi theo hướng thân → M1b"
+    },
+    {
+      "label": "Lan — thẳng (đối chiếu tỷ lệ; art Lan thuộc đợt sau)",
+      "character": "lan",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {},
+          "scale": 1.1
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "body",
+        "size": [
+          360,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "Tay phải — nắm (default)",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "hand.r",
+        "size": [
+          110,
+          130
+        ],
+        "offset": [
+          0,
+          22
+        ],
+        "zoom": 2.6
+      },
+      "note": "pivot cổ tay và grip chung cho 4 dáng: grip cách pivot (0; 10,5) px art"
+    },
+    {
+      "label": "Tay phải — thả lỏng",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "hand.r",
+        "size": [
+          110,
+          130
+        ],
+        "offset": [
+          0,
+          22
+        ],
+        "zoom": 2.6
+      },
+      "note": "pivot cổ tay và grip chung cho 4 dáng: grip cách pivot (0; 10,5) px art"
+    },
+    {
+      "label": "Tay phải — mở",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {
+        "hand.r": "open"
+      },
+      "view": {
+        "around": "hand.r",
+        "size": [
+          110,
+          130
+        ],
+        "offset": [
+          0,
+          22
+        ],
+        "zoom": 2.6
+      },
+      "note": "pivot cổ tay và grip chung cho 4 dáng: grip cách pivot (0; 10,5) px art"
+    },
+    {
+      "label": "Tay phải — chỉ",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {
+        "hand.r": "point"
+      },
+      "view": {
+        "around": "hand.r",
+        "size": [
+          110,
+          130
+        ],
+        "offset": [
+          0,
+          22
+        ],
+        "zoom": 2.6
+      },
+      "note": "pivot cổ tay và grip chung cho 4 dáng: grip cách pivot (0; 10,5) px art"
+    }
+  ]
+}

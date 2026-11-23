@@ -1,0 +1,518 @@
+{
+  "schemaVersion": 1,
+  "id": "tam-poses",
+  "title": "M1a — sheet tư thế Tam trên skin Xưởng Giấy (động tác lấy từ phim M2)",
+  "columns": 3,
+  "panels": [
+    {
+      "label": "1. Bê chậu cạnh thân",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-plant.json",
+          "frame": 130,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.l": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "2. Với thấp đặt đèn",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 427,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      },
+      "note": "vai xa thân 3/4 đặt x=114 (≥113 mới đủ tầm với đặt đèn ở f432; vị trí đặt là giới hạn tầm với E0)"
+    },
+    {
+      "label": "3. Trao đèn (hai tay cùng giữ quai)",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 266,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "4. Giữa cú lật (đổi chiều khi đi)",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 322,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "5. Đỉnh vẫy tay",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 160,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      }
+    },
+    {
+      "label": "6. Bước dài",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 80,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.l": "relaxed",
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.72
+      },
+      "note": "thân nghiêng chưa khả thi trên phim M2: m2-handover vượt tốc độ khớp f419 (13,10°/frame), m2-plant thiếu tầm với f32 (37,4 px) → M1b"
+    },
+    {
+      "label": "Cổ tay — nghỉ",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10,
+            "hand.r": 0
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "hand.r",
+        "size": [
+          150,
+          150
+        ],
+        "offset": [
+          0,
+          10
+        ],
+        "zoom": 2.2
+      },
+      "note": "hand.r = 0° (giới hạn rig ±45°)"
+    },
+    {
+      "label": "Cổ tay — giữa",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10,
+            "hand.r": 22
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "hand.r",
+        "size": [
+          150,
+          150
+        ],
+        "offset": [
+          0,
+          10
+        ],
+        "zoom": 2.2
+      },
+      "note": "hand.r = 22° (giới hạn rig ±45°)"
+    },
+    {
+      "label": "Cổ tay — giới hạn",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -20,
+            "forearm.r": -10,
+            "hand.r": 45
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "hand.r",
+        "size": [
+          150,
+          150
+        ],
+        "offset": [
+          0,
+          10
+        ],
+        "zoom": 2.2
+      },
+      "note": "hand.r = 45° (giới hạn rig ±45°)"
+    },
+    {
+      "label": "Vai — nghỉ",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -8
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "upper-arm.r",
+        "size": [
+          220,
+          220
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 1.5
+      },
+      "note": "upper-arm.r = -8° (giới hạn rig −175° … 60°)"
+    },
+    {
+      "label": "Vai — giữa (dang ngang)",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -90
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "upper-arm.r",
+        "size": [
+          220,
+          220
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 1.5
+      },
+      "note": "upper-arm.r = -90° (giới hạn rig −175° … 60°)"
+    },
+    {
+      "label": "Vai — giới hạn (giơ cao)",
+      "character": "tam",
+      "source": {
+        "pose": {
+          "pack": "xuong-giay",
+          "angles": {
+            "upper-arm.r": -175
+          },
+          "scale": 1.35
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "upper-arm.r",
+        "size": [
+          220,
+          220
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 1.5
+      },
+      "note": "upper-arm.r = -175° (giới hạn rig −175° … 60°)"
+    },
+    {
+      "label": "Hông — nghỉ",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 0,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "thigh.l",
+        "size": [
+          220,
+          220
+        ],
+        "offset": [
+          0,
+          10
+        ],
+        "zoom": 1.5
+      }
+    },
+    {
+      "label": "Hông — bước dài",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 80,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "thigh.l",
+        "size": [
+          220,
+          220
+        ],
+        "offset": [
+          0,
+          10
+        ],
+        "zoom": 1.5
+      }
+    },
+    {
+      "label": "Hông — ngồi xuống (với thấp)",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 427,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "thigh.l",
+        "size": [
+          220,
+          220
+        ],
+        "offset": [
+          0,
+          10
+        ],
+        "zoom": 1.5
+      }
+    },
+    {
+      "label": "Cổ chân — nghỉ",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 0,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "foot.l",
+        "size": [
+          200,
+          160
+        ],
+        "offset": [
+          10,
+          0
+        ],
+        "zoom": 1.6
+      }
+    },
+    {
+      "label": "Cổ chân — bước dài",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 80,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "foot.l",
+        "size": [
+          200,
+          160
+        ],
+        "offset": [
+          10,
+          0
+        ],
+        "zoom": 1.6
+      }
+    },
+    {
+      "label": "Cổ chân — ngồi xuống (với thấp)",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 427,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {},
+      "view": {
+        "around": "foot.l",
+        "size": [
+          200,
+          160
+        ],
+        "offset": [
+          10,
+          0
+        ],
+        "zoom": 1.6
+      }
+    }
+  ]
+}
