@@ -87,13 +87,13 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "fc643d5f1b18aaae9435919dfdc14a9813cffca9",
+      "head": "cabaf672419cd89234e3407f5d50e81e2a5733c8",
       "updated": "2026-11-23",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
         "edgeFixtures": "PASS_TECHNICAL",
         "regression": "PASS_TECHNICAL",
-        "slidingRest": "BLOCKED",
+        "slidingRest": "PASS_TECHNICAL",
         "separatingSupport": "BLOCKED",
         "visualReview": "NOT_RUN"
       },
@@ -103,7 +103,11 @@
         "Codex chạy npm run verify 322/322, đủ 5 golden. Cùng 21 test drop, bản cũ 15 đạt/6 lỗi, bản sửa 21 đạt. CI verify push https://github.com/maitoan2408/paper-studio-v2/actions/runs/45178796218 và PR https://github.com/maitoan2408/paper-studio-v2/actions/runs/45178806035 thành công. Render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45178806196 ở merge ref 00fe752, cùng cây với fc643d5, check:renderer 8/8 và audit 5 phim đạt, minPSNR 41,20 dB.",
         "Codex tái hiện trên m3-drop với walks[0].toX=-155, friction=0, onto=ledge (y=0, x0=-500, x1=-180). Vật trượt 37,68 px/s tại f178, tự ngủ và về 0 ở f179, khóa nghỉ f190. Đối chứng chỉ tắt tự ngủ của body: còn đỡ tới f214, PHYSICS_NO_LANDING f222. Với x1=400, đối chứng còn trượt 37,7 px/s ở f239.",
         "Codex kiểm ca restitution=0.65, onto=ledge (y=-10, x0=-600, x1=600): chạm f165 bước 8/8, pivot bật lên 644,77 px/s nhưng pose vẫn supported. Không khóa nghỉ tại f165. Cần phân biệt xung lực trong bước với đỡ sau bước.",
-        "Claude báo đã gửi hai clip fixture 0,5× render cục bộ. Fixture chưa có trong CI render và chủ dự án chưa duyệt. Codex đã kiểm dữ liệu và CI, chưa xem clip liên tục. Các bước tiếp theo nằm ở PLAN.md §6 M3."
+        "Claude báo đã gửi hai clip fixture 0,5× render cục bộ. Fixture chưa có trong CI render và chủ dự án chưa duyệt. Codex đã kiểm dữ liệu và CI, chưa xem clip liên tục. Các bước tiếp theo nằm ở PLAN.md §6 M3.",
+        "Hậu kiểm cabaf67 (code ca7b482, CLI drop-trace cabaf67). Codex chạy npm run verify 327/327, 5 golden SceneFrame đạt. Cùng 26 test drop trên fc643d5 đạt 22/26 (3 lỗi hành vi và 1 test đòi trường separation mới), bản sửa đạt 26/26.",
+        "slidingRest PASS_TECHNICAL. Bục ngắn không ma sát: f178–190 giữ vx khoảng 37,68 px/s, qua mép f201, đỡ cuối f214, PHYSICS_NO_LANDING f222. Bục dài còn trượt ở f239 và báo PHYSICS_NOT_AT_REST. Độ lệch vx tối đa từ f170 đến trước frame qua mép 0,0321 px/s, trong dung sai 0,05.",
+        "separatingSupport còn BLOCKED. Fixture bounce-late đã đúng ở f165 bước 8/8 (vận tốc tách 622,56 px/s, airborne). Codex tái hiện qua loadFilm với cùng fixture, friction=1.5 và ledge.y=-20. Ở f182 bước 8/8, điểm solver gần góc chịu xung lực đang tách 214,30 px/s, điểm gần góc xung lực 0 cho 15,48 px/s. Min lấy cả hai khiến pose supported=true dù chậu bật, f183 không có xung lực. Sai cờ trạng thái, chưa thấy khóa nghỉ sai ở ca này.",
+        "CI verify push https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187580896 và PR https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187592859 đạt. Render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187592927 tại merge ref 83be057 (cùng cây cabaf67), check:renderer 8/8, audit 5 phim đạt, minPSNR 41,15 dB. Claude báo đã gửi clip chẩn đoán slide-off vẽ hộp 0,5×. Codex chưa xem clip và chưa có quyết định duyệt thị giác."
       ]
     },
     "M4": {
