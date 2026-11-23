@@ -192,10 +192,33 @@ export function checkLiftClearance(film: Film, hand: (ci: number, contact: strin
 
 /**
  * Kiểm sau khi film đã dựng: tại frame grip, contact tay trùng anchor đạo cụ (trước khi nắm);
- * tại frame thả về chỗ đặt, contact tay trùng anchor ở vị trí đặt. Lệch > 0.5 px → PROP_DISCONTINUITY.
+ * tại frame thả về chỗ đặt, contact tay trùng anchor ở vị trí đặt; ở MỌI frame có nhiều tay cùng cầm, từng tay
+ * trùng anchor của chính nó trên đạo cụ (đạo cụ theo tay nắm gần nhất; tay đã thả tự do từ chính frame thả).
+ * Lệch > ALIGN_TOLERANCE_PX → PROP_DISCONTINUITY.
  */
 export function checkProps(film: Film, hand: (ci: number, contact: string, frame: number) => V2): void {
+  const N = film.data.output.durationFrames;
   for (const [propId, list] of propTimeline(film)) {
+    // Đồng cầm: đoạn [from, from kế tiếp) có ≥ 2 tay; frame thả bắt đầu đoạn mới nên tay vừa thả không bị kiểm.
+    list.forEach((seg, k) => {
+      if (seg.holders.length < 2) return;
+      const owner = seg.holders[seg.holders.length - 1]!;
+      const end = k + 1 < list.length ? list[k + 1]!.from : N;
+      for (let fr = seg.from; fr < end; fr++) {
+        const o = hand(owner.ci, owner.contact, fr);
+        const oOff = anchorOffset(film, propId, owner.anchor);
+        const pivot: V2 = [o[0] - oOff[0], o[1] - oOff[1]];
+        for (const h of seg.holders) {
+          if (h === owner) continue;
+          const off = anchorOffset(film, propId, h.anchor);
+          const got = hand(h.ci, h.contact, fr);
+          const d = Math.hypot(got[0] - pivot[0] - off[0], got[1] - pivot[1] - off[1]);
+          if (d > ALIGN_TOLERANCE_PX) {
+            fail('PROP_DISCONTINUITY', `prop ${propId} frame ${fr}`, `${film.data.characters[h.ci]!.id}.${h.contact} still holds anchor "${h.anchor}" but is ${d.toFixed(2)} px away from it (prop follows ${film.data.characters[owner.ci]!.id}.${owner.contact}); release earlier or keep the hands together`);
+          }
+        }
+      }
+    });
     for (let k = 1; k < list.length; k++) {
       const prev = list[k - 1]!;
       const cur = list[k]!;
