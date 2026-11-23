@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 /**
- * Fail-closed validator for paper-studio-v2 compatible paper-cut rig packs.
- * Checks: SVG allowlist (matching src/schema/svg.ts), SHA-256 integrity,
- * rig bone hierarchy (no cycles, single root, valid limits), skin completeness,
- * required anchors, non-degenerate bone lengths, and zero Math.random usage.
+ * Fail-closed validator for paper-studio-v2 compatible paper-cut rig packs (v1.1).
+ * Validates manifest.json, all referenced SVGs (allowlist + SHA-256), primary rig.json,
+ * and any additional rigs/*.json in multi-character packs.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ALLOWED_SVG_TAGS = new Set([
@@ -25,7 +24,7 @@ const ATTR = /\s+([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/y;
 function printHelp() {
   console.log(`Usage: node scripts/validate_pack.mjs [OPTIONS] <PACK_DIR>
 
-Validate a paper-cut rig pack (manifest.json, rig.json, and all referenced SVGs)
+Validate a paper-cut rig pack (manifest.json, rig.json, rigs/*.json, and all SVGs)
 against paper-studio-v2 safety, integrity, and kinematic contracts.
 
 Options:
@@ -107,14 +106,148 @@ function checkSvgText(text, where, pushErr) {
   }
 }
 
+function validateRigFile(rigPath, label, assetsById, pushErr) {
+  let rig;
+  try {
+    rig = JSON.parse(readFileSync(rigPath, 'utf8'));
+  } catch (e) {
+    pushErr('RIG_JSON_INVALID', label, `invalid JSON: ${e.message}`);
+    return null;
+  }
+
+  if (rig.schemaVersion !== 1) pushErr('RIG_SCHEMA', `${label}.schemaVersion`, 'expected schemaVersion === 1');
+  if (!Array.isArray(rig.bones) || rig.bones.length === 0) {
+    pushErr('RIG_SCHEMA', `${label}.bones`, 'must be a non-empty array');
+    return null;
+  }
+
+  const boneMap = new Map();
+  for (const b of rig.bones) {
+    if (boneMap.has(b.id)) pushErr('RIG_DUP_BONE', `${label}.bones.${b.id}`, `duplicate bone "${b.id}"`);
+    boneMap.set(b.id, b);
+  }
+
+  const roots = rig.bones.filter((b) => b.parent === null);
+  if (roots.length !== 1) pushErr('RIG_ROOT_COUNT', `${label}.bones`, `expected exactly 1 root bone, found ${roots.length}`);
+
+  for (const b of rig.bones) {
+    const where = `${label}.bones.${b.id}`;
+    if (b.parent !== null && !boneMap.has(b.parent)) {
+      pushErr('RIG_UNKNOWN_PARENT', where, `parent "${b.parent}" does not exist`);
+    }
+    if ((b.parent === null) !== (b.attach === null)) {
+      pushErr('RIG_SCHEMA', where, 'attach must be null if and only if parent is null');
+    }
+    if (!b.limits || !(b.limits.min < b.limits.max)) {
+      pushErr('RIG_LIMIT_INVALID', `${where}.limits`, `limits.min must be < limits.max`);
+    }
+    if (!(b.maxDegPerFrame > 0)) {
+      pushErr('RIG_SCHEMA', `${where}.maxDegPerFrame`, 'maxDegPerFrame must be > 0');
+    }
+  }
+
+  const children = new Map();
+  for (const b of rig.bones) {
+    if (b.parent !== null) children.set(b.parent, [...(children.get(b.parent) ?? []), b]);
+  }
+  const visited = new Set();
+  const stack = [...roots];
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    if (visited.has(cur.id)) continue;
+    visited.add(cur.id);
+    for (const ch of children.get(cur.id) ?? []) stack.push(ch);
+  }
+  if (visited.size !== rig.bones.length) {
+    const stuck = rig.bones.find((b) => !visited.has(b.id));
+    pushErr('RIG_CYCLE', `${label}.bones.${stuck?.id}`, 'bone is unreachable from root (cycle detected)');
+  }
+
+  for (const ch of rig.characters ?? []) {
+    const at = `${label}.characters.${ch.id}`;
+    for (const b of rig.bones) {
+      const skin = ch.skin?.[b.id];
+      if (!skin?.default) {
+        pushErr('RIG_SKIN_INCOMPLETE', `${at}.skin.${b.id}`, `missing default skin for bone "${b.id}"`);
+        continue;
+      }
+      const rest = ch.rest?.[b.id];
+      if (typeof rest !== 'number' || !Number.isFinite(rest)) {
+        pushErr('RIG_REST_MISSING', `${at}.rest.${b.id}`, `missing numeric rest angle`);
+      } else if (b.limits && (rest < b.limits.min || rest > b.limits.max)) {
+        pushErr('RIG_REST_OUT_OF_LIMIT', `${at}.rest.${b.id}`, `rest ${rest} outside [${b.limits.min}, ${b.limits.max}]`);
+      }
+
+      const variants = [['default', skin.default], ...Object.entries(skin.variants ?? {})];
+      for (const [vName, assetId] of variants) {
+        if (!assetsById.has(assetId)) {
+          pushErr('RIG_ASSET_MISSING', `${at}.skin.${b.id}.${vName}`, `asset "${assetId}" not found in manifest`);
+        }
+      }
+    }
+
+    for (const b of rig.bones) {
+      if (b.parent === null || b.attach === null) continue;
+      const pSkin = ch.skin?.[b.parent];
+      if (!pSkin?.default) continue;
+      const pVariants = [['default', pSkin.default], ...Object.entries(pSkin.variants ?? {})];
+      for (const [vName, pAssetId] of pVariants) {
+        const pAsset = assetsById.get(pAssetId);
+        if (!pAsset) continue;
+        const anc = pAsset.anchors?.[b.attach];
+        if (!Array.isArray(anc) || anc.length !== 2) {
+          pushErr('RIG_ANCHOR_MISSING', `${at}.skin.${b.parent}.${vName}`, `asset "${pAssetId}" lacks anchor "${b.attach}" for child "${b.id}"`);
+        } else {
+          const dist = Math.hypot(anc[0] - pAsset.pivot[0], anc[1] - pAsset.pivot[1]);
+          if (dist === 0) {
+            pushErr('RIG_DEGENERATE_BONE', `${at}.skin.${b.parent}.${vName}`, `anchor "${b.attach}" coincides with pivot on "${pAssetId}" (zero-length bone)`);
+          }
+        }
+      }
+    }
+
+    for (const [cName, cDef] of Object.entries(rig.contacts ?? {})) {
+      const skin = ch.skin?.[cDef.bone];
+      if (!skin?.default) {
+        pushErr('RIG_CONTACT_BAD_BONE', `${label}.contacts.${cName}`, `bone "${cDef.bone}" has no skin`);
+        continue;
+      }
+      const variants = [['default', skin.default], ...Object.entries(skin.variants ?? {})];
+      for (const [vName, aId] of variants) {
+        const a = assetsById.get(aId);
+        if (a && !a.anchors?.[cDef.anchor]) {
+          pushErr('RIG_ANCHOR_MISSING', `${at}.skin.${cDef.bone}.${vName}`, `asset "${aId}" lacks contact anchor "${cDef.anchor}" (${cName})`);
+        }
+      }
+    }
+  }
+
+  for (const [ikId, chain] of Object.entries(rig.ik ?? {})) {
+    const u = boneMap.get(chain.upper);
+    const l = boneMap.get(chain.lower);
+    const e = boneMap.get(chain.end);
+    if (!u || !l || !e) {
+      pushErr('RIG_IK_INVALID', `${label}.ik.${ikId}`, 'upper/lower/end must reference existing bones');
+    } else if (l.parent !== u.id || e.parent !== l.id) {
+      pushErr('RIG_IK_INVALID', `${label}.ik.${ikId}`, `must be parent->child chain: ${chain.upper} -> ${chain.lower} -> ${chain.end}`);
+    }
+  }
+
+  return {
+    file: label,
+    id: rig.id,
+    bones: rig.bones.length,
+    characters: (rig.characters ?? []).length,
+    ikChains: Object.keys(rig.ik ?? {}).length,
+  };
+}
+
 function validatePack(packDir) {
   const errors = [];
   const warnings = [];
   const pushErr = (code, where, detail) => errors.push({ code, where, detail });
 
   const manifestPath = join(packDir, 'manifest.json');
-  const rigPath = join(packDir, 'rig.json');
-
   if (!existsSync(manifestPath)) {
     pushErr('PACK_MISSING_MANIFEST', manifestPath, 'manifest.json not found');
     return { status: 'FAIL', packDir, errors, warnings, stats: {} };
@@ -157,159 +290,33 @@ function validatePack(packDir) {
     checkSvgText(rawSvg, `${where} (${a.file})`, pushErr);
   }
 
-  let rigStats = null;
-  if (existsSync(rigPath)) {
-    let rig;
-    try {
-      rig = JSON.parse(readFileSync(rigPath, 'utf8'));
-    } catch (e) {
-      pushErr('RIG_JSON_INVALID', rigPath, `invalid JSON: ${e.message}`);
-      return { status: 'FAIL', packDir, errors, warnings, stats: { assets: assetsById.size } };
-    }
-
-    if (rig.schemaVersion !== 1) pushErr('RIG_SCHEMA', 'rig.schemaVersion', 'expected schemaVersion === 1');
-    if (!Array.isArray(rig.bones) || rig.bones.length === 0) {
-      pushErr('RIG_SCHEMA', 'rig.bones', 'must be a non-empty array');
-    } else {
-      const boneMap = new Map();
-      for (const b of rig.bones) {
-        if (boneMap.has(b.id)) pushErr('RIG_DUP_BONE', `rig.bones.${b.id}`, `duplicate bone "${b.id}"`);
-        boneMap.set(b.id, b);
-      }
-
-      const roots = rig.bones.filter((b) => b.parent === null);
-      if (roots.length !== 1) pushErr('RIG_ROOT_COUNT', 'rig.bones', `expected exactly 1 root bone, found ${roots.length}`);
-
-      for (const b of rig.bones) {
-        const where = `rig.bones.${b.id}`;
-        if (b.parent !== null && !boneMap.has(b.parent)) {
-          pushErr('RIG_UNKNOWN_PARENT', where, `parent "${b.parent}" does not exist`);
-        }
-        if ((b.parent === null) !== (b.attach === null)) {
-          pushErr('RIG_SCHEMA', where, 'attach must be null if and only if parent is null');
-        }
-        if (!b.limits || !(b.limits.min < b.limits.max)) {
-          pushErr('RIG_LIMIT_INVALID', `${where}.limits`, `limits.min must be < limits.max`);
-        }
-        if (!(b.maxDegPerFrame > 0)) {
-          pushErr('RIG_SCHEMA', `${where}.maxDegPerFrame`, 'maxDegPerFrame must be > 0');
-        }
-      }
-
-      // Cycle detection via DFS from roots
-      const children = new Map();
-      for (const b of rig.bones) {
-        if (b.parent !== null) children.set(b.parent, [...(children.get(b.parent) ?? []), b]);
-      }
-      const visited = new Set();
-      const stack = [...roots];
-      while (stack.length > 0) {
-        const cur = stack.pop();
-        if (visited.has(cur.id)) continue;
-        visited.add(cur.id);
-        for (const ch of children.get(cur.id) ?? []) stack.push(ch);
-      }
-      if (visited.size !== rig.bones.length) {
-        const stuck = rig.bones.find((b) => !visited.has(b.id));
-        pushErr('RIG_CYCLE', `rig.bones.${stuck?.id}`, 'bone is unreachable from root (cycle detected)');
-      }
-
-      // Validate characters: skin, rest, anchors, non-degenerate bone lengths
-      for (const ch of rig.characters ?? []) {
-        const at = `rig.characters.${ch.id}`;
-        for (const b of rig.bones) {
-          const skin = ch.skin?.[b.id];
-          if (!skin?.default) {
-            pushErr('RIG_SKIN_INCOMPLETE', `${at}.skin.${b.id}`, `missing default skin for bone "${b.id}"`);
-            continue;
-          }
-          const rest = ch.rest?.[b.id];
-          if (typeof rest !== 'number' || !Number.isFinite(rest)) {
-            pushErr('RIG_REST_MISSING', `${at}.rest.${b.id}`, `missing numeric rest angle`);
-          } else if (b.limits && (rest < b.limits.min || rest > b.limits.max)) {
-            pushErr('RIG_REST_OUT_OF_LIMIT', `${at}.rest.${b.id}`, `rest ${rest} outside [${b.limits.min}, ${b.limits.max}]`);
-          }
-
-          const variants = [['default', skin.default], ...Object.entries(skin.variants ?? {})];
-          for (const [vName, assetId] of variants) {
-            if (!assetsById.has(assetId)) {
-              pushErr('RIG_ASSET_MISSING', `${at}.skin.${b.id}.${vName}`, `asset "${assetId}" not found in manifest`);
-            }
-          }
-        }
-
-        // Parent attach anchors must exist on every parent variant & have length > 0
-        for (const b of rig.bones) {
-          if (b.parent === null || b.attach === null) continue;
-          const pSkin = ch.skin?.[b.parent];
-          if (!pSkin?.default) continue;
-          const pVariants = [['default', pSkin.default], ...Object.entries(pSkin.variants ?? {})];
-          for (const [vName, pAssetId] of pVariants) {
-            const pAsset = assetsById.get(pAssetId);
-            if (!pAsset) continue;
-            const anc = pAsset.anchors?.[b.attach];
-            if (!Array.isArray(anc) || anc.length !== 2) {
-              pushErr('RIG_ANCHOR_MISSING', `${at}.skin.${b.parent}.${vName}`, `asset "${pAssetId}" lacks anchor "${b.attach}" for child "${b.id}"`);
-            } else {
-              const dist = Math.hypot(anc[0] - pAsset.pivot[0], anc[1] - pAsset.pivot[1]);
-              if (dist === 0) {
-                pushErr('RIG_DEGENERATE_BONE', `${at}.skin.${b.parent}.${vName}`, `anchor "${b.attach}" coincides with pivot on "${pAssetId}" (zero-length bone)`);
-              }
-            }
-          }
-        }
-
-        // Contacts check
-        for (const [cName, cDef] of Object.entries(rig.contacts ?? {})) {
-          const skin = ch.skin?.[cDef.bone];
-          if (!skin?.default) {
-            pushErr('RIG_CONTACT_BAD_BONE', `rig.contacts.${cName}`, `bone "${cDef.bone}" has no skin`);
-            continue;
-          }
-          const variants = [['default', skin.default], ...Object.entries(skin.variants ?? {})];
-          for (const [vName, aId] of variants) {
-            const a = assetsById.get(aId);
-            if (a && !a.anchors?.[cDef.anchor]) {
-              pushErr('RIG_ANCHOR_MISSING', `${at}.skin.${cDef.bone}.${vName}`, `asset "${aId}" lacks contact anchor "${cDef.anchor}" (${cName})`);
-            }
-          }
-        }
-      }
-
-      // IK chain checks
-      for (const [ikId, chain] of Object.entries(rig.ik ?? {})) {
-        const u = boneMap.get(chain.upper);
-        const l = boneMap.get(chain.lower);
-        const e = boneMap.get(chain.end);
-        if (!u || !l || !e) {
-          pushErr('RIG_IK_INVALID', `rig.ik.${ikId}`, 'upper/lower/end must reference existing bones');
-        } else if (l.parent !== u.id || e.parent !== l.id) {
-          pushErr('RIG_IK_INVALID', `rig.ik.${ikId}`, `must be parent->child chain: ${chain.upper} -> ${chain.lower} -> ${chain.end}`);
-        }
-      }
-
-      rigStats = {
-        id: rig.id,
-        bones: rig.bones.length,
-        characters: (rig.characters ?? []).length,
-        ikChains: Object.keys(rig.ik ?? {}).length,
-      };
-    }
+  const rigStats = [];
+  const primaryRigPath = join(packDir, 'rig.json');
+  if (existsSync(primaryRigPath)) {
+    const st = validateRigFile(primaryRigPath, 'rig.json', assetsById, pushErr);
+    if (st) rigStats.push(st);
   } else {
     warnings.push('rig.json not present (manifest-only prop/scene pack)');
+  }
+
+  const extraDir = join(packDir, 'rigs');
+  if (existsSync(extraDir)) {
+    for (const fname of readdirSync(extraDir).filter((f) => f.endsWith('.json')).sort()) {
+      const st = validateRigFile(join(extraDir, fname), `rigs/${fname}`, assetsById, pushErr);
+      if (st) rigStats.push(st);
+    }
   }
 
   return {
     status: errors.length === 0 ? 'PASS' : 'FAIL',
     packDir,
-    stats: { assets: assetsById.size, rig: rigStats },
+    stats: { assets: assetsById.size, rigs: rigStats },
     errorCount: errors.length,
     errors,
     warnings,
   };
 }
 
-// CLI entry
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h') || args.length === 0) {
   printHelp();
@@ -332,6 +339,6 @@ const report = validatePack(resolved);
 console.log(JSON.stringify(report, null, 2));
 if (pretty) {
   const icon = report.status === 'PASS' ? 'PASS' : 'FAIL';
-  console.error(`[${icon}] ${report.packDir} — ${report.stats.assets ?? 0} assets, ${report.errorCount} errors`);
+  console.error(`[${icon}] ${report.packDir} — ${report.stats.assets ?? 0} assets, ${report.stats.rigs?.length ?? 0} rig(s), ${report.errorCount} errors`);
 }
 process.exit(report.status === 'PASS' ? 0 : 1);

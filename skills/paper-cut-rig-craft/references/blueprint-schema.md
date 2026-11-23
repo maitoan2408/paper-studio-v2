@@ -1,118 +1,102 @@
-# Blueprint JSON Schema (`blueprint.json`)
+# Blueprint JSON Schema v1.1 (`blueprint.json`)
 
-Write one self-contained JSON file matching this structure, then compile it with `scripts/compile_rig_studio.mjs`.
+Write one clean JSON file and compile it with `scripts/compile_rig_studio.mjs`.
 
-## Top-Level Structure
+## Key v1.1 Additions (Multi-Rig, Atmosphere, Ground Shadows, Falling Leaves)
+- **Multi-character `rigs: [ ... ]`:** Supports 1, 2, or more independent articulated rigs in the same scene (backward-compatible with single `rig`).
+- **Cohesive shadows:** Set `groupShadow: "shadowDeep"` on each rig, and leave bone `shadow: "none"` (or `"shadowInner"` on near limbs/head) so segments blend smoothly without plastic black seams.
+- **Auto soft ground shadow:** Set `groundY`, `shadowRx`, `shadowRy` on each rig.
+- **Cinematic lighting (`scene.atmosphere`):** `lightShaftsSvg` (diagonal moonbeams), `midMistSvg` (horizon haze between hills and characters), `foregroundGlowSvg` (warm vignette / lantern bounce).
+- **Falling leaves/petals emitter (`type: "falling"`):** Wind drift + sinusoidal sway + 3D tumble across back & front lanes.
+- **Emotional cues:** Inside `phases[].rigs[rigId]`, set `emote: "warm"` or `"heart"`, `ease: "back"` for joyful hops, and `phase.vfx.warmGlow: { x, y, intensity }`.
+
+## Compact Schema Example
 ```json
 {
   "meta": {
-    "packId": "my-scene-v1",
-    "version": "0.1.0",
-    "title": "Shadow-Box Rig: Title",
-    "subtitle": "Short technical subtitle (bone count, features)",
+    "packId": "fox-rabbit-autumn-v1",
+    "version": "1.1.0",
+    "title": "Shadow-Box: Cáo Nhỏ & Thỏ Trắng Mùa Thu",
+    "subtitle": "2 Rig độc lập (18 xương) · Lá phong rơi · Ánh sáng hoàng hôn",
     "icon": "🦊",
-    "seed": 4219
+    "seed": 7713
   },
   "scene": {
-    "bgColor": "#0b1326",
-    "waterlineY": 516,
-    "defsSvg": "<linearGradient id=\"skyGrad\" ...>...</linearGradient>",
+    "bgColor": "#181024",
+    "defsSvg": "<linearGradient ...>...</linearGradient>",
     "skySvg": "<rect x=\"-40\" y=\"-40\" width=\"1040\" height=\"800\" fill=\"url(#skyGrad)\"/>",
-    "stars": { "count": 120, "maxY": 440, "color": "#ffffff" },
-    "emitters": [
-      { "type": "meteor", "period": 5.5, "offset": 0.8, "dur": 1.0, "x0": 780, "y0": 90, "dx": -300, "dy": 145, "len": 115, "gradId": "meteorTrail", "color": "#fff7c2" },
-      { "type": "fireflies", "seed": 901, "count": 18, "xMin": 100, "xMax": 860, "yMin": 260, "yMax": 560, "color": "#ffe985" }
-    ],
-    "celestial": {
-      "x": 360, "y": 210,
-      "rings": [{ "r": 104, "fill": "#173647" }, { "r": 84, "fill": "#2b5968" }],
-      "coreSvg": "<circle cx=\"0\" cy=\"0\" r=\"34\" fill=\"url(#moonCore)\"/>",
-      "orbitSvg": "<path transform=\"translate(66,-30)\" d=\"M0 -6 L2 -2 L6 0 L2 2 L0 6 L-2 2 L-6 0 L-2 -2 Z\" fill=\"#ffe156\"/>",
-      "orbitSpeed": 12
+    "stars": { "count": 90, "maxY": 380, "color": "#fff5dc" },
+    "atmosphere": {
+      "lightShaftsSvg": "<polygon points=\"240,120 430,120 720,620 420,620\" fill=\"url(#moonBeam)\"/>",
+      "midMistSvg": "<rect x=\"-40\" y=\"340\" width=\"1040\" height=\"210\" fill=\"url(#horizonMist)\"/>",
+      "foregroundGlowSvg": "<rect x=\"0\" y=\"0\" width=\"960\" height=\"720\" fill=\"url(#vignette)\" pointer-events=\"none\"/>"
     },
-    "backLayers": [
-      { "parallax": 11, "swayAmp": 14, "swayFreq": 1.4, "phase": 0, "filter": "shadowMed", "svg": "<path .../>" }
-    ],
-    "frontLayers": [
-      { "parallax": 18, "swayAmp": 18, "swayFreq": 1.9, "phase": 2.2, "filter": "shadowDeep", "svg": "<path .../>" }
-    ],
-    "swarms": [
+    "emitters": [
+      { "type": "fireflies", "seed": 901, "count": 20, "xMin": 120, "xMax": 840, "yMin": 260, "yMax": 560, "color": "#ffe680" },
       {
-        "lane": "front", "x0": 240, "y0": 570, "speed": 62, "dir": 1, "scale": 1.0,
-        "phase": 0.4, "amp": 14, "jump": true, "jumpPeriod": 5.5, "jumpOffset": 1.0, "jumpHeight": 82,
-        "tailPivotX": -14, "tailPivotY": 0, "wagFreq": 14, "wagAmp": 24,
-        "bodySvg": "<path .../>", "tailSvg": "<path .../>"
+        "type": "falling", "seed": 404, "count": 24, "speedY": 30, "windX": -28, "swayAmp": 26, "scale": 1.0,
+        "colors": ["#f26d38", "#f7b249", "#d9412e", "#ffd166"],
+        "shapesSvg": ["<path d=\"M0 -9 L2 -3 L8 -4 L4 1 L7 6 L1 4 L0 10 L-1 4 L-7 6 L-4 1 L-8 -4 L-2 -3 Z\" fill=\"CURRENT\"/>"]
       }
     ],
-    "frameSvg": "<path filter=\"url(#shadowDeep)\" fill-rule=\"evenodd\" d=\"M-30 -30 H990 V750 H-30 Z M60 110 ... Z\"/>",
-    "cornersSvg": "<g filter=\"url(#shadowSoft)\"><path .../></g>",
-    "overlayProps": [
-      { "x": 810, "y": 155, "scale": 0.8, "parallax": 22, "freqX": 0.8, "ampX": 10, "freqY": 1.1, "ampY": 10, "tiltAmp": 3.5, "svg": "<g>...</g>" }
-    ]
+    "celestial": { "x": 300, "y": 190, "rings": [], "coreSvg": "...", "orbitSvg": "...", "orbitSpeed": 10 },
+    "backLayers": [ { "parallax": 8, "filter": "shadowMed", "svg": "..." } ],
+    "frontLayers": [ { "parallax": 20, "filter": "shadowDeep", "svg": "..." } ],
+    "swarms": [ { "lane": "back", "x0": 140, "y0": 180, "speed": 58, "dir": 1, "scale": 0.85, "tailPivotX": 0, "tailPivotY": -2, "wagFreq": 10, "wagAmp": 32, "bodySvg": "...", "tailSvg": "..." } ],
+    "frameSvg": "...",
+    "cornersSvg": "...",
+    "overlayProps": [ { "x": 800, "y": 150, "scale": 1, "parallax": 22, "freqX": 0.9, "ampX": 6, "freqY": 1.1, "ampY": 5, "tiltAmp": 3.5, "svg": "..." } ]
   },
   "parts": [
-    {
-      "id": "creature-root",
-      "category": "body",
-      "size": [120, 96],
-      "pivot": [60, 48],
-      "anchors": { "head": [26, 40], "mid": [94, 52] },
-      "svg": "<path d=\"...\" fill=\"url(#bodyGrad)\"/>"
-    }
+    { "id": "fox-body", "category": "body", "size": [140, 84], "pivot": [70, 42], "anchors": { "neck": [108, 32] }, "svg": "..." }
   ],
-  "rig": {
-    "id": "my-rig-v1",
-    "characterId": "hero",
-    "rootPos": { "x": 500, "y": 420 },
-    "parallax": 15,
-    "bones": [
-      { "id": "root", "label": "Thân chính", "parent": null, "attach": null, "part": "creature-root", "limits": { "min": -85, "max": 85 }, "rest": 0, "z": 0, "maxDegPerFrame": 12, "shadow": "shadowDeep" },
-      { "id": "head", "label": "Đầu", "parent": "root", "attach": "head", "part": "creature-head", "limits": { "min": -30, "max": 30 }, "rest": -5, "z": 2, "maxDegPerFrame": 10, "shadow": "shadowMed" }
-    ],
-    "ik": {}
-  },
-  "motions": [
+  "rigs": [
     {
-      "id": "main-cycle",
-      "name": "🌊 Chu trình chính",
-      "type": "cycle",
-      "period": 10,
-      "phases": [
-        {
-          "from": 0, "to": 0.5, "label": "Pha 1/2: ...",
-          "rootX": [600, 440], "rootY": [620, 380], "arcY": 35,
-          "bones": { "root": [45, -25], "head": [8, -10] },
-          "waves": { "mid": { "freq": 5, "amp": 16, "phase": -0.6 } },
-          "vfx": { "splashAtY": 516, "bubbles": 0 }
-        },
-        {
-          "from": 0.5, "to": 1.0, "label": "Pha 2/2: ...",
-          "rootX": [440, 600], "rootY": [380, 620],
-          "bones": { "root": [-25, 45], "head": [-10, 8] },
-          "vfx": { "splashAtY": 516, "bubbles": 0.8 }
-        }
+      "id": "fox",
+      "label": "🦊 Cáo nhỏ",
+      "characterId": "fox-autumn",
+      "rootPos": { "x": 380, "y": 495 },
+      "groundY": 556, "shadowRx": 64, "shadowRy": 11,
+      "groupShadow": "shadowDeep", "z": 2, "parallax": 15,
+      "bones": [
+        { "id": "root", "label": "Thân cáo", "parent": null, "attach": null, "part": "fox-body", "limits": { "min": -35, "max": 35 }, "rest": 0, "z": 0, "shadow": "none" }
       ]
     },
     {
-      "id": "gentle",
-      "name": "🌙 Lướt êm",
-      "type": "harmonic",
-      "label": "Chuyển động êm dịu",
-      "rootWaveX": { "freq": 0.5, "amp": 50 },
-      "rootWaveY": { "freq": 1.1, "amp": 18 },
-      "base": { "root": -10 },
-      "waves": { "head": { "freq": 1.6, "amp": 6, "phase": 0 } }
+      "id": "rabbit",
+      "label": "🐰 Thỏ trắng",
+      "characterId": "rabbit-autumn",
+      "rootPos": { "x": 630, "y": 524 },
+      "groundY": 556, "shadowRx": 34, "shadowRy": 8,
+      "groupShadow": "shadowDeep", "z": 3, "parallax": 15,
+      "bones": [
+        { "id": "root", "label": "Thân thỏ", "parent": null, "attach": null, "part": "rabbit-body", "limits": { "min": -30, "max": 30 }, "rest": 0, "z": 0, "shadow": "none" }
+      ]
+    }
+  ],
+  "motions": [
+    {
+      "id": "story",
+      "name": "🍂 Gặp gỡ mùa thu",
+      "type": "cycle",
+      "period": 12,
+      "phases": [
+        {
+          "from": 0, "to": 0.5, "label": "🦊 Pha 1: Cáo bước nhẹ tới gặp Thỏ",
+          "vfx": { "warmGlow": { "x": 540, "y": 500, "intensity": 0.7 } },
+          "rigs": {
+            "fox": { "rootX": [240, 455], "rootY": [495, 495], "bones": { "root": [0, 4] }, "emote": "warm" },
+            "rabbit": { "rootX": [630, 630], "rootY": [524, 524], "ease": "back", "arcY": 24, "bones": { "root": [0, -10] } }
+          }
+        }
+      ]
     }
   ]
 }
 ```
 
-## Coordinate Convention (Critical!)
-- Inside `parts[].svg`, coordinates are **local to the bone's pivot `(0, 0)`**!
-- `parts[].size` is `[width, height]` of the exported standalone `.svg` file; `parts[].pivot` is `[ox, oy]` inside that viewBox.
-- `parts[].anchors` are in **viewBox pixel coordinates** (same coordinate space as `pivot`), so child offset is automatically `(anchor.x - pivot.x, anchor.y - pivot.y)`.
-- All gradients referenced in `parts[].svg` (like `url(#bodyGrad)`) MUST be declared in `scene.defsSvg` so both the HTML studio and every exported standalone `.svg` file render identically.
-
-## Allowed SVG Tags (`paper-studio-v2` Security Contract)
-Only use standard vector & filter primitives: `svg`, `g`, `defs`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline`, `polygon`, `linearGradient`, `radialGradient`, `stop`, `clipPath`, `mask`, `pattern`, `use`, `symbol`, `filter`, `feBlend`, `feColorMatrix`, `feComposite`, `feDropShadow`, `feFlood`, `feGaussianBlur`, `feMerge`, `feMergeNode`, `feOffset`, `feTurbulence`, `feDisplacementMap`, `feComponentTransfer`, `feFuncA/R/G/B`, `feMorphology`.
-**Never** include `<script>`, `<style>`, `<image>`, `<foreignObject>`, `on*` handlers, or external `http(s)://` URLs inside SVGs.
+## Coordinate & Security Rules
+- `parts[].svg` coordinates are local to `(0, 0)` (the bone's pivot).
+- `parts[].anchors` are in viewBox pixel space matching `parts[].pivot`.
+- All `url(#...)` gradients used inside `parts[].svg` MUST be declared in `scene.defsSvg`.
+- Strictly obey `paper-studio-v2` SVG allowlist (no `<script>`, `<style>`, `<image>`, `<foreignObject>`, `on*`, or external URLs).
