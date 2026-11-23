@@ -220,6 +220,17 @@ Phạm vi chủ dự án duyệt (2026-11-20, lựa chọn B — vẫn dùng art
 - Validator báo sớm khi không có chỗ rơi, rơi trúng nhân vật, hoặc dàn cảnh không với tới/không chừa chỗ cho tay.
 - **Đạt khi:** ≥2 đạo cụ khác hình, 2 tay, 2 thời điểm thả, 2 kiểu tiếp đất (bàn, sàn); kiểm liên tục tại frame thả; bake giả bị phát hiện; hash bake trùng giữa CI và máy tại chỗ; lượt chạy nghiệm thu PASS; chủ dự án duyệt video.
 
+**Tiến độ ngày 2026-11-23.** Chủ dự án ưu tiên vật lý đạo cụ trong khi mốc mở chính thức là M1 và mẫu Tam chờ duyệt. Đợt thả tự do trên PR #8 dùng một hộp và một mặt đỡ đích hữu hạn. Codex đã đối chiếu `89feaa4` với `fc643d5` trên cùng dữ liệu. Lần chạm đầu khi nảy và ba quỹ đạo ở mép đã có test hồi quy. Còn lỗi tự ngủ khi trượt và cờ đỡ lúc bật lên ở bước cuối. Chi tiết frame và bằng chứng CI nằm trong `docs/STATE.json`.
+
+| Thứ tự | Công việc và file dự kiến | Phép kiểm trước khi giao bước kế tiếp |
+| --- | --- | --- |
+| 1 | Sửa khóa nghỉ khi Rapier tự ngủ và cách xác định còn được đỡ sau va chạm. `src/physics/drop.ts`, `drop.test.ts`, `drop-fixtures.ts` cùng thư mục. | Trên mặt ngang không ma sát, vật đang trượt tới mép phải rơi tiếp. Trên mặt đủ dài vật tiếp tục trượt tới hết phim. Cú nảy ở bước 8/8 phải ghi được va chạm và vận tốc tách khỏi mặt. Giữ 5 golden, ngưỡng QA và các quỹ đạo đối chứng. |
+| 2 | Hai cảnh thả với hai nhân vật, hai tay, hai thời điểm và hai đạo cụ khác hình collider, một đáp lên bàn, một xuống sàn. Dữ liệu trong `examples/films/`, hình va chạm trong `src/schema/film.ts` và `src/physics/drop.ts`. | Kiểm liên tục tại R−1/R, mặt thực sự đỡ, lần chạm và tư thế nghỉ. Render/audit cả hai và bàn giao clip 1×/0,5×. |
+| 3 | Cho các đạo cụ và mặt đỡ liên quan vào cùng thế giới Rapier theo thời gian phim. `src/physics/drop.ts`, `src/motion/props.ts`, `src/schema/film.ts`. | Cảnh hai vật va nhau làm đổi vận tốc của cả hai, đối chứng thả lệch nhau. Vật đã nghỉ có thể chuyển động lại khi bị tác động. Tua ngẫu nhiên và thứ tự khai báo tương đương cho cùng kết quả. |
+| 4 | Ghi bake có SHA-256 và kiểm nguồn đầu vào, phiên bản engine, cấu hình, quỹ đạo. `src/physics/`, `src/render/{render,types}.ts`, `src/audit/audit.ts`. | Audit mô phỏng lại từ đầu. Bắt bake cũ và bake sửa pose rồi tính lại SHA. Đối chiếu SHA của bake CI với máy cục bộ, kèm hash SceneFrame riêng. |
+| 5 | Kiểm vật rơi trúng nhân vật trước render theo hình va chạm, tư thế và thời điểm. `src/schema/film.ts`, `src/motion/character.ts`, `src/physics/`. | Một ca trúng và một ca sượt qua hợp lệ. Lỗi nêu vật, nhân vật và frame, cho phép tiếp xúc tay hợp lệ lúc buông. |
+| 6 | Sau khi chủ dự án chốt phạm vi nhặt lại, nối pose đã bake vào sự kiện grip kế tiếp. `src/motion/{props,interaction}.ts`, `src/schema/film.ts`, `src/physics/drop.test.ts`. | Đề xuất trước hết cho nhặt sau khi nghỉ. Tay chạm đúng anchor đã xoay, pivot liên tục, kiểm ca ngoài tầm. Bắt vật đang bay cần quyết định phạm vi riêng. |
+
 ### M4 — Studio nối engine
 
 - **Capability catalog** (dữ liệu): mỗi hành động mô tả nó cần gì — tay, đạo cụ + anchor, tầm với, thời lượng tối thiểu/mặc định, có cần đối diện người khác.

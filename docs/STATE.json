@@ -87,10 +87,24 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": null,
-      "updated": "2026-11-20",
-      "checks": {},
-      "notes": []
+      "head": "fc643d5f1b18aaae9435919dfdc14a9813cffca9",
+      "updated": "2026-11-23",
+      "checks": {
+        "firstImpact": "PASS_TECHNICAL",
+        "edgeFixtures": "PASS_TECHNICAL",
+        "regression": "PASS_TECHNICAL",
+        "slidingRest": "BLOCKED",
+        "separatingSupport": "BLOCKED",
+        "visualReview": "NOT_RUN"
+      },
+      "notes": [
+        "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
+        "Codex kiểm độc lập PR #8, 89feaa4 → fc643d5. Bounce f165 bước 6/8, cuối bước t=164,75, bay trở lại, nghỉ f220 (bản cũ ghi lần đầu f176). Edge-land chạm f165, nghỉ f180. Edge-stool chạm f163, nghỉ f187. Edge-miss chưa chạm, lỗi f169. Edge-slide chạm f165, đỡ f166–168, rời đỡ f169, lỗi f175 (bản cũ lỗi f161). Cảnh gốc nghỉ f178.",
+        "Codex chạy npm run verify 322/322, đủ 5 golden. Cùng 21 test drop, bản cũ 15 đạt/6 lỗi, bản sửa 21 đạt. CI verify push https://github.com/maitoan2408/paper-studio-v2/actions/runs/45178796218 và PR https://github.com/maitoan2408/paper-studio-v2/actions/runs/45178806035 thành công. Render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45178806196 ở merge ref 00fe752, cùng cây với fc643d5, check:renderer 8/8 và audit 5 phim đạt, minPSNR 41,20 dB.",
+        "Codex tái hiện trên m3-drop với walks[0].toX=-155, friction=0, onto=ledge (y=0, x0=-500, x1=-180). Vật trượt 37,68 px/s tại f178, tự ngủ và về 0 ở f179, khóa nghỉ f190. Đối chứng chỉ tắt tự ngủ của body: còn đỡ tới f214, PHYSICS_NO_LANDING f222. Với x1=400, đối chứng còn trượt 37,7 px/s ở f239.",
+        "Codex kiểm ca restitution=0.65, onto=ledge (y=-10, x0=-600, x1=600): chạm f165 bước 8/8, pivot bật lên 644,77 px/s nhưng pose vẫn supported. Không khóa nghỉ tại f165. Cần phân biệt xung lực trong bước với đỡ sau bước.",
+        "Claude báo đã gửi hai clip fixture 0,5× render cục bộ. Fixture chưa có trong CI render và chủ dự án chưa duyệt. Codex đã kiểm dữ liệu và CI, chưa xem clip liên tục. Các bước tiếp theo nằm ở PLAN.md §6 M3."
+      ]
     },
     "M4": {
       "status": "NOT_RUN",
