@@ -13,6 +13,8 @@ const GOLDEN: Record<string, string> = {
   'm0-static': '3b7409d39b98b66755065448cadb7c929378b97b003beaff0da12fdc5c8edeb9',
   'm2-handover': '8fcb912a95b0e74b51c5f78a900a53caa594d242e518d2f314a83ae4441d4c1e',
   'm2-plant': '791a18777d51cf915723609d38072d170ae41d5a5940a6a6869ad1bf76e98c70',
+  // M3 đợt 1: quỹ đạo rơi do Rapier 2D tất định @0.21.0 (đổi phiên bản/bước mô phỏng → đổi golden có chủ ý).
+  'm3-drop': 'e773000116dc5df4616dab74307ef64e59f3828e357f189de96cbb96e8016bfe',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {
