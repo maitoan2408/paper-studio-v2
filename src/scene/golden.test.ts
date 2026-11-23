@@ -12,7 +12,7 @@ const GOLDEN: Record<string, string> = {
   'demo-greeting': 'f271276faff5bf91562cc930f93f1fa47054d1b884a23e2615b8ed2cd997ab9b',
   'm0-static': '3b7409d39b98b66755065448cadb7c929378b97b003beaff0da12fdc5c8edeb9',
   'm2-handover': '8fcb912a95b0e74b51c5f78a900a53caa594d242e518d2f314a83ae4441d4c1e',
-  'm2-plant': '3c1320faa7e7f2c84fdc993790948b5e1c9c26bbee8d2412453bb86c8db8f78d',
+  'm2-plant': '791a18777d51cf915723609d38072d170ae41d5a5940a6a6869ad1bf76e98c70',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {
