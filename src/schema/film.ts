@@ -41,6 +41,33 @@ const Prop = z
  * Đơn vị: gravity m/s², pxPerMeter = px thế giới mỗi mét (tỷ lệ của cảnh), density kg/m² (2D), friction/restitution
  * không thứ nguyên (Rapier). Va chạm đợt 1: chỉ mặt đỡ `onto` (khối tĩnh trên [x0, x1], mặt trên tại y của mặt đỡ).
  */
+/**
+ * Hình va chạm của đạo cụ khi rơi (M3). Mặc định (bỏ trống) = `box`: khung art × scale — giống mọi phim trước đó.
+ * `hull`: bao lồi của các điểm trong TỌA ĐỘ ART (px, gốc trên-trái, y xuống — như anchors), × scale của đạo cụ; dùng khi
+ * khung art lệch xa hình thật (vd. đèn lồng: đáy hẹp, dây treo phía trên). Rapier tính khối tâm/mô-men từ chính hình này.
+ */
+const Collider = z.union([
+  z.object({ type: z.literal('box') }).strict(),
+  z.object({ type: z.literal('hull'), points: z.array(z.tuple([Finite, Finite])).min(3).max(64) }).strict(),
+]);
+export type ColliderSpec = z.output<typeof Collider>;
+/** Diện tích bao lồi của các điểm 2D (thuật toán chuỗi đơn điệu; tất định, không phụ thuộc thứ tự nhập). */
+export function convexHullArea(points: readonly (readonly [number, number])[]): number {
+  const ps = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: readonly number[], a: readonly number[], b: readonly number[]) => (a[0]! - o[0]!) * (b[1]! - o[1]!) - (a[1]! - o[1]!) * (b[0]! - o[0]!);
+  const half = (list: typeof ps) => {
+    const h: (readonly [number, number])[] = [];
+    for (const p of list) {
+      while (h.length >= 2 && cross(h[h.length - 2]!, h[h.length - 1]!, p) <= 0) h.pop();
+      h.push(p);
+    }
+    return h.slice(0, -1);
+  };
+  const hull = [...half(ps), ...half([...ps].reverse())];
+  let a2 = 0;
+  for (let k = 0; k < hull.length; k++) { const p = hull[k]!, q = hull[(k + 1) % hull.length]!; a2 += p[0] * q[1] - q[0] * p[1]; }
+  return Math.abs(a2) / 2;
+}
 const Drop = z
   .object({
     id: Id,
@@ -48,7 +75,14 @@ const Drop = z
     release: z.number().int().min(0),
     onto: Id,
     world: z.object({ gravity: z.number().finite().positive().max(100), pxPerMeter: z.number().finite().positive().max(10000) }).strict(),
-    body: z.object({ density: z.number().finite().positive(), friction: z.number().finite().min(0).max(2), restitution: z.number().finite().min(0).max(1) }).strict(),
+    body: z
+      .object({
+        density: z.number().finite().positive(),
+        friction: z.number().finite().min(0).max(2),
+        restitution: z.number().finite().min(0).max(1),
+        collider: Collider.optional(),
+      })
+      .strict(),
   })
   .strict();
 export type DropSpec = z.output<typeof Drop>;
@@ -354,6 +388,17 @@ export function validateFilm(
     const clip = clips.get(c.pack)?.get(it.clip);
     if (!clip || !clip.events.some((e) => e.type === 'release')) fail('PHYSICS_NO_RELEASE', `${where}.release`, `timeline[${d.release}] (${it.clip}) has no release event`);
     if (it.bind.place) fail('PHYSICS_CONFLICT', `${where}.release`, `timeline[${d.release}] (${it.clip}) is a controlled place (bind.place); a drop must not set it`);
+    const col = d.body.collider;
+    if (col?.type === 'hull') {
+      const a = assets.get(f.props.find((x) => x.id === d.prop)!.asset)!;
+      col.points.forEach(([x, y], k) => {
+        if (x < 0 || x > a.width || y < 0 || y > a.height) fail('PHYSICS_COLLIDER', `${where}.body.collider.points[${k}]`, `(${x}, ${y}) is outside the art frame ${a.width}×${a.height} of "${a.id}"`);
+      });
+      // Bao suy biến (thẳng hàng/trùng điểm) phải bị chặn TẠI ĐÂY: Rapier 0.21 không trả null như tài liệu mà panic trong
+      // WASM ("unreachable"). Diện tích bao lồi (chuỗi đơn điệu Andrew) phải ≥ 1 px² art.
+      const area = convexHullArea(col.points);
+      if (area < 1) fail('PHYSICS_COLLIDER', `${where}.body.collider`, `hull of ${col.points.length} points has area ${area.toFixed(3)} px² (collinear or repeated points)`);
+    }
   });
 
   const film: Film = { data: f, assets, packs, rigs, clips };

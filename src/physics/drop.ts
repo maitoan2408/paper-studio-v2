@@ -97,6 +97,8 @@ export interface DropTrace {
   init: { pivot: V2; velocity: V2; angle: number };
   poses: DropPose[];
   firstContact: FirstContact | null;
+  /** Điểm manifold của cặp (vật, mặt đỡ) ở đúng bước con chạm đầu (rỗng nếu chưa chạm). */
+  firstContactPoints: ContactPoint[];
   /** Frame cuối cùng vật còn được đỡ (−1 nếu chưa bao giờ). */
   lastSupported: number;
   restFrame: number;
@@ -112,6 +114,7 @@ export interface DropBake {
   /** Frame của lần tiếp xúc đầu tiên với mặt đỡ (= firstContact.frame). */
   landFrame: number;
   firstContact: FirstContact;
+  firstContactPoints: ContactPoint[];
   restFrame: number;
   init: { pivot: V2; velocity: V2; angle: number };
   poses: DropPose[];
@@ -162,11 +165,18 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
   const ppm = d.world.pxPerMeter;
   const g = d.world.gravity * ppm; // px/s²
   const surface = film.data.stage.surfaces.find((s) => s.id === d.onto)!;
-  // Khối = khung art × scale; tâm khối tính từ pivot trong khung local (y-lên).
+  // Gốc thân Rapier = TÂM KHUNG ART × scale (tính từ pivot trong khung local, y-lên) — với mọi hình collider, nên pivot ↔
+  // gốc thân không đổi giữa hộp và hull. Hình (src/schema/film.ts Collider): mặc định hộp = khung art; hull = bao lồi của
+  // các điểm art. Khối tâm do Rapier tính từ hình (hull: khác gốc thân) — mọi vận tốc dưới đây lấy quanh KHỐI TÂM.
   const hw = (asset.width * prop.scale) / 2, hh = (asset.height * prop.scale) / 2;
-  const radius = Math.hypot(hw, hh);
   const cLocal = artToLocal([asset.width / 2, asset.height / 2], asset.pivot);
   const c0: V2 = [cLocal[0] * prop.scale, cLocal[1] * prop.scale];
+  const collider = d.body.collider ?? { type: 'box' as const };
+  /** Đỉnh hình trong khung thân (px, quanh gốc thân). */
+  const verts: V2[] = collider.type === 'box'
+    ? [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]]
+    : collider.points.map((a) => { const l = artToLocal(a, asset.pivot); return [l[0] * prop.scale - c0[0], l[1] * prop.scale - c0[1]] as V2; });
+  const radius = Math.max(...verts.map((v) => Math.hypot(v[0], v[1])));
   const centerOf = (pivot: V2, angle: number): V2 => { const r = rotate(c0, angle); return [pivot[0] + r[0], pivot[1] + r[1]]; };
   const pivotOf = (center: V2, angle: number): V2 => { const r = rotate(c0, angle); return [center[0] - r[0], center[1] - r[1]]; };
 
@@ -187,7 +197,12 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
       // ma sát) — nằm yên chỉ do tiêu chí của file này quyết định (REST_*), không do ngưỡng ngủ nội bộ của engine.
       .setCanSleep(false),
   );
-  const shape = world.createCollider(RAPIER.ColliderDesc.cuboid(hw / ppm, hh / ppm).setDensity(d.body.density).setFriction(d.body.friction).setRestitution(d.body.restitution), body);
+  const desc = collider.type === 'box' ? RAPIER.ColliderDesc.cuboid(hw / ppm, hh / ppm) : RAPIER.ColliderDesc.convexHull(new Float32Array(verts.flatMap((v) => [v[0] / ppm, v[1] / ppm])));
+  if (!desc) {
+    world.free();
+    return fail('PHYSICS_COLLIDER', `${where}.body.collider`, `the hull of ${verts.length} points is degenerate (collinear or repeated points)`);
+  }
+  const shape = world.createCollider(desc.setDensity(d.body.density).setFriction(d.body.friction).setRestitution(d.body.restitution), body);
   /**
    * Dung sai vₙ của "đỡ" = g·h (h = bước con). Không phải ngưỡng vật lý của cú nảy mà là độ phân giải của mô phỏng: một
    * điểm rời mặt với vₙ ≤ g·h chỉ dưới trọng lực sẽ cao lên tối đa vₙ²/2g ≤ g·h²/2 (≈ 0,05 px ở 9,81 m/s², 400 px/m,
@@ -212,11 +227,11 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
     const points: ContactPoint[] = [];
     world.contactPair(shape, support, (m, flipped) => {
       const n = m.normal(), s = flipped ? 1 : -1, nx = s * n.x, ny = s * n.y;
-      const c = body.translation(), v = body.linvel(), w = body.angvel(), r = body.rotation();
+      const c = body.worldCom(), t = body.translation(), v = body.linvel(), w = body.angvel(), r = body.rotation();
       const cr = Math.cos(r), sr = Math.sin(r);
       for (let i = 0; i < m.numContacts(); i++) {
         const lb = (flipped ? m.localContactPoint2(i) : m.localContactPoint1(i))!;
-        const px = c.x + cr * lb.x - sr * lb.y, py = c.y + sr * lb.x + cr * lb.y;
+        const px = t.x + cr * lb.x - sr * lb.y, py = t.y + sr * lb.x + cr * lb.y; // điểm local quanh GỐC thân
         const vn = ((v.x - w * (py - c.y)) * nx + (v.y + w * (px - c.x)) * ny) * ppm;
         const impulse = m.contactImpulse(i);
         points.push({ x: px * ppm, y: py * ppm, impulse, separation: vn });
@@ -231,6 +246,7 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
 
   const poses: DropPose[] = [];
   let firstContact: FirstContact | null = null;
+  let firstContactPoints: ContactPoint[] = [];
   let restFrame = -1, missFrame = -1, lastSupported = -1, calm = 0;
   try {
     for (let fr = R; fr < N; fr++) {
@@ -244,7 +260,10 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
         const ct = contact();
         if (ct.pushed) {
           touching = true;
-          if (!firstContact) firstContact = { frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS };
+          if (!firstContact) {
+            firstContact = { frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS };
+            firstContactPoints = ct.points;
+          }
         }
         if (k === SUBSTEPS) {
           supported = ct.supports;
@@ -252,13 +271,13 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
           points = ct.points;
         }
       }
-      const t = body.translation(), lv = body.linvel();
+      const t = body.translation(), lv = body.linvel(), com = body.worldCom();
       const angle = (body.rotation() * 180) / Math.PI;
       const center: V2 = [t.x * ppm, t.y * ppm];
       const pv = pivotOf(center, angle);
       const w = body.angvel();
-      // vận tốc của pivot = v_tâm + ω × (pivot − tâm)
-      const rx = pv[0] - center[0], ry = pv[1] - center[1];
+      // vận tốc của pivot = v_khối-tâm + ω × (pivot − khối tâm)  (linvel của Rapier là vận tốc khối tâm)
+      const rx = pv[0] - com.x * ppm, ry = pv[1] - com.y * ppm;
       const vx = lv.x * ppm - w * ry, vy = lv.y * ppm + w * rx;
       const spin = (w * 180) / Math.PI;
       if (supported) lastSupported = fr;
@@ -277,7 +296,7 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
   } finally {
     world.free();
   }
-  return { releaseFrame: R, init: { pivot: p1, velocity: v0, angle: angle0 }, poses, firstContact, lastSupported, restFrame, missFrame };
+  return { releaseFrame: R, init: { pivot: p1, velocity: v0, angle: angle0 }, poses, firstContact, firstContactPoints, lastSupported, restFrame, missFrame };
 }
 
 function bake(film: Film, d: DropSpec): DropBake {
@@ -295,5 +314,5 @@ function bake(film: Film, d: DropSpec): DropBake {
     const last = tr.poses[tr.poses.length - 1];
     fail('PHYSICS_NOT_AT_REST', where, `"${d.prop}" ${history} but is not at rest at the last frame ${N - 1}${last ? ` (speed ${Math.hypot(last.vx, last.vy).toFixed(1)} px/s, ${last.state})` : ''}; lengthen the film or release earlier`);
   }
-  return { id: d.id, prop: d.prop, engine: `rapier2d-deterministic-compat@${RAPIER_VERSION}`, releaseFrame: tr.releaseFrame, landFrame: fc.frame, firstContact: fc, restFrame: tr.restFrame, init: tr.init, poses: tr.poses };
+  return { id: d.id, prop: d.prop, engine: `rapier2d-deterministic-compat@${RAPIER_VERSION}`, releaseFrame: tr.releaseFrame, landFrame: fc.frame, firstContact: fc, firstContactPoints: tr.firstContactPoints, restFrame: tr.restFrame, init: tr.init, poses: tr.poses };
 }

@@ -15,6 +15,8 @@ const GOLDEN: Record<string, string> = {
   'm2-plant': '791a18777d51cf915723609d38072d170ae41d5a5940a6a6869ad1bf76e98c70',
   // M3 đợt 1: quỹ đạo rơi do Rapier 2D tất định @0.21.0 (đổi phiên bản/bước mô phỏng → đổi golden có chủ ý).
   'm3-drop': 'e773000116dc5df4616dab74307ef64e59f3828e357f189de96cbb96e8016bfe',
+  // M3 việc 2: Lan tay trái thả đèn lồng (collider hull) lên mặt bàn — phim mới, không đổi golden cũ.
+  'm3-drop-table': 'afb62ed98f49fe8c6465425f2db0f55389f83cfdb273e31820a12d2dc0da8fe2',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {
