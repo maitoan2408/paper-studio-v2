@@ -64,6 +64,126 @@
       "sha256": "31cf0b52bb7db019f80d2700ce5a0800b61fc9d93f9610741ee647dab39506ad"
     },
     {
+      "id": "tam-pelvis-side",
+      "file": "body/tam-pelvis-side.svg",
+      "width": 124,
+      "height": 56,
+      "pivot": [
+        62.0,
+        28
+      ],
+      "anchors": {
+        "waist": [
+          62.0,
+          12
+        ],
+        "hip.l": [
+          65.0,
+          34
+        ],
+        "hip.r": [
+          59.0,
+          34
+        ],
+        "carry.l": [
+          65.0,
+          42.0
+        ],
+        "carry.r": [
+          59.0,
+          42.0
+        ]
+      },
+      "category": "body",
+      "sha256": "0149f04aec2ca2ce579b10607591820066e7c639e8e0ad7e110887e3dd2761e8"
+    },
+    {
+      "id": "tam-pelvis-tq",
+      "file": "body/tam-pelvis-tq.svg",
+      "width": 124,
+      "height": 56,
+      "pivot": [
+        62.0,
+        28
+      ],
+      "anchors": {
+        "waist": [
+          62.0,
+          12
+        ],
+        "hip.l": [
+          86.0,
+          34
+        ],
+        "hip.r": [
+          38.0,
+          34
+        ],
+        "carry.l": [
+          86.0,
+          42.0
+        ],
+        "carry.r": [
+          38.0,
+          42.0
+        ]
+      },
+      "category": "body",
+      "sha256": "91cf3a71ba020633e819efc45956d4c871111c301124af131074e48997bd27ae"
+    },
+    {
+      "id": "tam-torso-side",
+      "file": "body/tam-torso-side.svg",
+      "width": 140,
+      "height": 124,
+      "pivot": [
+        70.0,
+        114
+      ],
+      "anchors": {
+        "neck": [
+          74.0,
+          14
+        ],
+        "shoulder.l": [
+          72.0,
+          30
+        ],
+        "shoulder.r": [
+          72.0,
+          30
+        ]
+      },
+      "category": "body",
+      "sha256": "464072962bee641c55e98da7bba18c2c8bc55c23eaac5c4d29505e2ce82aa8d6"
+    },
+    {
+      "id": "tam-torso-tq",
+      "file": "body/tam-torso-tq.svg",
+      "width": 140,
+      "height": 124,
+      "pivot": [
+        70.0,
+        114
+      ],
+      "anchors": {
+        "neck": [
+          80.0,
+          14
+        ],
+        "shoulder.l": [
+          114.0,
+          30
+        ],
+        "shoulder.r": [
+          28.0,
+          30
+        ]
+      },
+      "category": "body",
+      "sha256": "166ecb76dba17ac2045676cca4c8ebcfcfc178adef57715e26985e06c0872078"
+    },
+    {
       "id": "tam-head",
       "file": "head/tam-head.svg",
       "width": 128,
@@ -141,20 +261,20 @@
     {
       "id": "tam-hand",
       "file": "hand/tam-hand.svg",
-      "width": 36,
-      "height": 42,
+      "width": 52,
+      "height": 64,
       "pivot": [
-        18,
+        26.0,
         10.5
       ],
       "anchors": {
         "grip": [
-          18,
+          26.0,
           21
         ]
       },
       "category": "hand",
-      "sha256": "8453c39746de3380720581b178d07d37cd4537d378fb4afef3abb39479ee1092"
+      "sha256": "632f42fdb403ed3d82a470da6c90ac15fa6b6b6e0f54863697a143d1d17734dd"
     },
     {
       "id": "tam-hand-open",
@@ -163,16 +283,52 @@
       "height": 64,
       "pivot": [
         26.0,
-        6
+        10.5
       ],
       "anchors": {
         "grip": [
           26.0,
-          27
+          21
         ]
       },
       "category": "hand",
-      "sha256": "145bd385bc5681bdac7a0bd1ff7c7f5a2ff2c703271dba31e11f55fcdf80fdf7"
+      "sha256": "eea3a45ea8b0d9c0dd36313a3078608a73d26571241754ddb8c6099eba0e1e15"
+    },
+    {
+      "id": "tam-hand-point",
+      "file": "hand/tam-hand-point.svg",
+      "width": 52,
+      "height": 64,
+      "pivot": [
+        26.0,
+        10.5
+      ],
+      "anchors": {
+        "grip": [
+          26.0,
+          21
+        ]
+      },
+      "category": "hand",
+      "sha256": "e709cfcaf9b17d39ae2190b62575325e107be4501043c17cdf39c94571b11ed7"
+    },
+    {
+      "id": "tam-hand-relaxed",
+      "file": "hand/tam-hand-relaxed.svg",
+      "width": 52,
+      "height": 64,
+      "pivot": [
+        26.0,
+        10.5
+      ],
+      "anchors": {
+        "grip": [
+          26.0,
+          21
+        ]
+      },
+      "category": "hand",
+      "sha256": "7a1f2a16a935809a8b7da4f855404922a548287c5f81d4c726fbdbb69e898944"
     },
     {
       "id": "tam-thigh",

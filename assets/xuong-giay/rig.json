@@ -199,10 +199,18 @@
       "id": "tam",
       "skin": {
         "pelvis": {
-          "default": "tam-pelvis"
+          "default": "tam-pelvis",
+          "variants": {
+            "three-quarter": "tam-pelvis-tq",
+            "side": "tam-pelvis-side"
+          }
         },
         "torso": {
-          "default": "tam-torso"
+          "default": "tam-torso",
+          "variants": {
+            "three-quarter": "tam-torso-tq",
+            "side": "tam-torso-side"
+          }
         },
         "head": {
           "default": "tam-head",
@@ -220,7 +228,9 @@
         "hand.l": {
           "default": "tam-hand",
           "variants": {
-            "open": "tam-hand-open"
+            "relaxed": "tam-hand-relaxed",
+            "open": "tam-hand-open",
+            "point": "tam-hand-point"
           }
         },
         "upper-arm.r": {
@@ -232,7 +242,9 @@
         "hand.r": {
           "default": "tam-hand",
           "variants": {
-            "open": "tam-hand-open"
+            "relaxed": "tam-hand-relaxed",
+            "open": "tam-hand-open",
+            "point": "tam-hand-point"
           }
         },
         "thigh.l": {
