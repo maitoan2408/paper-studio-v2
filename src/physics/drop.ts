@@ -16,9 +16,11 @@
  * lực pháp tuyến > 0. Không dùng khoảng cách (Rapier tạo điểm tiếp xúc "dự đoán" từ ~8 px, và contactDist của manifold đo
  * TRƯỚC bước giải) và không dùng tư thế cuối frame (vật nảy có thể chạm rồi rời sàn trong cùng một frame). Ba khái niệm:
  *  - ĐÃ TỪNG CHẠM: từ bước con đầu tiên có tiếp xúc (landFrame / firstContact) — không đổi khi vật nảy lại lên không.
- *  - ĐANG ĐƯỢC ĐỠ (`supported`): ở bước con CUỐI của frame, mặt đỡ đẩy vật với pháp tuyến hướng lên (ny ≥ SUPPORT_MIN_NY).
- *    Chạm vào cạnh bên khối mặt đỡ là "chạm" nhưng không phải "đỡ".
+ *  - ĐANG ĐƯỢC ĐỠ (`supported`): ở bước con CUỐI của frame, mặt đỡ đẩy vật với pháp tuyến hướng lên (ny ≥ SUPPORT_MIN_NY)
+ *    VÀ sau bước đó vật không tách khỏi mặt: vận tốc tách theo pháp tuyến tại điểm tiếp xúc (có tính quay) ≤ g·h. Xung lực
+ *    trong bước chỉ nói "đã va"; cú bật ở bước cuối (vₙ ≫ g·h) là va chạm, không phải đỡ. Chạm cạnh bên khối = chạm, không đỡ.
  *  - NẰM YÊN: đang được đỡ, tốc độ ≤ REST_SPEED, quay ≤ REST_SPIN liên tục REST_FRAMES frame → khóa tư thế từ đó.
+ *    Thân động KHÔNG được tự ngủ trong Rapier (ngủ = engine ép vận tốc về 0 ⇒ vật đang trượt bị "đóng băng" giả).
  * Hụt (PHYSICS_NO_LANDING): chỉ khi CHẮC CHẮN không thể lên mặt đỡ — frame không có tiếp xúc và ngay cả theo quỹ đạo đạn đạo
  * (chỉ trọng lực) điểm cao nhất vật còn với tới được: tâm + max(vy,0)²/2g + bán kính ngoại tiếp, vẫn thấp hơn mặt đỡ quá
  * LAND_GAP_PX. Vị trí tâm khi còn trên không KHÔNG đủ để kết luận (vật bay từ ngoài mép vào vẫn đáp được).
@@ -60,6 +62,9 @@ export interface DropPose {
   touching: boolean;
   /** Ở bước con cuối của frame mặt đỡ đỡ vật từ bên dưới (xem đầu file). */
   supported: boolean;
+  /** Vận tốc tách theo pháp tuyến (px/s, dương = rời mặt) ở bước con cuối, nhỏ nhất trên các điểm tiếp xúc; null nếu
+   *  bước con cuối không có xung lực tiếp xúc. */
+  separation: number | null;
   /** falling: chưa từng chạm · supported: đã chạm và đang được đỡ · airborne: đã chạm, đang không được đỡ (nảy/lật/trượt mép)
    *  · rest: đã khóa nằm yên. */
   state: 'falling' | 'supported' | 'airborne' | 'rest';
@@ -164,24 +169,40 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
       .setRotation((angle0 * Math.PI) / 180)
       .setLinvel(v0[0] / ppm, v0[1] / ppm)
       .setAngvel(0)
-      .setCcdEnabled(true),
+      .setCcdEnabled(true)
+      // Không cho Rapier tự ngủ: khi ngủ, Rapier ĐẶT VẬN TỐC VỀ 0 cho vật chậm (kể cả vật đang trượt đều trên mặt không
+      // ma sát) — nằm yên chỉ do tiêu chí của file này quyết định (REST_*), không do ngưỡng ngủ nội bộ của engine.
+      .setCanSleep(false),
   );
   const shape = world.createCollider(RAPIER.ColliderDesc.cuboid(hw / ppm, hh / ppm).setDensity(d.body.density).setFriction(d.body.friction).setRestitution(d.body.restitution), body);
-  /** Tiếp xúc của đúng cặp (vật, mặt đỡ) ở bước vừa chạy: có xung lực pháp tuyến > 0 không, và pháp tuyến mặt đỡ → vật. */
-  const contact = (): { pushed: boolean; up: boolean } => {
-    let pushed = false, up = false;
+  /**
+   * Tiếp xúc của đúng cặp (vật, mặt đỡ) ở bước vừa chạy: có xung lực pháp tuyến > 0 không, pháp tuyến mặt đỡ → vật có
+   * hướng lên không, và vận tốc TÁCH theo pháp tuyến sau bước (px/s) nhỏ nhất trên các điểm tiếp xúc của bộ giải:
+   * vₙ = (v_tâm + ω × (p − tâm)) · n — tính cả quay (vật lật quanh một góc có vₙ ≈ 0 ở góc đó).
+   */
+  const contact = (): { pushed: boolean; up: boolean; sep: number } => {
+    let pushed = false, up = false, sep = Infinity;
     world.contactPair(shape, support, (m, flipped) => {
       let imp = 0;
       for (let i = 0; i < m.numContacts(); i++) imp += m.contactImpulse(i);
       if (!(imp > 0)) return;
       pushed = true;
       // pháp tuyến manifold hướng từ collider thứ nhất sang thứ hai; flipped ⇒ thứ nhất là mặt đỡ.
-      const ny = flipped ? m.normal().y : -m.normal().y;
+      const n = m.normal(), s = flipped ? 1 : -1, nx = s * n.x, ny = s * n.y;
       if (ny >= SUPPORT_MIN_NY) up = true;
+      const c = body.translation(), v = body.linvel(), w = body.angvel();
+      for (let j = 0; j < m.numSolverContacts(); j++) {
+        const p = m.solverContactPoint(j)!;
+        const vx = v.x - w * (p.y - c.y), vy = v.y + w * (p.x - c.x);
+        sep = Math.min(sep, (vx * nx + vy * ny) * ppm);
+      }
     });
-    return { pushed, up };
+    return { pushed, up, sep };
   };
 
+  /** Vận tốc tách tối đa vẫn coi là "đang đỡ": vận tốc trọng lực cộng trong một bước con (g·h). Tách chậm hơn ⇒ vật
+   *  quay lại mặt ngay trong bước con kế tiếp (đỡ liên tục); nhanh hơn ⇒ vật đang BẬT khỏi mặt (nảy), không được đỡ. */
+  const sepMax = g / (fps * SUBSTEPS);
   const poses: DropPose[] = [];
   let firstContact: FirstContact | null = null;
   let restFrame = -1, missFrame = -1, lastSupported = -1, calm = 0;
@@ -191,7 +212,7 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
         poses.push({ ...poses[poses.length - 1]!, frame: fr, vx: 0, vy: 0, spin: 0 });
         continue;
       }
-      let touching = false, supported = false;
+      let touching = false, supported = false, separation: number | null = null;
       for (let k = 1; k <= SUBSTEPS; k++) {
         world.step();
         const ct = contact();
@@ -199,7 +220,10 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
           touching = true;
           if (!firstContact) firstContact = { frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS };
         }
-        if (k === SUBSTEPS) supported = ct.pushed && ct.up;
+        if (k === SUBSTEPS) {
+          supported = ct.pushed && ct.up && ct.sep <= sepMax;
+          separation = ct.pushed && Number.isFinite(ct.sep) ? ct.sep : null;
+        }
       }
       const t = body.translation(), lv = body.linvel();
       const angle = (body.rotation() * 180) / Math.PI;
@@ -214,7 +238,7 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
       const calmNow = supported && Math.hypot(lv.x * ppm, lv.y * ppm) <= REST_SPEED_PX && Math.abs(spin) <= REST_SPIN_DEG;
       calm = calmNow ? calm + 1 : 0;
       const state: DropPose['state'] = calm >= REST_FRAMES ? 'rest' : !firstContact ? 'falling' : supported ? 'supported' : 'airborne';
-      poses.push({ frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching, supported, state });
+      poses.push({ frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching, supported, separation, state });
       if (state === 'rest') restFrame = fr;
       // Hụt chắc chắn: không chạm trong frame, và theo đạn đạo điểm cao nhất với tới được vẫn dưới mặt đỡ.
       const reach = center[1] + Math.max(lv.y * ppm, 0) ** 2 / (2 * g) + radius;

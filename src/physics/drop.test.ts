@@ -178,10 +178,14 @@ const highest = (q: DropPose) => Math.max(...corners.map((c) => q.y + rotate(c, 
 const HH = (plantAsset.height * PS) / 2;
 const centerY = (q: DropPose) => q.y + rotate([0, HH], q.angle)[1];
 const at = (poses: DropPose[], fr: number) => poses.find((q) => q.frame === fr)!;
-/** Phim fixture KHÔNG bake (để xem diễn biến cả khi bake bị từ chối): dữ liệu cảnh gốc đã validate + mặt đỡ/physics của fixture. */
+/**
+ * Phim fixture KHÔNG bake (để xem diễn biến cả khi bake bị từ chối): TOÀN BỘ dữ liệu fixture (walks, surfaces, physics…)
+ * trên art/rig/clip đã nạp của cảnh gốc. Fixture chỉ đổi số liệu của các mục đã có nên khớp schema; test "unbaked = bake"
+ * bên dưới đối chiếu với validateFilm + dropBake ở các fixture bake được.
+ */
 const unbaked = (name: string): { f: Film; d: drop.DropTrace } => {
   const fx = dropFixture(name);
-  const f: Film = { ...film, data: { ...film.data, stage: { ...film.data.stage, surfaces: fx.stage.surfaces }, physics: fx.physics } };
+  const f: Film = { ...film, data: fx };
   return { f, d: drop.simulateDrop(f, fx.physics[0]) };
 };
 const calmWindowSupported = (poses: DropPose[], restFrame: number) => {
@@ -276,4 +280,81 @@ test('edge slide: the engine sees the pot touch and stand on the ledge before it
   const sl = at(d.poses, d.lastSupported), end = d.poses.at(-1)!;
   assert.ok(sl.x > x1 && sl.x - HW < x1, `standing on the end of the ledge at f${d.lastSupported}`);
   assert.ok(end.angle < sl.angle - 10 && highest(end) < -1, `tipped (${sl.angle.toFixed(1)}° → ${end.angle.toFixed(1)}°) and fell below`);
+});
+
+// ─── Hậu kiểm Codex @fc643d5: tự ngủ khi trượt, cờ đỡ khi bật ở bước con cuối ───────────────────────────────────────
+const gh = (spec.world.gravity * spec.world.pxPerMeter) / (fps * SUBSTEPS); // g·h: ngưỡng vận tốc tách của "đang đỡ"
+
+test('sliding without friction to the end of a ledge: the pot keeps sliding and falls off (not frozen by engine sleep)', () => {
+  assert.throws(() => build(dropFixture('m3-drop-slide-off')), (err: Error) =>
+    /PHYSICS_NO_LANDING/.test(err.message) && /frame 222/.test(err.message) && /first touched "ledge" at frame 165/.test(err.message) && /last supported at frame 214/.test(err.message));
+  const { d } = unbaked('m3-drop-slide-off');
+  const x1 = -180;
+  assert.equal(d.restFrame, -1);
+  assert.ok(d.poses.every((q) => q.state !== 'rest'));
+  // Trượt đều: ma sát 0 ⇒ không lực ngang; từ f170 tới khi trọng tâm qua mép vx giữ nguyên (bản cũ: 37,68 → 0 ở f179).
+  const v = at(d.poses, 170).vx;
+  assert.ok(Math.abs(v - 37.68) < 0.05, `slide speed ${v}`);
+  const crossing = d.poses.find((q) => q.x > x1)!.frame;
+  // dung sai 0,05 px/s (0,13 %): bộ giải tiếp xúc f32 trôi 37,676 → 37,71 px/s sau ~40 frame; dừng thật (bản cũ) là −37,68.
+  for (let fr = 170; fr < crossing; fr++) {
+    const q = at(d.poses, fr);
+    assert.ok(q.supported && Math.abs(q.vx - v) < 0.05 && Math.abs(q.angle) < 0.1, `frame ${fr}: ${q.state} vx ${q.vx.toFixed(3)} angle ${q.angle.toFixed(3)}`);
+    assert.ok(q.separation !== null && Math.abs(q.separation) <= gh, `frame ${fr}: separation ${q.separation}`);
+  }
+  // Diễn biến khỏi mép: tâm qua mép → còn đỡ bằng phần đáy chồm trên mép, lật dần → rời đỡ → rơi dưới mặt → lỗi f222.
+  assert.ok(crossing > 190 && crossing < d.lastSupported, `centre crosses the edge at f${crossing}, last supported f${d.lastSupported}`);
+  assert.equal(d.lastSupported, 214);
+  for (const q of d.poses.filter((q) => q.frame > d.lastSupported)) assert.ok(!q.supported && q.state === 'airborne', `frame ${q.frame}`);
+  const end = d.poses.at(-1)!;
+  assert.equal(end.frame, 222);
+  assert.ok(end.angle < -10 && highest(end) < -1, `tipped ${end.angle.toFixed(1)}°, top ${highest(end).toFixed(1)}`);
+});
+
+test('sliding without friction on a long ledge: still moving at the last frame ⇒ PHYSICS_NOT_AT_REST (no fake rest lock)', () => {
+  assert.throws(() => build(dropFixture('m3-drop-slide-long')), (err: Error) => /PHYSICS_NOT_AT_REST/.test(err.message) && /speed 37\.7 px\/s/.test(err.message));
+  const { d } = unbaked('m3-drop-slide-long');
+  assert.equal(d.restFrame, -1);
+  assert.equal(d.missFrame, -1);
+  const last = d.poses.at(-1)!;
+  assert.equal(last.frame, 239);
+  assert.ok(last.supported && Math.abs(last.vx - 37.68) < 0.01, `f239: ${last.state} vx ${last.vx}`);
+  for (const q of d.poses.filter((q) => q.frame >= 170)) assert.ok(q.supported && Math.abs(q.vx - last.vx) < 0.05, `frame ${q.frame}: vx ${q.vx}`);
+});
+
+test('bounce whose first impact is the last substep of f165: impact recorded, but the pot is separating, so not supported', () => {
+  const e = dropBake(build(dropFixture('m3-drop-bounce-late')), 'drop-plant');
+  assert.deepEqual(e.firstContact, { frame: 165, substep: 8, time: 165 });
+  const f165 = at(e.poses, 165);
+  assert.ok(f165.touching, 'impulse in the last substep is a contact event');
+  assert.ok(f165.vy > 600, `bouncing off: vy ${f165.vy.toFixed(1)}`);
+  assert.ok(!f165.supported && f165.state === 'airborne', `f165 is moving away from the ledge at ${f165.vy.toFixed(1)} px/s but is ${f165.state}`);
+  assert.ok(f165.separation! > 600, `separation along the contact normal ${f165.separation} px/s`);
+  assert.ok(e.restFrame > 165);
+  calmWindowSupported(e.poses, e.restFrame);
+  for (let fr = e.restFrame - drop.REST_FRAMES + 1; fr <= e.restFrame; fr++) assert.ok(Math.abs(at(e.poses, fr).separation!) <= gh, `frame ${fr}`);
+});
+
+test('real support is kept: resting, settling after a small hop, and standing on an edge while tipping all stay supported', () => {
+  // cảnh gốc: chạm f165 (bật nhẹ, vₙ 91,7 > g·h ⇒ chưa đỡ), đỡ liên tục từ f166 tới khóa nghỉ f178
+  assert.ok(!at(b.poses, 165).supported);
+  for (let fr = 166; fr <= b.restFrame; fr++) {
+    const q = at(b.poses, fr);
+    assert.ok(q.supported && Math.abs(q.separation!) <= gh, `baseline frame ${fr}: separation ${q.separation}`);
+  }
+  // chạm mép rồi lật: các frame đỡ bằng góc đáy trên mép vẫn được đỡ (vₙ tại điểm tiếp xúc ≈ 0 dù vật đang quay)
+  const { d } = unbaked('m3-drop-edge-slide');
+  const sup = d.poses.filter((q) => q.supported);
+  assert.deepEqual(sup.map((q) => q.frame), [166, 167, 168]);
+  assert.ok(sup.some((q) => Math.abs(q.spin) > 100), 'tipping fast while supported');
+  for (const q of sup) assert.ok(Math.abs(q.separation!) <= gh, `edge-slide frame ${q.frame}: separation ${q.separation}`);
+});
+
+test('test helper: the unbaked trace equals the validated bake for every fixture that bakes', () => {
+  for (const name of ['m3-drop-bounce', 'm3-drop-bounce-late', 'm3-drop-edge-land', 'm3-drop-edge-stool']) {
+    const e = dropBake(build(dropFixture(name)), 'drop-plant');
+    const { d } = unbaked(name);
+    assert.deepEqual(d.poses, e.poses, name);
+    assert.deepEqual(d.firstContact, e.firstContact, name);
+  }
 });

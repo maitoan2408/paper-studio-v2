@@ -37,6 +37,26 @@ export const DROP_FIXTURES: Record<string, (d: Raw) => void> = {
     d.stage.layers.push({ id: 'stool', asset: 'table', x: x0 + 200 * s, y: 0, scale: s, rotation: 0, depth: 0.999 });
     ledge(d, { id: 'stool-top', y: 246 * s, x0, x1: x0 + 400 * s });
   },
+  /**
+   * Trượt khỏi mép (hậu kiểm Codex @fc643d5): Tam đi chậm hơn (walks[0].toX −50 → −155) nên chậu buông với vx nhỏ hơn,
+   * ma sát 0 ⇒ sau khi chạm chậu TRƯỢT ĐỀU (không lực ngang) tới mép phải −180 của mặt đỡ và phải rơi khỏi mép.
+   */
+  'm3-drop-slide-off': (d) => {
+    d.walks[0].toX = -155;
+    d.physics[0].body.friction = 0;
+    ledge(d, { id: 'ledge', y: 0, x0: -500, x1: -180 });
+  },
+  /** Như slide-off nhưng mặt đỡ dài tới 400: chậu còn trượt đều tới hết phim ⇒ không được khóa nghỉ. */
+  'm3-drop-slide-long': (d) => {
+    d.walks[0].toX = -155;
+    d.physics[0].body.friction = 0;
+    ledge(d, { id: 'ledge', y: 0, x0: -500, x1: 400 });
+  },
+  /** Nảy với lần chạm đầu rơi đúng bước con cuối (8/8) của f165: restitution 0.65, mặt đỡ hạ xuống y = −10. */
+  'm3-drop-bounce-late': (d) => {
+    d.physics[0].body.restitution = 0.65;
+    ledge(d, { id: 'ledge', y: -10, x0: -600, x1: 600 });
+  },
 };
 
 export function dropFixture(name: string, base = 'examples/films/m3-drop.json'): Raw {
