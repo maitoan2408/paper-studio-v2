@@ -57,6 +57,15 @@ export const DROP_FIXTURES: Record<string, (d: Raw) => void> = {
     d.physics[0].body.restitution = 0.65;
     ledge(d, { id: 'ledge', y: -10, x0: -600, x1: 600 });
   },
+  /**
+   * Biến thể của bounce-late (hậu kiểm Codex @cabaf67): giữ restitution 0.65 và mặt [−600, 600], ma sát 1.5, mặt hạ
+   * xuống y = −20 — chậu nảy, quay và đập MỘT GÓC xuống mặt ở bước con cuối của f182 rồi bật đi (góc kia không chịu lực).
+   */
+  'm3-drop-bounce-tumble': (d) => {
+    d.physics[0].body.restitution = 0.65;
+    d.physics[0].body.friction = 1.5;
+    ledge(d, { id: 'ledge', y: -20, x0: -600, x1: 600 });
+  },
 };
 
 export function dropFixture(name: string, base = 'examples/films/m3-drop.json'): Raw {

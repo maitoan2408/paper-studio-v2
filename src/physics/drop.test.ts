@@ -358,3 +358,23 @@ test('test helper: the unbaked trace equals the validated bake for every fixture
     assert.deepEqual(d.firstContact, e.firstContact, name);
   }
 });
+
+// ─── Hậu kiểm Codex @cabaf67: "đỡ" phải xét đúng điểm chịu xung lực, không lấy min vₙ của mọi điểm ─────────────────
+test('bounce-tumble (friction 1.5, ledge y −20): at f182 one corner is hit and bounces away, the other corner has no force — not supported', () => {
+  const e = dropBake(build(dropFixture('m3-drop-bounce-tumble')), 'drop-plant');
+  const f182 = at(e.poses, 182), f183 = at(e.poses, 183);
+  assert.ok(f182.touching, 'f182: impulse on the ledge in the last substep');
+  assert.ok(!f182.supported && f182.state === 'airborne', `f182 is bouncing off the ledge but is ${f182.state}`);
+  assert.ok(f182.separation! > 200, `f182 separation at the loaded corner ${f182.separation} px/s`);
+  // bằng chứng từng điểm ở bước con cuối: một góc chịu xung lực và đang tách > 200 px/s, góc kia xung lực 0
+  const pts = f182.points!;
+  assert.equal(pts.length, 2);
+  const hit = pts.filter((p) => p.impulse > 0), idle = pts.filter((p) => p.impulse === 0);
+  assert.ok(hit.length === 1 && idle.length === 1, JSON.stringify(pts));
+  assert.ok(hit[0]!.separation > 200, JSON.stringify(pts));
+  // f183 bay tự do: không tiếp xúc, không đỡ, quay đều (không mô-men từ mặt)
+  assert.ok(!f183.touching && !f183.supported && f183.state === 'airborne', `f183 ${f183.state}`);
+  assert.ok(Math.abs(f183.spin - f182.spin) < 1e-3, `f183 spin ${f183.spin} vs f182 ${f182.spin}`);
+  assert.ok(e.restFrame > 183);
+  calmWindowSupported(e.poses, e.restFrame);
+});
