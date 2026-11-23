@@ -6,7 +6,7 @@ import { loadPackMotion, validateFilm, type Film } from '../schema/film.ts';
 import { code } from '../schema/test-helpers.ts';
 import { sampleFrame } from '../scene/sample.ts';
 import { contactWorld } from './character.ts';
-import { anchorOffset, propPivot, segmentAt } from './props.ts';
+import { ALIGN_TOLERANCE_PX, anchorOffset, propPivot, segmentAt } from './props.ts';
 
 const packs = new Map(['sample-m0', 'demo-cast'].map((x) => [x, loadArtPack(`assets/${x}`)]));
 const motion = loadPackMotion(packs.get('demo-cast')!);
@@ -115,12 +115,14 @@ for (const [name, f] of Object.entries(films)) {
 }
 
 /** Phim với clip đã sửa (đột biến dữ liệu chuyển động, không sửa phim). */
-function buildWithClip(id: string, clipId: string, mutate: (c: any) => void): Film {
+function buildWithClip(id: string, clipId: string, mutate: (c: any) => void, mutateFilm: (d: any) => void = () => {}): Film {
   const clips = new Map(motion.clips);
   const c = structuredClone(clips.get(clipId)!) as any;
   mutate(c);
   clips.set(clipId, c);
-  return validateFilm(raw(id), packs, new Map([['demo-cast', motion.rig!]]), new Map([['demo-cast', clips], ['sample-m0', new Map()]]));
+  const d = raw(id);
+  mutateFilm(d);
+  return validateFilm(d, packs, new Map([['demo-cast', motion.rig!]]), new Map([['demo-cast', clips], ['sample-m0', new Map()]]));
 }
 
 test('PROP_THROUGH_SURFACE: without the lift/clear path the prop is dragged down through its spot — both characters', () => {
@@ -149,6 +151,67 @@ test('handover: while both hold, the prop follows the receiver (most recent grip
   }
   assert.ok(both >= 3, `both hands held for only ${both} frames`);
 });
+
+// ── Đồng cầm khi trao: MỌI tay trong danh sách đang cầm phải ở đúng anchor của tay đó trên đạo cụ ─────────────
+/** Sai số (px thế giới) của từng tay đang cầm ở mỗi frame có ≥ 2 tay cùng cầm; đạo cụ theo tay nắm gần nhất. */
+function coHold(f: Film, propId: string): { fr: number; who: string; d: number }[] {
+  const out: { fr: number; who: string; d: number }[] = [];
+  for (let fr = 0; fr < f.data.output.durationFrames; fr++) {
+    const s = segmentAt(f, propId, fr);
+    if (s.holders.length < 2) continue;
+    const pivot = propPivot(f, propId, fr, hand(f, fr));
+    for (const h of s.holders) {
+      const off = anchorOffset(f, propId, h.anchor);
+      const p = contactWorld(f, h.ci, fr, h.contact);
+      out.push({ fr, who: `${f.data.characters[h.ci]!.id}.${h.contact}`, d: Math.hypot(p[0] - pivot[0] - off[0], p[1] - pivot[1] - off[1]) });
+    }
+  }
+  return out;
+}
+const giveAt = (t: number) => (c: any) => (c.events.find((e: any) => e.type === 'release').t = t);
+
+test('PROP_DISCONTINUITY: a co-holding hand that drifts off its anchor before its release (fixture: give.release.t = 0.60)', () => {
+  // Timing cũ đặt NGAY trong fixture (không phụ thuộc dữ liệu pack): Tam (receive) rời điểm gặp từ t = 0.56 kéo đèn
+  // theo, Lan (give) đến t = 0.60 mới thả → tay Lan còn trong danh sách đang cầm nhưng đã lệch khỏi quai.
+  assert.throws(
+    () => buildWithClip('m2-handover', 'give', giveAt(0.6)),
+    (e: any) => {
+      assert.equal(e.code, 'PROP_DISCONTINUITY', e.message);
+      assert.match(e.message, /lantern-1/);
+      assert.match(e.message, /frame 27[0-2]\b/);
+      assert.match(e.message, /lan\.grip\.l/);
+      assert.match(e.message, /\d+\.\d+ px/);
+      return true;
+    },
+  );
+});
+
+test('handover data: both hands stay on their anchors for the whole co-hold; the receiver keeps holding after the release', () => {
+  const f = films.handover;
+  const rows = coHold(f, 'lantern-1');
+  assert.ok(new Set(rows.map((r) => r.fr)).size >= 3, 'co-hold too short — test would be vacuous');
+  for (const r of rows) assert.ok(r.d <= ALIGN_TOLERANCE_PX, `frame ${r.fr} ${r.who}: ${r.d.toFixed(3)} px`);
+  const last = Math.max(...rows.map((r) => r.fr));
+  const after = segmentAt(f, 'lantern-1', last + 1).holders;
+  assert.deepEqual(after.map((h) => `${f.data.characters[h.ci]!.id}.${h.contact}`), ['tam.grip.l'], 'Tam keeps the lantern after Lan lets go');
+});
+
+for (const dur of [95, 98]) {
+  test(`handover with give/receive lasting ${dur} frames: co-hold stays on both anchors (frame rounding)`, () => {
+    const f = buildWithClip('m2-handover', 'give', () => {}, (d) => {
+      for (const t of d.timeline) if (t.clip === 'give' || t.clip === 'receive') t.durationFrames = dur;
+      // carry của người nhận nối ngay sau receive, giữ nguyên frame kết thúc (không khe hở, không chồng).
+      const recv = d.timeline.find((t: any) => t.clip === 'receive');
+      const carry = d.timeline.find((t: any) => t.clip === 'carry' && t.character === recv.character);
+      const end = carry.start + carry.durationFrames;
+      carry.start = recv.start + dur;
+      carry.durationFrames = end - carry.start;
+    });
+    const rows = coHold(f, 'lantern-1');
+    assert.ok(new Set(rows.map((r) => r.fr)).size >= 3, `co-hold too short at ${dur}`);
+    for (const r of rows) assert.ok(r.d <= ALIGN_TOLERANCE_PX, `dur ${dur} frame ${r.fr} ${r.who}: ${r.d.toFixed(3)} px`);
+  });
+}
 
 test('the two films cover both hands, both characters and two different props', () => {
   const used = new Set<string>();
