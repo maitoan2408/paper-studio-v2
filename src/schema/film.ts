@@ -1,6 +1,7 @@
 /**
  * Film — tọa độ thế giới: px tại 1080p, y hướng LÊN, gốc ở giữa sàn; góc độ, dương = ngược chiều kim đồng hồ.
- * Chưa bật: physics (phải rỗng → FILM_FEATURE_NOT_ENABLED).
+ * physics (M3 đợt 1): chỉ THẢ TỰ DO (drop) — xem src/physics/drop.ts. Đặt có kiểm soát (bind.place) và trao tay không
+ * dùng physics; mọi kết hợp mơ hồ bị từ chối (PHYSICS_CONFLICT, PHYSICS_NOT_FREE…).
  */
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,6 +12,7 @@ import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
 import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
+import { dropBake } from '../physics/drop.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
 import { Finite, Id, Semver, Sha256, firstDuplicate } from './common.ts';
@@ -34,6 +36,22 @@ const Prop = z
     on: Id.optional(), shadow: Shadow.optional(),
   })
   .strict();
+/**
+ * Thả tự do (M3): mục timeline `release` phải chứa sự kiện release của NGƯỜI CẦM CUỐI CÙNG và không có bind.place.
+ * Đơn vị: gravity m/s², pxPerMeter = px thế giới mỗi mét (tỷ lệ của cảnh), density kg/m² (2D), friction/restitution
+ * không thứ nguyên (Rapier). Va chạm đợt 1: chỉ mặt đỡ `onto` (khối tĩnh trên [x0, x1], mặt trên tại y của mặt đỡ).
+ */
+const Drop = z
+  .object({
+    id: Id,
+    prop: Id,
+    release: z.number().int().min(0),
+    onto: Id,
+    world: z.object({ gravity: z.number().finite().positive().max(100), pxPerMeter: z.number().finite().positive().max(10000) }).strict(),
+    body: z.object({ density: z.number().finite().positive(), friction: z.number().finite().min(0).max(2), restitution: z.number().finite().min(0).max(1) }).strict(),
+  })
+  .strict();
+export type DropSpec = z.output<typeof Drop>;
 const Character = z
   .object({ id: Id, pack: Id, rig: Id, character: Id, x: Finite, scale: z.number().finite().positive().max(10), depth: Depth, facing: z.enum(['left', 'right']), on: Id })
   .strict();
@@ -103,7 +121,7 @@ const FilmSchema = z
     walks: z.array(Walk),
     turns: z.array(Turn).optional(),
     points: z.record(Id, PointSpec).optional(),
-    physics: z.array(z.unknown()),
+    physics: z.array(Drop),
   })
   .strict();
 
@@ -321,7 +339,22 @@ export function validateFilm(
     }
   }
 
-  if (f.physics.length > 0) fail('FILM_FEATURE_NOT_ENABLED', 'film.physics', 'physics is not enabled yet');
+  // Thả tự do: tham chiếu hợp lệ, không trùng, không lẫn với đặt có kiểm soát (phần "người cầm cuối" kiểm trong propTimeline).
+  const dropIds = firstDuplicate(f.physics.map((d) => d.id));
+  if (dropIds) fail('FILM_DUP_ID', 'film.physics', `drop id "${dropIds}" is used more than once`);
+  const dropItems = firstDuplicate(f.physics.map((d) => String(d.release)));
+  if (dropItems) fail('PHYSICS_CONFLICT', 'film.physics', `timeline[${dropItems}] is referenced by two drops`);
+  f.physics.forEach((d, i) => {
+    const where = `film.physics[${i}]`;
+    if (!props.has(d.prop)) fail('FILM_UNKNOWN_REF', `${where}.prop`, `prop "${d.prop}" does not exist`);
+    if (!surfaces.has(d.onto)) fail('FILM_UNKNOWN_REF', `${where}.onto`, `surface "${d.onto}" does not exist`);
+    const it = f.timeline[d.release];
+    if (!it) fail('FILM_UNKNOWN_REF', `${where}.release`, `timeline[${d.release}] does not exist`);
+    const c = f.characters.find((x) => x.id === it.character)!;
+    const clip = clips.get(c.pack)?.get(it.clip);
+    if (!clip || !clip.events.some((e) => e.type === 'release')) fail('PHYSICS_NO_RELEASE', `${where}.release`, `timeline[${d.release}] (${it.clip}) has no release event`);
+    if (it.bind.place) fail('PHYSICS_CONFLICT', `${where}.release`, `timeline[${d.release}] (${it.clip}) is a controlled place (bind.place); a drop must not set it`);
+  });
 
   const film: Film = { data: f, assets, packs, rigs, clips };
   propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
@@ -346,6 +379,8 @@ export function validateFilm(
   for (let fr = 0; fr < N; fr++) checkHeldAboveSurface(film, fr, (ci, contact) => contactWorld(film, ci, fr, contact));
   checkLiftClearance(film, (ci, contact, f) => contactWorld(film, ci, f, contact));
   checkProps(film, (ci, contact, fr) => contactWorld(film, ci, fr, contact));
+  // Thả tự do: bake ngay khi dựng film (fail closed: PHYSICS_NOT_AT_REST, PHYSICS_NO_LANDING, PHYSICS_RELEASE_TOO_EARLY…).
+  for (const d of f.physics) dropBake(film, d.id);
   return film;
 }
 

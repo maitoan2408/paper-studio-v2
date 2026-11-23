@@ -14,7 +14,7 @@ import type { ArtPack } from '../schema/art-pack.ts';
 import { contactPoint, forwardKinematics, restPose, standingHeight, type PoseInput } from '../rig/pose.ts';
 import { solveChain } from './ik.ts';
 import { activeItems, characterPose, keyValue } from './timeline.ts';
-import { anchorOffset, segmentAt } from './props.ts';
+import { anchorOffset, restPivot, segmentAt } from './props.ts';
 import { solvedPoint } from './interaction.ts';
 import { walkState, type WalkState } from './walk.ts';
 
@@ -195,7 +195,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
           if (others.length > 0) fail('PROP_TARGET_HELD', where, `reach target "${propId}" is held by someone else; reach a point instead`);
           // Đang do chính tay này cầm: đích là chỗ đồ nằm TRƯỚC khi cầm (rời tay khỏi chỗ nhặt mượt mà).
           const mine = seg.holders.find((h) => h.ci === ci && h.contact === contact);
-          pivot = mine ? segmentAt(film, propId, mine.since - 1).rest : seg.rest;
+          pivot = mine ? segmentAt(film, propId, mine.since - 1).rest : restPivot(film, propId, frame);
         }
         // clear = dời VỀ PHÍA NGƯỜI một phần bề ngang của chính đạo cụ (px thế giới, suy ra từ art × scale; gương khi r).
         const pr = film.data.props.find((x) => x.id === propId)!;

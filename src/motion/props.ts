@@ -5,13 +5,16 @@
  *  - Frame sự kiện = start + round(t·(duration−1)). Thứ tự: frame, rồi thứ tự timeline, rồi thứ tự trong clip.
  *  - Đạo cụ đi theo tay NẮM GẦN NHẤT (grip muộn nhất còn đang nắm). Khi trao đồ có vài frame cả hai cùng
  *    nắm: đồ đi theo NGƯỜI NHẬN (grip muộn hơn). Tay đó thả → đi theo người còn nắm kế tiếp.
- *  - Không còn ai nắm sau một release → đạo cụ nằm tại bind.place của mục timeline chứa release đó.
- *    Thiếu place → PROP_FLOATING. Đạo cụ giữ góc xoay thế giới của nó (không xoay theo bàn tay).
+ *  - Không còn ai nắm sau một release → đạo cụ nằm tại bind.place của mục timeline chứa release đó (ĐẶT CÓ KIỂM SOÁT),
+ *    hoặc RƠI TỰ DO nếu film.physics có drop trỏ đúng mục timeline đó (src/physics/drop.ts). Không có cả hai →
+ *    PROP_FLOATING. Drop trỏ vào lần buông mà người khác vẫn còn cầm (trao tay) → PHYSICS_NOT_FREE.
+ *    Đạo cụ giữ góc xoay thế giới của nó (không xoay theo bàn tay); khi rơi, góc do mô phỏng quyết định.
  */
 import { fail } from '../core/errors.ts';
 import { artToLocal, rotate, type V2 } from '../core/space.ts';
 import type { Film } from '../schema/film.ts';
 import { clipFor } from './timeline.ts';
+import { dropPose } from '../physics/drop.ts';
 
 export interface Holder {
   ci: number;
@@ -19,10 +22,15 @@ export interface Holder {
   anchor: string;
   since: number;
 }
-interface Segment {
+export interface Segment {
   from: number;
   holders: Holder[];
+  /** Chỗ nằm yên khi không ai cầm (đặt có kiểm soát / vị trí ban đầu). Với đoạn rơi: dùng restPivot/dropPose. */
   rest: V2;
+  /** id drop (film.physics) nếu đoạn này là rơi tự do bắt đầu ở `from`. */
+  drop?: string;
+  /** Tay vừa buông khi bắt đầu rơi — để giữ lớp vẽ liên tục (sample.ts). */
+  releasedBy?: Holder;
 }
 interface PropEvent {
   frame: number;
@@ -80,6 +88,10 @@ export function propTimeline(film: Film): Map<string, Segment[]> {
     const last = list[list.length - 1]!;
     let holders = last.holders;
     let rest = last.rest;
+    let drop: string | undefined;
+    if (e.kind === 'grip' && last.drop) {
+      fail('PHYSICS_REGRIP', where, `"${prop}" was dropped freely (${last.drop}); picking it up again is not supported in M3 batch 1`);
+    }
     if (e.kind === 'grip') {
       if (holding.has(key)) fail('HAND_BUSY', where, `${film.data.characters[e.ci]!.id}.${e.contact} already holds "${holding.get(key)}"`);
       if (holders.length >= 2) fail('HAND_BUSY', where, `prop "${prop}" already held by two hands`);
@@ -90,7 +102,14 @@ export function propTimeline(film: Film): Map<string, Segment[]> {
     } else {
       holding.delete(key);
       holders = holders.filter((h) => !(h.ci === e.ci && h.contact === e.contact));
-      if (holders.length === 0) {
+      const free = film.data.physics.find((d) => d.release === e.item);
+      if (free && free.prop !== prop) fail('PHYSICS_CONFLICT', `${where} (${free.id})`, `drop is for "${free.prop}" but this release lets go of "${prop}"`);
+      if (free && holders.length > 0) {
+        fail('PHYSICS_NOT_FREE', `${where} (${free.id})`, `"${prop}" is still held by ${holders.map((h) => `${film.data.characters[h.ci]!.id}.${h.contact}`).join(', ')}; a handover release cannot start a fall`);
+      }
+      if (holders.length === 0 && free) {
+        drop = free.id;
+      } else if (holders.length === 0) {
         if (!e.place) fail('PROP_FLOATING', where, `"${prop}" released by its last holder but bind.place is not set`);
         const s = surfaces.get(e.place.surface);
         if (!s) fail('FILM_UNKNOWN_REF', `${where}.bind.place`, `surface "${e.place.surface}" does not exist`);
@@ -98,8 +117,9 @@ export function propTimeline(film: Film): Map<string, Segment[]> {
         rest = [e.place.x, s.y];
       }
     }
-    if (last.from === e.frame) list[list.length - 1] = { from: e.frame, holders, rest };
-    else list.push({ from: e.frame, holders, rest });
+    const seg: Segment = { from: e.frame, holders, rest, ...(drop ? { drop, releasedBy: last.holders[last.holders.length - 1]! } : {}) };
+    if (last.from === e.frame) list[list.length - 1] = seg;
+    else list.push(seg);
   }
   cache.set(film, segs);
   return segs;
@@ -111,6 +131,21 @@ export function segmentAt(film: Film, propId: string, frame: number): Segment {
   let s = list[0]!;
   for (const x of list) if (x.from <= frame) s = x;
   return s;
+}
+
+/** Pivot khi không ai cầm: chỗ nằm yên, hoặc vị trí mô phỏng nếu đang/đã rơi tự do. */
+export function restPivot(film: Film, propId: string, frame: number): V2 {
+  const s = segmentAt(film, propId, frame);
+  if (!s.drop) return s.rest;
+  const p = dropPose(film, s.drop, frame);
+  return [p.x, p.y];
+}
+
+/** Góc thế giới của đạo cụ ở frame (độ, ngược chiều kim đồng hồ): góc dàn cảnh, hoặc góc mô phỏng khi rơi. */
+export function propAngle(film: Film, propId: string, frame: number): number {
+  const s = segmentAt(film, propId, frame);
+  if (s.drop) return dropPose(film, s.drop, frame).angle;
+  return film.data.props.find((x) => x.id === propId)!.rotation;
 }
 
 /** Vector pivot → anchor của đạo cụ trong thế giới (y-lên), theo scale và góc của đạo cụ. */
@@ -127,6 +162,7 @@ export function anchorOffset(film: Film, propId: string, anchor: string): V2 {
  */
 export function propPivot(film: Film, propId: string, frame: number, hand: (ci: number, contact: string) => V2): V2 {
   const s = segmentAt(film, propId, frame);
+  if (s.drop) return restPivot(film, propId, frame);
   if (s.holders.length === 0) return s.rest;
   const owner = s.holders[s.holders.length - 1]!;
   const h = hand(owner.ci, owner.contact);
@@ -178,7 +214,7 @@ export function checkLiftClearance(film: Film, hand: (ci: number, contact: strin
         if (!inside(pv[0], origin)) break;
         if (pv[1] < origin[1] - ALIGN_TOLERANCE_PX) bad(fr, origin, 'where it was picked up');
       }
-      if (endIdx >= 0) {
+      if (endIdx >= 0 && !list[endIdx]!.drop) {
         const dest = list[endIdx]!.rest;
         for (let fr = to - 1; fr >= from; fr--) {
           const pv = at(fr);
@@ -239,7 +275,7 @@ export function checkProps(film: Film, hand: (ci: number, contact: string, frame
         if (d > ALIGN_TOLERANCE_PX) fail('PROP_DISCONTINUITY', `prop ${propId} frame ${f}`, `${film.data.characters[h.ci]!.id}.${h.contact} grips ${d.toFixed(2)} px away from anchor "${h.anchor}"`);
       }
       // Thả về chỗ đặt: tay người thả cuối phải ở đúng anchor tại vị trí đặt.
-      if (cur.holders.length === 0 && prev.holders.length > 0) {
+      if (cur.holders.length === 0 && prev.holders.length > 0 && !cur.drop) {
         const o = prev.holders[prev.holders.length - 1]!;
         const off = anchorOffset(film, propId, o.anchor);
         const got = at(o.ci, o.contact);

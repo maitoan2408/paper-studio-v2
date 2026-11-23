@@ -17,6 +17,7 @@
     "sheet": "node src/cli/sheet.ts"
   },
   "dependencies": {
+    "@dimforge/rapier2d-deterministic-compat": "0.21.0",
     "puppeteer-core": "25.18.1",
     "three": "0.187.0",
     "zod": "4.6.7"

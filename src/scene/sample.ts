@@ -14,7 +14,7 @@ import { ease } from '../motion/easing.ts';
 import type { Film } from '../schema/film.ts';
 import type { Asset } from '../schema/art-pack.ts';
 import { characterState, contactWorld } from '../motion/character.ts';
-import { propPivot, segmentAt } from '../motion/props.ts';
+import { propAngle, propPivot, segmentAt } from '../motion/props.ts';
 import { forwardKinematics } from '../rig/pose.ts';
 
 export interface Camera {
@@ -109,7 +109,8 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
       ...base(item.id, asset),
       x: sx,
       y: sy,
-      rot: item.rotation === 0 ? 0 : -item.rotation, // ngược chiều kim đồng hồ (thế giới) → theo chiều (màn hình)
+      // ngược chiều kim đồng hồ (thế giới) → theo chiều (màn hình). Đạo cụ đang rơi: góc mô phỏng (physics/drop.ts).
+      rot: (() => { const a = isProp ? propAngle(film, item.id, frame) : item.rotation; return a === 0 ? 0 : -a; })(),
       scale: item.scale * zoomL,
       scaleX: item.scale * zoomL,
     };
@@ -143,7 +144,10 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
     // (đồ đè lên thân/cánh tay nhưng nằm dưới bàn tay), chiếu ở depth của người cầm để bám tay khi parallax.
     const held = new Map<string, Sprite[]>();
     for (const p of film.data.props) {
-      const h = heldBy(p.id);
+      // Đang cầm → trong lượt của người cầm. Đang/đã rơi tự do → giữ đúng chỗ đó trong lượt của người vừa buông
+      // (vật rơi từ mặt phẳng trước thân, không "nhảy" ra sau chân lúc buông).
+      const seg = segmentAt(film, p.id, frame);
+      const h = heldBy(p.id) ?? seg.releasedBy;
       if (!h || h.ci !== ci) continue;
       const bone = rig.data.contacts[h.contact]!.bone;
       held.set(bone, [...(held.get(bone) ?? []), ...flat(p, true, c.depth)]);
@@ -169,7 +173,7 @@ export function sampleFrame(film: Film, frame: number): SceneFrame {
 
   const entries: { depth: number; kind: number; index: number; make: () => Sprite[] }[] = [
     ...film.data.stage.layers.map((it, index) => ({ depth: it.depth, kind: 0, index, make: () => flat(it, false) })),
-    ...film.data.props.map((it, index) => ({ depth: it.depth, kind: 1, index, make: () => (heldBy(it.id) ? [] : flat(it, true)) })),
+    ...film.data.props.map((it, index) => ({ depth: it.depth, kind: 1, index, make: () => (heldBy(it.id) || segmentAt(film, it.id, frame).releasedBy ? [] : flat(it, true)) })),
     ...film.data.characters.map((it, index) => ({ depth: it.depth, kind: 2, index, make: () => puppet(index) })),
   ];
   // Xa trước; cùng depth: layer → prop → nhân vật; rồi theo thứ tự trong file. Sắp ổn định, tất định.

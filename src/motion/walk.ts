@@ -15,7 +15,7 @@
 import { fail } from '../core/errors.ts';
 import { ease } from './easing.ts';
 import type { Film } from '../schema/film.ts';
-import { segmentAt } from './props.ts';
+import { restPivot, segmentAt } from './props.ts';
 
 export interface WalkSegment {
   start: number;
@@ -64,7 +64,7 @@ function faceSign(film: Film, ci: number, face: NonNullable<Film['data']['turns'
     const seg = segmentAt(film, face.prop, frame);
     const holder = seg.holders[seg.holders.length - 1];
     if (holder && holder.ci === ci) fail('ACTION_PRECONDITION', `film.turns(${film.data.characters[ci]!.id}@${frame}).face`, `cannot turn to face "${face.prop}" while holding it`);
-    tx = holder ? walkOnlyX(film, holder.ci, frame) : seg.rest[0];
+    tx = holder ? walkOnlyX(film, holder.ci, frame) : restPivot(film, face.prop, frame)[0];
   }
   return tx === x ? current : tx > x ? 1 : -1;
 }
