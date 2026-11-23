@@ -62,6 +62,7 @@ node scripts/validate_pack.mjs --pretty <path/to/pack-dir>
 5. **Collapsed 2-leg quadruped silhouette:** Always offset `*.far` legs in angle & position and tint them 20% darker than `*.near` legs.
 6. **Static scattered leaves feel dead:** Use the built-in `type: "falling"` emitter for gently tumbling, wind-drifting autumn leaves or petals across both back & front lanes.
 7. **Missing `<defs>`, `Math.random()`, or unsafe SVG tags:** Every `url(#id)` in `parts[].svg` must live in `scene.defsSvg`; never use `Math.random()` or disallowed tags (`<script>`, `<style>`, `<image>`, `<foreignObject>`).
+8. **HTML preview shows raw source code in artifact UIs (Antigravity):** Shell scripts skip `ArtifactMetadata`. When delivering an interactive `.html` preview inside an artifact-enabled UI, create/register the `.html` artifact with the native file-creation tool (`UserFacing: true`, `RequestFeedback: false`) so it renders live instead of opening as raw text.
 
 ## Delivery Checklist
 - [ ] `compile_rig_studio.mjs` produced both HTML preview and pack directory cleanly.
