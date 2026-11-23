@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__TITLE__</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    input[type="range"] { height: 5px; }
+    .pill-btn[data-active="true"], .tab-btn[data-active="true"] {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+    .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 3px; }
+    .ik-handle { cursor: grab; }
+    .ik-handle:active { cursor: grabbing; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased m-0 p-0">
+  <div class="min-h-screen flex flex-col">
+    <!-- Top Bar -->
+    <header class="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--card)] flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div id="badgeIcon" class="w-8 h-8 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center font-bold text-sm">✂</div>
+        <div>
+          <div id="hdrTitle" class="font-semibold text-sm leading-tight"></div>
+          <div id="hdrSub" class="text-xs text-[var(--muted-foreground)]"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <div id="presetBar" class="flex flex-wrap items-center gap-1.5"></div>
+        <span class="mx-1 text-[var(--border)]">|</span>
+        <button id="btnFlip" class="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] font-medium">⇄ Lật</button>
+        <button id="btnPlay" class="px-2.5 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] font-medium">⏸ Tạm dừng</button>
+        <select id="selSpeed" class="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]">
+          <option value="1">1.0×</option>
+          <option value="0.5">0.5×</option>
+          <option value="0.25">0.25×</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Main Split -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12">
+      <!-- Shadow-Box Stage -->
+      <main class="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-[var(--border)]">
+        <div id="stageWrap" class="relative flex-1 min-h-[520px] bg-[var(--content)] flex items-center justify-center p-3 sm:p-5 overflow-hidden select-none">
+          <div class="w-full max-w-[920px] aspect-[4/3] rounded-xl shadow-2xl border-[5px] border-[#f4f4f2] overflow-hidden relative" id="stageBox">
+            <svg id="sceneSvg" viewBox="0 0 960 720" class="w-full h-full block">
+              <defs id="svgDefs"></defs>
+              <clipPath id="stageClip"><rect x="0" y="0" width="960" height="720"/></clipPath>
+              <g clip-path="url(#stageClip)">
+                <g id="layerSky"></g>
+                <g id="layerAmbientBack"></g>
+                <g id="layerCelestial"></g>
+                <g id="layerBackScenery"></g>
+                <g id="layerSwarmBack"></g>
+                <g id="layerHero"></g>
+                <g id="layerVfx"></g>
+                <g id="layerFrontScenery"></g>
+                <g id="layerSwarmFront"></g>
+                <g id="layerFrame"></g>
+                <g id="layerCorners"></g>
+                <g id="layerOverlayProps"></g>
+                <g id="layerDiag"></g>
+                <g id="layerIk"></g>
+              </g>
+            </svg>
+
+            <!-- Bottom Stage Toggles -->
+            <div class="absolute bottom-3 left-3 flex flex-wrap items-center gap-2 text-xs bg-[var(--card)]/90 backdrop-blur px-2.5 py-1.5 rounded-lg border border-[var(--border)] shadow">
+              <label class="flex items-center gap-1 cursor-pointer"><input id="chkBones" type="checkbox" class="accent-[var(--primary)]"> Khung xương</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input id="chkAnchors" type="checkbox" class="accent-[var(--primary)]"> Anchors</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input id="chkParallax" type="checkbox" checked class="accent-[var(--primary)]"> Parallax 3D</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input id="chkFrame" type="checkbox" checked class="accent-[var(--primary)]"> Khung giấy</label>
+              <label class="flex items-center gap-1 cursor-pointer"><input id="chkCorners" type="checkbox" checked class="accent-[var(--primary)]"> Mây/Góc</label>
+            </div>
+
+            <div class="absolute bottom-3 right-3 flex items-center gap-1 text-xs bg-[var(--card)]/90 backdrop-blur px-2 py-1 rounded-lg border border-[var(--border)] shadow">
+              <button id="btnZoomOut" class="px-1.5 py-0.5 rounded hover:bg-[var(--background)]">−</button>
+              <span id="zoomLabel" class="font-mono tabular-nums w-10 text-center">100%</span>
+              <button id="btnZoomIn" class="px-1.5 py-0.5 rounded hover:bg-[var(--background)]">+</button>
+            </div>
+
+            <div id="phaseBadge" class="absolute top-3 left-3 text-[11px] font-mono px-2.5 py-1 rounded-md bg-[var(--card)]/85 backdrop-blur border border-[var(--border)] text-[var(--muted-foreground)]"></div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Inspector -->
+      <aside class="lg:col-span-4 bg-[var(--card)] flex flex-col max-h-[720px]">
+        <div class="p-2 border-b border-[var(--border)] grid grid-cols-3 gap-1.5 text-xs">
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--border)] font-medium" data-tab="rig" data-active="true">Khớp Rig</button>
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--border)] font-medium" data-tab="scene" data-active="false">Cảnh &amp; Hiệu ứng</button>
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--border)] font-medium" data-tab="spec" data-active="false">Cấu trúc &amp; JSON</button>
+        </div>
+
+        <div id="tab-rig" class="p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
+          <div id="variantSection" class="space-y-2 hidden pb-2 border-b border-[var(--border)]"></div>
+          <div class="flex items-center justify-between text-[var(--muted-foreground)]">
+            <span>Kéo thanh trượt để chỉnh từng khớp (FK)</span>
+            <button id="btnRest" class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--primary)]">↺ Nghỉ</button>
+          </div>
+          <div id="rootControls" class="space-y-2 pb-2 border-b border-[var(--border)]"></div>
+          <div id="boneSliders" class="space-y-2"></div>
+        </div>
+
+        <div id="tab-scene" class="hidden p-3.5 space-y-3.5 overflow-y-auto scroll-thin flex-1 text-xs">
+          <div class="space-y-2">
+            <div class="font-semibold">Ánh sáng &amp; Bóng cắt giấy</div>
+            <label class="flex items-center gap-2">
+              <span class="w-28 text-[var(--muted-foreground)]">Độ sâu bóng giấy</span>
+              <input id="rngShadow" type="range" min="0.2" max="1.8" step="0.1" value="1" class="flex-1 accent-[var(--primary)]"/>
+              <span id="valShadow" class="w-10 text-right font-mono">1.0×</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <span class="w-28 text-[var(--muted-foreground)]">Nhịp môi trường</span>
+              <input id="rngAmbient" type="range" min="0" max="2.2" step="0.1" value="1" class="flex-1 accent-[var(--primary)]"/>
+              <span id="valAmbient" class="w-10 text-right font-mono">1.0×</span>
+            </label>
+            <label class="flex items-center justify-between pt-1">
+              <span class="text-[var(--muted-foreground)]">Hiệu ứng trời (Sao băng / Đom đóm)</span>
+              <input id="chkAmbient" type="checkbox" checked class="accent-[var(--primary)]"/>
+            </label>
+            <label class="flex items-center justify-between">
+              <span class="text-[var(--muted-foreground)]">Đàn sinh vật nhỏ (Swarm)</span>
+              <input id="chkSwarm" type="checkbox" checked class="accent-[var(--primary)]"/>
+            </label>
+          </div>
+        </div>
+
+        <div id="tab-spec" class="hidden p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
+          <div id="specSummary" class="p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] space-y-1"></div>
+          <div class="space-y-1">
+            <div class="font-semibold">Cây xương Rig</div>
+            <pre id="boneTreeOut" class="p-2 rounded bg-[var(--background)] border border-[var(--border)] font-mono text-[11px] overflow-x-auto leading-relaxed"></pre>
+          </div>
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">Pose JSON hiện tại</span>
+              <button id="btnCopyPose" class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--primary)]">Copy</button>
+            </div>
+            <pre id="poseJsonOut" class="p-2 rounded bg-[var(--background)] border border-[var(--border)] font-mono text-[11px] max-h-44 overflow-auto"></pre>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const BLUEPRINT = __BLUEPRINT_JSON__;
+
+    // Deterministic Park-Miller LCG (strictly seeded, zero non-deterministic RNG)
+    function makeRng(seed) {
+      let s = (seed >>> 0) || 4219;
+      return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+    }
+    const DEG = Math.PI / 180;
+    const RAD = 180 / Math.PI;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const smoothstep = (t) => { const c = clamp(t, 0, 1); return c * c * (3 - 2 * c); };
+
+    // Topo sort bones
+    const BONES = [];
+    (function topo() {
+      const byParent = new Map();
+      for (const b of BLUEPRINT.rig.bones) {
+        const k = b.parent ?? '__root__';
+        byParent.set(k, [...(byParent.get(k) ?? []), b]);
+      }
+      const visit = (parentId) => {
+        for (const b of byParent.get(parentId) ?? []) {
+          BONES.push(b);
+          visit(b.id);
+        }
+      };
+      visit('__root__');
+    })();
+    const BONE_BY_ID = Object.fromEntries(BONES.map(b => [b.id, b]));
+    const PART_BY_ID = Object.fromEntries(BLUEPRINT.parts.map(p => [p.id, p]));
+
+    const state = {
+      preset: BLUEPRINT.motions?.[0]?.id ?? 'manual',
+      playing: true,
+      speed: 1,
+      time: 0,
+      facing: 1,
+      zoom: 1,
+      showBones: false,
+      showAnchors: false,
+      parallax: true,
+      showFrame: true,
+      showCorners: true,
+      showAmbient: true,
+      showSwarm: true,
+      shadowScale: 1,
+      ambientAmp: 1,
+      pointer: { x: 0, y: 0 },
+      smoothPtr: { x: 0, y: 0 },
+      rootX: BLUEPRINT.rig.rootPos?.x ?? 480,
+      rootY: BLUEPRINT.rig.rootPos?.y ?? 420,
+      angles: Object.fromEntries(BONES.map(b => [b.id, b.rest ?? 0])),
+      variants: Object.fromEntries(Object.entries(BLUEPRINT.rig.variants ?? {}).map(([k, list]) => [k, list[0]])),
+      draggingIk: null,
+      vfx: { splash: 0, splashX: 480, bubbles: 0, spout: 0 },
+    };
+
+    // Header & Defs setup
+    document.getElementById('badgeIcon').textContent = BLUEPRINT.meta.icon ?? '✂';
+    document.getElementById('hdrTitle').textContent = BLUEPRINT.meta.title;
+    document.getElementById('hdrSub').textContent = BLUEPRINT.meta.subtitle ?? '';
+    document.getElementById('stageBox').style.background = BLUEPRINT.scene.bgColor ?? '#0b1326';
+
+    // Build SVG <defs>
+    const baseDefs = `
+      <filter id="paperTex" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="2" seed="${BLUEPRINT.meta.seed ?? 13}" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.10  0 0 0 0.09 0" result="g"/>
+        <feComposite in="g" in2="SourceGraphic" operator="in" result="gc"/>
+        <feBlend in="SourceGraphic" in2="gc" mode="multiply"/>
+      </filter>
+      <filter id="shadowDeep" x="-25%" y="-25%" width="150%" height="150%">
+        <feDropShadow id="fDeep" dx="0" dy="8" stdDeviation="9" flood-color="#040812" flood-opacity="0.60"/>
+      </filter>
+      <filter id="shadowMed" x="-25%" y="-25%" width="150%" height="150%">
+        <feDropShadow id="fMed" dx="2" dy="6" stdDeviation="6" flood-color="#050b16" flood-opacity="0.46"/>
+      </filter>
+      <filter id="shadowSoft" x="-25%" y="-25%" width="150%" height="150%">
+        <feDropShadow id="fSoft" dx="0" dy="4" stdDeviation="6" flood-color="#142033" flood-opacity="0.26"/>
+      </filter>
+      <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="10" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      ${BLUEPRINT.scene.defsSvg ?? ''}`;
+    document.getElementById('svgDefs').innerHTML = baseDefs;
+
+    // Static Frame & Corner Layers
+    document.getElementById('layerFrame').innerHTML = BLUEPRINT.scene.frameSvg ?? '';
+    document.getElementById('layerCorners').innerHTML = BLUEPRINT.scene.cornersSvg ?? '';
+
+    // Pre-generate deterministic stars/particles
+    const rng = makeRng(BLUEPRINT.meta.seed ?? 4219);
+    const STARS = [];
+    const starCount = BLUEPRINT.scene.stars?.count ?? 0;
+    for (let i = 0; i < starCount; i++) {
+      STARS.push({
+        x: 35 + rng() * 890,
+        y: 35 + rng() * (BLUEPRINT.scene.stars.maxY ?? 440),
+        r: 0.7 + rng() * 1.9,
+        op: 0.3 + rng() * 0.65,
+        phase: rng() * 6.28,
+        freq: 1.2 + rng() * 2.2,
+      });
+    }
+
+    // Forward Kinematics
+    function computeWorld() {
+      const world = {};
+      for (const b of BONES) {
+        const localDeg = state.angles[b.id] ?? 0;
+        if (b.parent === null) {
+          world[b.id] = { x: state.rootX, y: state.rootY, deg: localDeg };
+        } else {
+          const pWorld = world[b.parent];
+          const pBone = BONE_BY_ID[b.parent];
+          const pPart = PART_BY_ID[resolvePartId(pBone)];
+          const anc = pPart?.anchors?.[b.attach] ?? pPart?.pivot ?? [0, 0];
+          const piv = pPart?.pivot ?? [0, 0];
+          const lx = anc[0] - piv[0];
+          const ly = anc[1] - piv[1];
+          const r = pWorld.deg * DEG;
+          const c = Math.cos(r), s = Math.sin(r);
+          world[b.id] = {
+            x: pWorld.x + lx * c - ly * s,
+            y: pWorld.y + lx * s + ly * c,
+            deg: pWorld.deg + localDeg,
+          };
+        }
+      }
+      return world;
+    }
+
+    function resolvePartId(bone) {
+      if (bone.variantGroup && bone.variants) {
+        const sel = state.variants[bone.variantGroup];
+        if (sel && bone.variants[sel]) return bone.variants[sel];
+      }
+      return bone.part;
+    }
+
+    // Analytic 2-bone IK (for rigs defining ikChains)
+    function solveIk(chain, target) {
+      const world = computeWorld();
+      const uBone = BONE_BY_ID[chain.upper];
+      const lBone = BONE_BY_ID[chain.lower];
+      const uPart = PART_BY_ID[resolvePartId(uBone)];
+      const lPart = PART_BY_ID[resolvePartId(lBone)];
+      const uAnc = uPart.anchors[lBone.attach];
+      const lAnc = lPart.anchors[BONE_BY_ID[chain.end].attach];
+      const L1 = Math.hypot(uAnc[0] - uPart.pivot[0], uAnc[1] - uPart.pivot[1]);
+      const L2 = Math.hypot(lAnc[0] - lPart.pivot[0], lAnc[1] - lPart.pivot[1]);
+      const baseAngleOffset = Math.atan2(uAnc[1] - uPart.pivot[1], uAnc[0] - uPart.pivot[0]);
+      const origin = world[chain.upper];
+      const pDeg = world[uBone.parent].deg;
+      const dx = target.x - origin.x, dy = target.y - origin.y;
+      const d = clamp(Math.hypot(dx, dy), Math.abs(L1 - L2) + 1, L1 + L2 - 0.5);
+      const aim = Math.atan2(dy, dx);
+      const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+      const b = Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
+      const bend = chain.bend ?? 1;
+      let uLocal = (aim + bend * a - baseAngleOffset) * RAD - pDeg;
+      while (uLocal > 180) uLocal -= 360;
+      while (uLocal < -180) uLocal += 360;
+      const lLocal = -bend * (Math.PI - b) * RAD;
+      state.angles[chain.upper] = clamp(uLocal, uBone.limits.min, uBone.limits.max);
+      state.angles[chain.lower] = clamp(lLocal, lBone.limits.min, lBone.limits.max);
+    }
+
+    // Motion Evaluator (declarative phase keyframes + harmonic waves!)
+    function evalMotion(t) {
+      const m = (BLUEPRINT.motions ?? []).find(x => x.id === state.preset);
+      if (!m) return;
+      state.vfx.splash = 0; state.vfx.bubbles = 0; state.vfx.spout = 0;
+
+      if (m.type === 'cycle' && Array.isArray(m.phases)) {
+        const period = m.period ?? 10;
+        const u = ((t % period) + period) % period / period;
+        let phase = m.phases[m.phases.length - 1];
+        let localT = 0;
+        for (const ph of m.phases) {
+          if (u >= ph.from && u <= ph.to) {
+            phase = ph;
+            localT = (u - ph.from) / Math.max(0.0001, ph.to - ph.from);
+            break;
+          }
+        }
+        const e = smoothstep(localT);
+        if (phase.label) document.getElementById('phaseBadge').textContent = phase.label;
+        if (phase.rootX) state.rootX = lerp(phase.rootX[0], phase.rootX[1], e);
+        if (phase.rootY) state.rootY = lerp(phase.rootY[0], phase.rootY[1], e) - (phase.arcY ? Math.sin(localT * Math.PI) * phase.arcY : 0);
+        for (const b of BONES) {
+          const k = phase.bones?.[b.id];
+          if (Array.isArray(k)) state.angles[b.id] = lerp(k[0], k[1], e);
+          else if (typeof k === 'number') state.angles[b.id] = k;
+          const wv = phase.waves?.[b.id];
+          if (wv) state.angles[b.id] = (state.angles[b.id] ?? 0) + Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
+        }
+        if (phase.vfx) {
+          if (phase.vfx.splashAtY != null) {
+            const dist = Math.abs(state.rootY - phase.vfx.splashAtY);
+            if (dist < 95) { state.vfx.splash = 1 - dist / 95; state.vfx.splashX = state.rootX; }
+          }
+          if (phase.vfx.bubbles) state.vfx.bubbles = Math.sin(localT * Math.PI) * phase.vfx.bubbles;
+          if (phase.vfx.spout) state.vfx.spout = Math.sin(localT * Math.PI) * phase.vfx.spout;
+        }
+      } else if (m.type === 'harmonic') {
+        if (m.label) document.getElementById('phaseBadge').textContent = m.label;
+        const bx = BLUEPRINT.rig.rootPos?.x ?? 480;
+        const by = BLUEPRINT.rig.rootPos?.y ?? 420;
+        state.rootX = bx + (m.rootWaveX ? Math.sin(t * m.rootWaveX.freq + (m.rootWaveX.phase ?? 0)) * m.rootWaveX.amp : 0);
+        state.rootY = by + (m.rootWaveY ? Math.sin(t * m.rootWaveY.freq + (m.rootWaveY.phase ?? 0)) * m.rootWaveY.amp : 0);
+        for (const b of BONES) {
+          let deg = m.base?.[b.id] ?? b.rest ?? 0;
+          const wv = m.waves?.[b.id];
+          if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
+          state.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
+        }
+      }
+    }
+
+    // Render Scene Layers
+    function renderAll(t, px, py) {
+      const sc = BLUEPRINT.scene;
+      // 1. Sky + twinkling stars
+      let skyHtml = sc.skySvg ?? `<rect x="-40" y="-40" width="1040" height="800" fill="${sc.bgColor ?? '#0b1326'}"/>`;
+      if (STARS.length) {
+        skyHtml += `<g transform="translate(${(px * 4).toFixed(1)}, ${(py * 4).toFixed(1)})">`;
+        for (const s of STARS) {
+          const op = clamp(s.op + Math.sin(t * s.freq + s.phase) * 0.25, 0.12, 1);
+          skyHtml += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${s.r.toFixed(2)}" fill="${sc.stars.color ?? '#ffffff'}" opacity="${op.toFixed(2)}"/>`;
+        }
+        skyHtml += `</g>`;
+      }
+      document.getElementById('layerSky').innerHTML = skyHtml;
+
+      // 2. Ambient Sky Effects (shooting stars / fireflies / petals)
+      let ambHtml = '';
+      if (state.showAmbient && Array.isArray(sc.emitters)) {
+        for (const em of sc.emitters) {
+          if (em.type === 'meteor') {
+            const local = (t * state.ambientAmp + (em.offset ?? 0)) % (em.period ?? 6);
+            const dur = em.dur ?? 1.0;
+            if (local <= dur) {
+              const p = local / dur;
+              const ease = 1 - Math.pow(1 - p, 2);
+              const hx = em.x0 + em.dx * ease + px * 6;
+              const hy = em.y0 + em.dy * ease + py * 6;
+              const ang = Math.atan2(em.dy, em.dx) * RAD;
+              const fade = p < 0.2 ? p / 0.2 : (p > 0.72 ? (1 - p) / 0.28 : 1);
+              const len = (em.len ?? 110) * Math.sin(p * Math.PI);
+              ambHtml += `
+                <g transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${fade.toFixed(2)}">
+                  <polygon points="${(-len).toFixed(1)},0 0,-2.6 0,2.6" fill="url(#${em.gradId ?? 'meteorTrail'})"/>
+                  <path d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" fill="${em.color ?? '#fff7c2'}" filter="url(#softGlow)"/>
+                </g>`;
+            }
+          } else if (em.type === 'fireflies') {
+            const fr = makeRng(em.seed ?? 901);
+            for (let i = 0; i < (em.count ?? 18); i++) {
+              const bx = (em.xMin ?? 80) + fr() * ((em.xMax ?? 880) - (em.xMin ?? 80));
+              const by = (em.yMin ?? 160) + fr() * ((em.yMax ?? 580) - (em.yMin ?? 160));
+              const ph = fr() * 6.28;
+              const fx = bx + Math.sin(t * 0.8 * state.ambientAmp + ph) * 26 + px * 12;
+              const fy = by + Math.cos(t * 1.1 * state.ambientAmp + ph) * 18 + py * 10;
+              const glow = 0.25 + 0.75 * Math.pow((Math.sin(t * 2.2 + ph) + 1) * 0.5, 2);
+              ambHtml += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(2.2 + glow * 2.4).toFixed(1)}" fill="${em.color ?? '#ffe985'}" opacity="${glow.toFixed(2)}" filter="url(#softGlow)"/>`;
+            }
+          }
+        }
+      }
+      document.getElementById('layerAmbientBack').innerHTML = ambHtml;
+
+      // 3. Concentric Celestial Rig (Moon/Sun)
+      let celHtml = '';
+      if (sc.celestial) {
+        const c = sc.celestial;
+        const pulse = Math.sin(t * 1.4 * state.ambientAmp) * 0.035;
+        celHtml += `<g transform="translate(${(c.x + px * 8).toFixed(1)}, ${(c.y + py * 8).toFixed(1)})">`;
+        (c.rings ?? []).forEach((rg, idx) => {
+          celHtml += `<circle cx="${(px * idx * 1.4).toFixed(1)}" cy="${(py * idx * 1.4).toFixed(1)}" r="${(rg.r * (1 + pulse * (0.6 + idx * 0.15))).toFixed(1)}" fill="${rg.fill}" filter="url(#shadowMed)"/>`;
+        });
+        celHtml += `<g transform="translate(${(px * 8).toFixed(1)}, ${(py * 8).toFixed(1)})">${c.coreSvg ?? ''}</g>`;
+        if (c.orbitSvg) celHtml += `<g transform="rotate(${(t * (c.orbitSpeed ?? 12) * state.ambientAmp).toFixed(1)})">${c.orbitSvg}</g>`;
+        celHtml += `</g>`;
+      }
+      document.getElementById('layerCelestial').innerHTML = celHtml;
+
+      // 4. Back & Front Multiplane Scenery (waves / hills / trees)
+      const renderPlaneList = (list) => (list ?? []).map((pl) => {
+        const dx = px * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.5) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
+        const dy = py * ((pl.parallax ?? 12) * 0.7);
+        return `<g transform="translate(${dx.toFixed(1)}, ${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
+      }).join('');
+      document.getElementById('layerBackScenery').innerHTML = renderPlaneList(sc.backLayers);
+      document.getElementById('layerFrontScenery').innerHTML = renderPlaneList(sc.frontLayers);
+
+      // 5. Mini-Swarms (2-bone fish / flapping birds)
+      let swBack = '', swFront = '';
+      if (state.showSwarm && Array.isArray(sc.swarms)) {
+        for (const sw of sc.swarms) {
+          const span = 1040;
+          const rawX = (sw.x0 + (sw.dir ?? 1) * t * (sw.speed ?? 55) * state.ambientAmp) % span;
+          const x = (rawX < -40 ? rawX + span : rawX) - 40;
+          let y = sw.y0 + Math.sin(t * 2.5 * state.ambientAmp + (sw.phase ?? 0)) * (sw.amp ?? 14);
+          let pitch = Math.cos(t * 2.5 * state.ambientAmp + (sw.phase ?? 0)) * 12;
+          if (sw.jump) {
+            const jt = (t * state.ambientAmp + (sw.jumpOffset ?? 0)) % (sw.jumpPeriod ?? 6);
+            if (jt < 1.4) {
+              const u = jt / 1.4;
+              y -= Math.sin(u * Math.PI) * (sw.jumpHeight ?? 80);
+              pitch = -Math.cos(u * Math.PI) * 42;
+            }
+          }
+          const wag = Math.sin(t * (sw.wagFreq ?? 13) * state.ambientAmp + (sw.phase ?? 0)) * (sw.wagAmp ?? 24);
+          const ox = px * (sw.lane === 'front' ? 20 : 14);
+          const oy = py * (sw.lane === 'front' ? 13 : 10);
+          const item = `
+            <g transform="translate(${(x + ox).toFixed(1)}, ${(y + oy).toFixed(1)}) scale(${(sw.dir ?? 1) * (sw.scale ?? 1)}, ${sw.scale ?? 1}) rotate(${pitch.toFixed(1)})" filter="url(#shadowSoft)">
+              <g transform="translate(${sw.tailPivotX ?? -14}, ${sw.tailPivotY ?? 0}) rotate(${wag.toFixed(1)})">${sw.tailSvg}</g>
+              ${sw.bodySvg}
+            </g>`;
+          if (sw.lane === 'front') swFront += item; else swBack += item;
+        }
+      }
+      document.getElementById('layerSwarmBack').innerHTML = swBack;
+      document.getElementById('layerSwarmFront').innerHTML = swFront;
+
+      // 6. Hero Articulated Rig (sorted by bone.z)
+      const world = computeWorld();
+      const sorted = [...BONES].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+      const hox = px * (BLUEPRINT.rig.parallax ?? 15);
+      const hoy = py * ((BLUEPRINT.rig.parallax ?? 15) * 0.75);
+      const pivotFlipX = state.rootX;
+      let heroHtml = `<g transform="translate(${(pivotFlipX + hox).toFixed(1)}, ${hoy.toFixed(1)}) scale(${state.facing}, 1) translate(${(-pivotFlipX).toFixed(1)}, 0)" filter="url(#paperTex)">`;
+      for (const b of sorted) {
+        const w = world[b.id];
+        const part = PART_BY_ID[resolvePartId(b)];
+        if (!part) continue;
+        const sh = b.shadow ? `filter="url(#${b.shadow})"` : 'filter="url(#shadowMed)"';
+        heroHtml += `<g transform="translate(${w.x.toFixed(2)}, ${w.y.toFixed(2)}) rotate(${w.deg.toFixed(2)})" ${sh}>${part.svg}</g>`;
+      }
+      heroHtml += `</g>`;
+      document.getElementById('layerHero').innerHTML = heroHtml;
+
+      // 7. Dynamic VFX (splash / bubbles)
+      let vfxHtml = '';
+      if (state.vfx.splash > 0.04) {
+        const s = state.vfx.splash;
+        const sy = sc.waterlineY ?? 516;
+        vfxHtml += `<g transform="translate(${(state.vfx.splashX + hox).toFixed(1)}, ${(sy + hoy).toFixed(1)})" opacity="${Math.min(1, s * 1.15).toFixed(2)}">
+          <circle cx="${(-46 * s).toFixed(1)}" cy="${(-44 * s).toFixed(1)}" r="5" fill="#e6f7ff"/>
+          <circle cx="${(-18 * s).toFixed(1)}" cy="${(-64 * s).toFixed(1)}" r="4.5" fill="#ffffff"/>
+          <circle cx="${(22 * s).toFixed(1)}" cy="${(-60 * s).toFixed(1)}" r="5.5" fill="#e6f7ff"/>
+          <circle cx="${(48 * s).toFixed(1)}" cy="${(-38 * s).toFixed(1)}" r="4" fill="#ffffff"/>
+          <path d="M${(-64 * s).toFixed(1)} 4 Q0 ${(-24 * s).toFixed(1)} ${(64 * s).toFixed(1)} 4 Q0 ${(-8 * s).toFixed(1)} ${(-64 * s).toFixed(1)} 4 Z" fill="#d4f1ff" opacity="0.85"/>
+        </g>`;
+      }
+      if (state.vfx.bubbles > 0.05) {
+        for (let i = 0; i < 6; i++) {
+          const rise = (t * 48 + i * 24) % 90;
+          const bx = state.rootX - 28 + i * 15 + Math.sin(t * 4 + i) * 6 + hox;
+          const by = (sc.waterlineY ?? 520) + 36 - rise + hoy;
+          vfxHtml += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${(2.5 + (i % 3) * 1.3).toFixed(1)}" fill="#c8efff" opacity="${(state.vfx.bubbles * (1 - rise / 95) * 0.75).toFixed(2)}"/>`;
+        }
+      }
+      document.getElementById('layerVfx').innerHTML = vfxHtml;
+
+      // 8. Overlay pendulum props (e.g., hot-air balloon / hanging lantern)
+      let ovHtml = '';
+      for (const op of sc.overlayProps ?? []) {
+        const ox = op.x + px * (op.parallax ?? 22) + Math.sin(t * (op.freqX ?? 0.8) * state.ambientAmp) * (op.ampX ?? 10);
+        const oy = op.y + py * ((op.parallax ?? 22) * 0.8) + Math.cos(t * (op.freqY ?? 1.1) * state.ambientAmp) * (op.ampY ?? 10);
+        const tilt = Math.sin(t * (op.freqX ?? 0.9) * state.ambientAmp) * (op.tiltAmp ?? 3.5);
+        ovHtml += `<g transform="translate(${ox.toFixed(1)}, ${oy.toFixed(1)}) scale(${op.scale ?? 1}) rotate(${tilt.toFixed(2)})" filter="url(#shadowDeep)">${op.svg}</g>`;
+      }
+      document.getElementById('layerOverlayProps').innerHTML = ovHtml;
+
+      // 9. Diagnostics (Skeleton & Anchors)
+      let dHtml = '';
+      if (state.showBones || state.showAnchors) {
+        dHtml += `<g transform="translate(${(pivotFlipX + hox).toFixed(1)}, ${hoy.toFixed(1)}) scale(${state.facing}, 1) translate(${(-pivotFlipX).toFixed(1)}, 0)">`;
+        if (state.showBones) {
+          for (const b of BONES) {
+            if (!b.parent) continue;
+            const p = world[b.parent], c = world[b.id];
+            dHtml += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${c.x.toFixed(1)}" y2="${c.y.toFixed(1)}" stroke="#38bdf8" stroke-width="2.2" opacity="0.9"/>`;
+          }
+          for (const b of BONES) {
+            const w = world[b.id];
+            dHtml += `<circle cx="${w.x.toFixed(1)}" cy="${w.y.toFixed(1)}" r="4" fill="#ffffff" stroke="#0284c7" stroke-width="1.8"/>`;
+            dHtml += `<text x="${(w.x + 7).toFixed(1)}" y="${(w.y - 4).toFixed(1)}" font-size="10" font-family="monospace" fill="#bae6fd" font-weight="bold">${b.id}</text>`;
+          }
+        }
+        if (state.showAnchors) {
+          for (const b of BONES) {
+            const part = PART_BY_ID[resolvePartId(b)];
+            const w = world[b.id];
+            const rad = w.deg * DEG, cs = Math.cos(rad), sn = Math.sin(rad);
+            for (const [an, pt] of Object.entries(part?.anchors ?? {})) {
+              const lx = pt[0] - part.pivot[0], ly = pt[1] - part.pivot[1];
+              const wx = w.x + lx * cs - ly * sn, wy = w.y + lx * sn + ly * cs;
+              dHtml += `<circle cx="${wx.toFixed(1)}" cy="${wy.toFixed(1)}" r="3.2" fill="#f97316" stroke="#fff" stroke-width="1"/>`;
+            }
+          }
+        }
+        dHtml += `</g>`;
+      }
+      document.getElementById('layerDiag').innerHTML = dHtml;
+
+      // 10. Optional IK drag handles
+      let ikHtml = '';
+      if (BLUEPRINT.rig.ik && Object.keys(BLUEPRINT.rig.ik).length > 0) {
+        for (const [ikId, ch] of Object.entries(BLUEPRINT.rig.ik)) {
+          const endW = world[ch.end];
+          const hx = pivotFlipX + (endW.x - pivotFlipX) * state.facing + hox;
+          const hy = endW.y + hoy;
+          ikHtml += `<g class="ik-handle" data-ik="${ikId}"><circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="8" fill="#ef4444" fill-opacity="0.32" stroke="#ef4444" stroke-width="2"/><circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="2.5" fill="#fff"/></g>`;
+        }
+      }
+      document.getElementById('layerIk').innerHTML = ikHtml;
+    }
+
+    // Build UI Controls
+    const presetBar = document.getElementById('presetBar');
+    for (const m of [...(BLUEPRINT.motions ?? []), { id: 'manual', name: '🎛️ Tự chỉnh Rig' }]) {
+      const btn = document.createElement('button');
+      btn.className = 'pill-btn px-2.5 py-1.5 rounded-md border border-[var(--border)] font-medium';
+      btn.dataset.preset = m.id;
+      btn.dataset.active = String(m.id === state.preset);
+      btn.textContent = m.name;
+      btn.addEventListener('click', () => {
+        state.preset = m.id;
+        document.querySelectorAll('[data-preset]').forEach(x => x.dataset.active = String(x.dataset.preset === m.id));
+        if (m.id === 'manual') document.getElementById('phaseBadge').textContent = '🎛️ Chế độ tự chỉnh từng khớp Rig';
+      });
+      presetBar.appendChild(btn);
+    }
+
+    // Variant selectors if defined
+    const varEntries = Object.entries(BLUEPRINT.rig.variants ?? {});
+    if (varEntries.length > 0) {
+      const vs = document.getElementById('variantSection');
+      vs.classList.remove('hidden');
+      for (const [grp, opts] of varEntries) {
+        const block = document.createElement('div');
+        block.className = 'space-y-1';
+        block.innerHTML = `<div class="font-semibold">${grp}</div><div class="flex flex-wrap gap-1"></div>`;
+        const row = block.lastChild;
+        for (const opt of opts) {
+          const b = document.createElement('button');
+          b.className = 'pill-btn px-2 py-1 rounded border border-[var(--border)]';
+          b.dataset.active = String(state.variants[grp] === opt);
+          b.textContent = opt;
+          b.addEventListener('click', () => {
+            state.variants[grp] = opt;
+            row.querySelectorAll('button').forEach(x => x.dataset.active = String(x.textContent === opt));
+          });
+          row.appendChild(b);
+        }
+        vs.appendChild(block);
+      }
+    }
+
+    // Root X/Y + Bone FK Sliders
+    const sliderRefs = {};
+    const addSlider = (parentEl, key, label, min, max, val, unit, onSet) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+      row.innerHTML = `<span class="w-32 truncate text-[var(--muted-foreground)]" title="${key}">${label}</span><input type="range" min="${min}" max="${max}" step="1" value="${val}" class="flex-1 accent-[var(--primary)]"/><span class="w-12 text-right font-mono tabular-nums">${Math.round(val)}${unit}</span>`;
+      const inp = row.querySelector('input'), out = row.querySelectorAll('span')[1];
+      inp.addEventListener('input', () => {
+        state.preset = 'manual';
+        document.querySelectorAll('[data-preset]').forEach(x => x.dataset.active = String(x.dataset.preset === 'manual'));
+        onSet(Number(inp.value));
+        out.textContent = `${Math.round(inp.value)}${unit}`;
+      });
+      parentEl.appendChild(row);
+      sliderRefs[key] = { inp, out, unit };
+    };
+    const rootCtrl = document.getElementById('rootControls');
+    addSlider(rootCtrl, '__rootX', 'Vị trí X', 80, 880, state.rootX, 'px', v => state.rootX = v);
+    addSlider(rootCtrl, '__rootY', 'Vị trí Y', 80, 680, state.rootY, 'px', v => state.rootY = v);
+
+    const boneSliders = document.getElementById('boneSliders');
+    for (const b of BONES) {
+      addSlider(boneSliders, b.id, b.label ?? b.id, b.limits.min, b.limits.max, state.angles[b.id], '°', v => state.angles[b.id] = v);
+    }
+
+    function syncSliders() {
+      sliderRefs.__rootX.inp.value = state.rootX; sliderRefs.__rootX.out.textContent = `${Math.round(state.rootX)}px`;
+      sliderRefs.__rootY.inp.value = state.rootY; sliderRefs.__rootY.out.textContent = `${Math.round(state.rootY)}px`;
+      for (const b of BONES) {
+        const ref = sliderRefs[b.id];
+        ref.inp.value = state.angles[b.id];
+        ref.out.textContent = `${Math.round(state.angles[b.id])}°`;
+      }
+    }
+
+    // Spec tab
+    document.getElementById('specSummary').innerHTML = `
+      <div class="font-semibold">${BLUEPRINT.meta.title}</div>
+      <div class="text-[var(--muted-foreground)]">${BONES.length} xương · ${BLUEPRINT.parts.length} SVG parts · Seed ${BLUEPRINT.meta.seed ?? 4219} · Chuẩn paper-studio-v2</div>`;
+    function formatTree(parentId, prefix) {
+      const kids = BONES.filter(b => b.parent === parentId);
+      return kids.map((k, idx) => {
+        const last = idx === kids.length - 1;
+        return `${prefix}${parentId === null ? '' : (last ? '└─ ' : '├─ ')}${k.id} [${k.limits.min}°..${k.limits.max}°]\n` +
+          formatTree(k.id, parentId === null ? ' ' : prefix + (last ? '   ' : '│  '));
+      }).join('');
+    }
+    document.getElementById('boneTreeOut').textContent = formatTree(null, '').trim();
+
+    function updatePoseJson() {
+      const a = {};
+      for (const b of BONES) a[b.id] = Number(state.angles[b.id].toFixed(1));
+      document.getElementById('poseJsonOut').textContent = JSON.stringify({
+        rig: BLUEPRINT.rig.id, root: { x: Math.round(state.rootX), y: Math.round(state.rootY) },
+        facing: state.facing === 1 ? 'normal' : 'flipped', variants: state.variants, angles: a,
+      }, null, 2);
+    }
+
+    // Events
+    document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('[data-tab]').forEach(b => b.dataset.active = String(b === btn));
+      ['rig', 'scene', 'spec'].forEach(t => document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab));
+      if (tab === 'spec') updatePoseJson();
+    }));
+    document.getElementById('btnCopyPose').addEventListener('click', () => { updatePoseJson(); navigator.clipboard?.writeText(document.getElementById('poseJsonOut').textContent); });
+    document.getElementById('btnPlay').addEventListener('click', e => { state.playing = !state.playing; e.target.textContent = state.playing ? '⏸ Tạm dừng' : '▶ Phát'; });
+    document.getElementById('btnFlip').addEventListener('click', () => { state.facing *= -1; });
+    document.getElementById('btnRest').addEventListener('click', () => {
+      state.preset = 'manual';
+      for (const b of BONES) state.angles[b.id] = b.rest ?? 0;
+      state.rootX = BLUEPRINT.rig.rootPos?.x ?? 480; state.rootY = BLUEPRINT.rig.rootPos?.y ?? 420;
+      syncSliders();
+    });
+    document.getElementById('selSpeed').addEventListener('change', e => state.speed = Number(e.target.value));
+    document.getElementById('chkBones').addEventListener('change', e => state.showBones = e.target.checked);
+    document.getElementById('chkAnchors').addEventListener('change', e => state.showAnchors = e.target.checked);
+    document.getElementById('chkParallax').addEventListener('change', e => state.parallax = e.target.checked);
+    document.getElementById('chkFrame').addEventListener('change', e => { state.showFrame = e.target.checked; document.getElementById('layerFrame').style.display = e.target.checked ? 'inline' : 'none'; });
+    document.getElementById('chkCorners').addEventListener('change', e => { state.showCorners = e.target.checked; document.getElementById('layerCorners').style.display = e.target.checked ? 'inline' : 'none'; });
+    document.getElementById('chkAmbient').addEventListener('change', e => state.showAmbient = e.target.checked);
+    document.getElementById('chkSwarm').addEventListener('change', e => state.showSwarm = e.target.checked);
+    document.getElementById('rngAmbient').addEventListener('input', e => { state.ambientAmp = Number(e.target.value); document.getElementById('valAmbient').textContent = state.ambientAmp.toFixed(1) + '×'; });
+    document.getElementById('rngShadow').addEventListener('input', e => {
+      const v = Number(e.target.value); state.shadowScale = v;
+      document.getElementById('valShadow').textContent = v.toFixed(1) + '×';
+      document.getElementById('fDeep').setAttribute('stdDeviation', (9 * v).toFixed(1));
+      document.getElementById('fDeep').setAttribute('dy', (8 * v).toFixed(1));
+      document.getElementById('fMed').setAttribute('stdDeviation', (6 * v).toFixed(1));
+    });
+
+    const sceneSvg = document.getElementById('sceneSvg');
+    const setZoom = (d) => {
+      state.zoom = clamp(state.zoom + d, 0.7, 2.2);
+      const w = 960 / state.zoom, h = 720 / state.zoom;
+      sceneSvg.setAttribute('viewBox', `${(480 - w / 2).toFixed(1)} ${(360 - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+      document.getElementById('zoomLabel').textContent = `${Math.round(state.zoom * 100)}%`;
+    };
+    document.getElementById('btnZoomIn').addEventListener('click', () => setZoom(0.2));
+    document.getElementById('btnZoomOut').addEventListener('click', () => setZoom(-0.2));
+
+    // IK dragging
+    sceneSvg.addEventListener('pointerdown', e => {
+      const h = e.target.closest('.ik-handle');
+      if (!h) return;
+      state.draggingIk = h.dataset.ik;
+      state.preset = 'manual';
+      sceneSvg.setPointerCapture(e.pointerId);
+    });
+    sceneSvg.addEventListener('pointermove', e => {
+      if (!state.draggingIk) return;
+      const pt = sceneSvg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+      const sp = pt.matrixTransform(sceneSvg.getScreenCTM().inverse());
+      const hox = state.smoothPtr.x * (BLUEPRINT.rig.parallax ?? 15);
+      const hoy = state.smoothPtr.y * ((BLUEPRINT.rig.parallax ?? 15) * 0.75);
+      const tx = state.rootX + (sp.x - hox - state.rootX) * state.facing;
+      const ty = sp.y - hoy;
+      solveIk(BLUEPRINT.rig.ik[state.draggingIk], { x: tx, y: ty });
+      syncSliders();
+    });
+    sceneSvg.addEventListener('pointerup', () => state.draggingIk = null);
+
+    // Parallax mouse tracking
+    const stageWrap = document.getElementById('stageWrap');
+    stageWrap.addEventListener('pointermove', e => {
+      const r = stageWrap.getBoundingClientRect();
+      state.pointer.x = ((e.clientX - r.left) / r.width - 0.5) * 2;
+      state.pointer.y = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    });
+    stageWrap.addEventListener('pointerleave', () => { state.pointer.x = 0; state.pointer.y = 0; });
+
+    // Main 60fps loop
+    let last = performance.now();
+    function tick(now) {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      if (state.playing) {
+        state.time += dt * state.speed;
+        if (state.preset !== 'manual') {
+          evalMotion(state.time);
+          syncSliders();
+        }
+      }
+      const tpx = state.parallax ? state.pointer.x : 0;
+      const tpy = state.parallax ? state.pointer.y : 0;
+      state.smoothPtr.x += (tpx - state.smoothPtr.x) * 0.08;
+      state.smoothPtr.y += (tpy - state.smoothPtr.y) * 0.08;
+      renderAll(state.time, state.smoothPtr.x, state.smoothPtr.y);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

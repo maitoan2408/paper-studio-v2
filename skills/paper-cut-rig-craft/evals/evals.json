@@ -1,0 +1,42 @@
+{
+  "skill_name": "paper-cut-rig-craft",
+  "evals": [
+    {
+      "id": 1,
+      "name": "fox-autumn-moon-shadowbox",
+      "prompt": "Tạo rig cáo nhỏ cắt giấy chạy và nhảy qua đồi rừng thu dưới mặt trăng tròn, có đom đóm bay lấp lánh và chim nhỏ bay ngang trời, khung cảnh thoáng rộng ít che khuất.",
+      "expected_output": "Interactive shadow-box HTML viewer + validated paper-studio-v2 pack (manifest.json with SHA-256, rig.json, SVGs) featuring an articulated fox rig (9+ bones including bushy 3-segment wagging tail and ears), concentric autumn moon, fireflies emitter, back/front forest hills for occlusion, and flapping mini-bird swarm.",
+      "assertions": [
+        "validate_pack.mjs exits with code 0 and status PASS",
+        "All SVG parts pass allowlist and SHA-256 checks with zero errors",
+        "Rig has >= 8 bones with valid limits and non-degenerate lengths",
+        "Scene includes multi-phase or harmonic motions, ambient emitter (fireflies), and 2-bone mini-swarm (birds)",
+        "Standalone HTML compiles cleanly and contains zero Math.random() calls"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "whale-moon-dive-shadowbox",
+      "prompt": "Tạo cảnh cắt giấy shadow-box cá voi lặn sâu xuống biển rồi vọt lên ngắm trăng, có sao băng bay qua, đàn cá nhỏ bơi tung tăng, ít mây trắng để nhìn rõ cảnh.",
+      "expected_output": "Interactive shadow-box HTML + validated pack with 11-bone whale rig executing 4-phase dive/breach cycle behind front waves, shooting stars, 2-bone fish school with wave jumpers, concentric moon, and slim border.",
+      "assertions": [
+        "validate_pack.mjs exits with code 0 and status PASS",
+        "Whale rig has >= 9 bones with circular overlap tail segments",
+        "Motion cycle dips whale rootY below front wave waterline and triggers splash/bubbles VFX",
+        "Scene contains meteor emitters and fish swarm across back/front wave lanes"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "artisan-biped-character-rig",
+      "prompt": "Tạo bộ rig nhân vật cắt giấy tỷ lệ 5.3 đầu mặc áo xưởng giấy, có xương cúi eo, khớp tròn chồng mép, 4 dáng tay và IK kéo trực tiếp.",
+      "expected_output": "Interactive viewer + validated paper-studio-v2 biped pack with symmetric l/r limbs, spine bend bone, 4 hand variants sharing a common grip anchor, and 2-bone IK definitions.",
+      "assertions": [
+        "validate_pack.mjs exits with code 0 and status PASS",
+        "Rig defines sides ['l', 'r'], contacts, ground, and ik chains",
+        "Every hand variant asset defines the same grip anchor relative to pivot",
+        "Zero external image/video APIs or disallowed SVG tags"
+      ]
+    }
+  ]
+}
