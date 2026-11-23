@@ -87,14 +87,14 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "cabaf672419cd89234e3407f5d50e81e2a5733c8",
-      "updated": "2026-11-23",
+      "head": "77d522f7a8a5e70c03803e5de2a8c4199f9b3cd1",
+      "updated": "2026-11-24",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
         "edgeFixtures": "PASS_TECHNICAL",
         "regression": "PASS_TECHNICAL",
         "slidingRest": "PASS_TECHNICAL",
-        "separatingSupport": "BLOCKED",
+        "separatingSupport": "PASS_TECHNICAL",
         "visualReview": "NOT_RUN"
       },
       "notes": [
@@ -107,7 +107,10 @@
         "Hậu kiểm cabaf67 (code ca7b482, CLI drop-trace cabaf67). Codex chạy npm run verify 327/327, 5 golden SceneFrame đạt. Cùng 26 test drop trên fc643d5 đạt 22/26 (3 lỗi hành vi và 1 test đòi trường separation mới), bản sửa đạt 26/26.",
         "slidingRest PASS_TECHNICAL. Bục ngắn không ma sát: f178–190 giữ vx khoảng 37,68 px/s, qua mép f201, đỡ cuối f214, PHYSICS_NO_LANDING f222. Bục dài còn trượt ở f239 và báo PHYSICS_NOT_AT_REST. Độ lệch vx tối đa từ f170 đến trước frame qua mép 0,0321 px/s, trong dung sai 0,05.",
         "separatingSupport còn BLOCKED. Fixture bounce-late đã đúng ở f165 bước 8/8 (vận tốc tách 622,56 px/s, airborne). Codex tái hiện qua loadFilm với cùng fixture, friction=1.5 và ledge.y=-20. Ở f182 bước 8/8, điểm solver gần góc chịu xung lực đang tách 214,30 px/s, điểm gần góc xung lực 0 cho 15,48 px/s. Min lấy cả hai khiến pose supported=true dù chậu bật, f183 không có xung lực. Sai cờ trạng thái, chưa thấy khóa nghỉ sai ở ca này.",
-        "CI verify push https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187580896 và PR https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187592859 đạt. Render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187592927 tại merge ref 83be057 (cùng cây cabaf67), check:renderer 8/8, audit 5 phim đạt, minPSNR 41,15 dB. Claude báo đã gửi clip chẩn đoán slide-off vẽ hộp 0,5×. Codex chưa xem clip và chưa có quyết định duyệt thị giác."
+        "CI verify push https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187580896 và PR https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187592859 đạt. Render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45187592927 tại merge ref 83be057 (cùng cây cabaf67), check:renderer 8/8, audit 5 phim đạt, minPSNR 41,15 dB. Claude báo đã gửi clip chẩn đoán slide-off vẽ hộp 0,5×. Codex chưa xem clip và chưa có quyết định duyệt thị giác.",
+        "Hậu kiểm 77d522f. Cùng 27 test drop, thay riêng drop.ts từ cabaf67 tái hiện 1 lỗi f182. Bản mới qua npm run verify 328/328, gồm 5 golden. So độc lập 10 trace, mọi pose, góc và vận tốc trùng. Chỉ đổi cờ đỡ ở bounce-tumble f182/f187 và bounce-late f187.",
+        "f182 điểm chịu xung lực 0,1537 tách 212,15 px/s, điểm có vận tốc 13,42 px/s mang xung lực 0. f183 bay tự do. Hai f187 được ghi airborne theo trạng thái cuối bước con, f188 lại được đỡ, nghỉ f199/f200. Edge-slide f166–168 vẫn có điểm tựa với vận tốc tách 14,97/11,95/10,03 px/s rồi hụt f175. Quy ước áp dụng cho hộp trên mặt ngang, 24 fps và 8 bước con, g·h = 20,44 px/s ở cấu hình thử. Khi đổi độ phân giải thời gian cần kiểm lại các ca sát biên.",
+        "CI PR verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45195229132 và render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45195221582 đạt. Fixture chẩn đoán được kiểm bằng test và trace. Chưa duyệt video. Giao việc 2, hai cảnh bàn/sàn theo PLAN §6 M3."
       ]
     },
     "M4": {
