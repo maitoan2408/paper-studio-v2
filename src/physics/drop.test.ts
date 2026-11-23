@@ -19,7 +19,9 @@ import { code } from '../schema/test-helpers.ts';
 import { sampleFrame } from '../scene/sample.ts';
 import { contactWorld } from '../motion/character.ts';
 import { propPivot, propTimeline, segmentAt } from '../motion/props.ts';
-import { dropBake, SUBSTEPS } from './drop.ts';
+import * as drop from './drop.ts';
+import { dropBake, SUBSTEPS, type DropPose } from './drop.ts';
+import { dropFixture } from './drop-fixtures.ts';
 import { RAPIER, RAPIER_VERSION } from './rapier.ts';
 
 const packs = new Map(['sample-m0', 'demo-cast'].map((x) => [x, loadArtPack(`assets/${x}`)]));
@@ -164,4 +166,114 @@ test('draw order stays continuous at release: the falling prop keeps its slot in
   const before = slot(R - 1);
   assert.equal(before[1], 'tam/hand.r', 'held prop is drawn just before the gripping hand');
   for (const fr of [R, R + 1, b.landFrame, b.restFrame, film.data.output.durationFrames - 1]) assert.deepEqual(slot(fr), before, `frame ${fr}`);
+});
+
+// ─── Tiếp đất: lần chạm đầu, được đỡ, nằm yên (fixture riêng — cảnh gốc ở trên giữ làm đối chứng) ─────────────────
+const plantAsset = film.assets.get(film.data.props.find((p) => p.id === 'plant-1')!.asset)!;
+const PS = film.data.props.find((p) => p.id === 'plant-1')!.scale;
+const HW = (plantAsset.width * PS) / 2; // pivot = giữa đáy chậu ⇒ ở góc 0, x của pivot là tâm ngang, y là đáy
+const corners = [[-HW, 0], [HW, 0], [-HW, plantAsset.height * PS], [HW, plantAsset.height * PS]] as [number, number][];
+const lowest = (q: DropPose) => Math.min(...corners.map((c) => q.y + rotate(c, q.angle)[1]));
+const highest = (q: DropPose) => Math.max(...corners.map((c) => q.y + rotate(c, q.angle)[1]));
+const HH = (plantAsset.height * PS) / 2;
+const centerY = (q: DropPose) => q.y + rotate([0, HH], q.angle)[1];
+const at = (poses: DropPose[], fr: number) => poses.find((q) => q.frame === fr)!;
+/** Phim fixture KHÔNG bake (để xem diễn biến cả khi bake bị từ chối): dữ liệu cảnh gốc đã validate + mặt đỡ/physics của fixture. */
+const unbaked = (name: string): { f: Film; d: drop.DropTrace } => {
+  const fx = dropFixture(name);
+  const f: Film = { ...film, data: { ...film.data, stage: { ...film.data.stage, surfaces: fx.stage.surfaces }, physics: fx.physics } };
+  return { f, d: drop.simulateDrop(f, fx.physics[0]) };
+};
+const calmWindowSupported = (poses: DropPose[], restFrame: number) => {
+  for (let fr = restFrame - drop.REST_FRAMES + 1; fr <= restFrame; fr++) {
+    const q = at(poses, fr);
+    assert.ok(q.supported && Math.hypot(q.vx, q.vy) <= drop.REST_SPEED_PX + 1e-9, `frame ${fr}: rest lock needs support and calm (${q.state}, ${Math.hypot(q.vx, q.vy).toFixed(2)} px/s)`);
+  }
+};
+
+test('baseline m3-drop: first contact inside f165 (substep 6/8), supported from f166, rest at f178 — unchanged', () => {
+  assert.deepEqual(b.firstContact, { frame: 165, substep: 6, time: 164.75 });
+  assert.equal(b.landFrame, 165);
+  assert.equal(b.restFrame, 178);
+  calmWindowSupported(b.poses, b.restFrame);
+  assert.ok(b.poses.filter((q) => q.frame < 165).every((q) => q.state === 'falling' && !q.touching));
+});
+
+test('bounce (restitution 0.65): the first impact is kept even though the pot is back in the air at the end of that frame', () => {
+  const bb = dropBake(build(dropFixture('m3-drop-bounce')), 'drop-plant');
+  const f164 = at(bb.poses, 164), f165 = at(bb.poses, 165);
+  // diễn biến: đi xuống nhanh ở f164, đã bật lên ở f165
+  assert.ok(f164.vy < -800 && f164.state === 'falling' && !f164.touching, `f164 ${f164.vy}`);
+  assert.ok(f165.vy > 500, `f165 must already move up after the bounce (vy ${f165.vy})`);
+  assert.ok(lowest(f165) > 1, 'f165 is drawn in the air above the floor');
+  // sự kiện: chạm đầu trong bước con 6 của f165 — không phải lúc rơi lại / nằm yên (bản cũ: 176)
+  assert.deepEqual(bb.firstContact, { frame: 165, substep: 6, time: 164.75 });
+  assert.equal(bb.landFrame, 165);
+  assert.ok(f165.touching && !f165.supported && f165.state === 'airborne');
+  // đối chiếu vận tốc: đạn đạo từ f164 (khe 23.85 px, vy −814.9) chạm tại t* ∈ (bước con 5, bước con 6] của f165
+  const g = spec.world.gravity * spec.world.pxPerMeter, gap = lowest(f164), v = -f164.vy;
+  const tStar = 164 + ((-v + Math.sqrt(v * v + 2 * g * gap)) / g) * fps;
+  assert.ok(tStar > bb.firstContact.time - 1 / SUBSTEPS && tStar <= bb.firstContact.time, `ballistic contact ${tStar.toFixed(3)} vs substep end ${bb.firstContact.time}`);
+  // bay lại lên không: đã từng chạm (airborne, không phải falling), không được đỡ, không tiếp xúc; bay tự do: quay đều,
+  // tâm khối có gia tốc đúng −g (sai phân bậc hai của Euler bán ẩn = −g·dt² chính xác tới f32)
+  for (let fr = 166; fr <= 172; fr++) {
+    const q = at(bb.poses, fr);
+    assert.ok(q.state === 'airborne' && !q.touching && !q.supported, `frame ${fr}: ${q.state}`);
+    if (fr >= 167) {
+      const p = at(bb.poses, fr - 1), pp = at(bb.poses, fr - 2);
+      assert.ok(Math.abs(q.spin - p.spin) < 1e-3, `frame ${fr}: spin changes in free flight`);
+      assert.ok(Math.abs(centerY(q) - 2 * centerY(p) + centerY(pp) + g * dt * dt) < 1e-2, `frame ${fr}: centre not in free flight`);
+    }
+  }
+  assert.ok(at(bb.poses, 168).vy > 0 && at(bb.poses, 169).vy < 0, 'apex between f168 and f169');
+  // nằm yên chỉ khóa khi được đỡ và đứng yên đủ REST_FRAMES
+  assert.ok(bb.restFrame > 172);
+  calmWindowSupported(bb.poses, bb.restFrame);
+  assert.ok(at(bb.poses, bb.restFrame).supported && lowest(at(bb.poses, bb.restFrame)) >= -0.5);
+});
+
+for (const [name, surfaceId] of [['m3-drop-edge-land', 'ledge'], ['m3-drop-edge-stool', 'stool-top']] as const) {
+  test(`${name}: starts outside the left edge in mid-air, lands on "${surfaceId}" and rests there (not PHYSICS_NO_LANDING at f160)`, () => {
+    const fb = build(dropFixture(name));
+    const s = fb.data.stage.surfaces.find((x) => x.id === surfaceId)!;
+    const e = dropBake(fb, 'drop-plant');
+    const f160 = at(e.poses, 160);
+    assert.ok(f160.x < s.x0 && lowest(f160) > s.y + 20, `f160: centre ${f160.x.toFixed(2)} outside x0 ${s.x0}, still ${(lowest(f160) - s.y).toFixed(1)} px up`);
+    const first = at(e.poses, e.firstContact.frame);
+    assert.ok(first.touching && e.poses.filter((q) => q.frame < e.firstContact.frame).every((q) => !q.touching));
+    assert.ok(first.x - HW < s.x0, 'first contact while overhanging the edge');
+    const r = at(e.poses, e.restFrame);
+    assert.ok(r.supported && Math.abs(lowest(r) - s.y) <= 0.5, `rests on top of ${surfaceId}: bottom ${lowest(r).toFixed(3)} vs ${s.y}`);
+    assert.ok(r.x >= s.x0 && r.x <= s.x1 && Math.abs(r.angle) < 1, `centre ${r.x.toFixed(2)} over [${s.x0}, ${s.x1}], angle ${r.angle.toFixed(2)}`);
+    calmWindowSupported(e.poses, e.restFrame);
+  });
+}
+
+test('edge miss: the pot never reaches the surface — PHYSICS_NO_LANDING only once it is below the top with no way back up', () => {
+  assert.throws(() => build(dropFixture('m3-drop-edge-miss')), (err: Error) => /PHYSICS_NO_LANDING/.test(err.message) && /frame 169/.test(err.message) && /never touched "ledge"/.test(err.message));
+  const { d } = unbaked('m3-drop-edge-miss');
+  assert.equal(d.firstContact, null);
+  assert.equal(d.missFrame, 169);
+  assert.ok(d.poses.every((q) => !q.touching && !q.supported && q.state === 'falling'));
+  assert.ok(Math.max(...d.poses.map((q) => q.x + HW)) < -100, 'right side of the pot never gets over the surface');
+  // không kết luận sớm: kết luận ở frame ĐẦU TIÊN mà cận trên bảo thủ (tâm + bán kính ngoại tiếp; vy ≤ 0 nên không cộng
+  // độ cao đạn đạo) xuống dưới mặt đỡ; ở f160 (bản cũ đã báo lỗi) vật còn cao hơn mặt ~106 px.
+  const R2 = Math.hypot(HW, HH);
+  for (const q of d.poses) assert.ok(q.vy < 0 && (centerY(q) + R2 < -drop.LAND_GAP_PX) === (q.frame === 169), `frame ${q.frame}`);
+  assert.ok(lowest(at(d.poses, 160)) > 100 && highest(at(d.poses, 169)) < -1);
+});
+
+test('edge slide: the engine sees the pot touch and stand on the ledge before it tips off the end', () => {
+  assert.throws(() => build(dropFixture('m3-drop-edge-slide')), (err: Error) => /PHYSICS_NO_LANDING/.test(err.message) && /first touched "ledge" at frame 165/.test(err.message));
+  const { d } = unbaked('m3-drop-edge-slide');
+  const x1 = -190;
+  assert.deepEqual(d.firstContact, { frame: 165, substep: 6, time: 164.75 });
+  const sup = d.poses.filter((q) => q.supported).map((q) => q.frame);
+  assert.ok(sup.length >= 2 && sup[0]! > 165 && d.lastSupported === sup.at(-1)!, `supported frames ${sup}`);
+  assert.ok(d.missFrame > d.lastSupported && d.restFrame === -1);
+  for (const q of d.poses.filter((q) => q.frame > d.lastSupported)) assert.ok(!q.supported && q.state === 'airborne', `frame ${q.frame}`);
+  // trọng tâm đã ra ngoài mép (tâm pivot ở bên phải x1) và chậu lật theo chiều kim đồng hồ khi trượt khỏi mép
+  const sl = at(d.poses, d.lastSupported), end = d.poses.at(-1)!;
+  assert.ok(sl.x > x1 && sl.x - HW < x1, `standing on the end of the ledge at f${d.lastSupported}`);
+  assert.ok(end.angle < sl.angle - 10 && highest(end) < -1, `tipped (${sl.angle.toFixed(1)}° → ${end.angle.toFixed(1)}°) and fell below`);
 });
