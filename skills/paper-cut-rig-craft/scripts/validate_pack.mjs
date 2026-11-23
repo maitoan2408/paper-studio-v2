@@ -8,24 +8,13 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const ALLOWED_SVG_TAGS = new Set([
-  'svg', 'g', 'defs', 'title', 'desc', 'path', 'rect', 'circle', 'ellipse',
-  'line', 'polyline', 'polygon', 'lineargradient', 'radialgradient', 'stop',
-  'clippath', 'mask', 'pattern', 'use', 'symbol', 'filter', 'feblend',
-  'fecolormatrix', 'fecomposite', 'fedropshadow', 'feflood', 'fegaussianblur',
-  'femerge', 'femergenode', 'feoffset', 'feturbulence', 'fedisplacementmap',
-  'fecomponenttransfer', 'fefunca', 'fefuncr', 'fefuncg', 'fefuncb', 'femorphology',
-]);
-
-const OPEN_TAG = /<([A-Za-z][\w:.-]*)((?:\s+[^\s=/>]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*)\s*(\/?)>/g;
-const CLOSE_TAG = /<\/([A-Za-z][\w:.-]*)\s*>/g;
-const ATTR = /\s+([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/y;
+import { checkSvgDocument } from './lib/svg-guard.mjs';
 
 function printHelp() {
   console.log(`Usage: node scripts/validate_pack.mjs [OPTIONS] <PACK_DIR>
 
 Validate a paper-cut rig pack (manifest.json, rig.json, rigs/*.json, and all SVGs)
-against paper-studio-v2 safety, integrity, and kinematic contracts.
+against paper-studio-v2 safety, integrity, <defs> completeness, and kinematic contracts.
 
 Options:
   --json       Emit machine-readable JSON report to stdout (default)
@@ -38,72 +27,12 @@ Exit codes:
   2  USAGE_ERROR (missing directory or invalid CLI arguments)`);
 }
 
-function parseAttrs(raw, pushErr, where) {
-  const out = {};
-  ATTR.lastIndex = 0;
-  while (ATTR.lastIndex < raw.length) {
-    const start = ATTR.lastIndex;
-    const m = ATTR.exec(raw);
-    if (!m) {
-      if (raw.slice(start).trim() === '') break;
-      pushErr('ART_SVG_UNSAFE', where, 'malformed SVG attributes');
-      return out;
-    }
-    const key = m[1];
-    if (key in out) pushErr('ART_SVG_UNSAFE', where, `duplicate attribute "${key}"`);
-    out[key] = m[2] ?? m[3] ?? '';
-  }
-  return out;
-}
-
 function checkSvgText(text, where, pushErr) {
-  let body = text.replace(/^\uFEFF/, '').replace(/^\s*<\?xml\s[^?]*\?>/, '');
-  if (/<!\[CDATA\[|<!DOCTYPE|<!ENTITY|<\?/i.test(body)) {
-    pushErr('ART_SVG_UNSAFE', where, 'CDATA, DOCTYPE, ENTITY or processing instructions are forbidden');
-    return;
-  }
-  body = body.replace(/<!--[\s\S]*?-->/g, '');
-  let rootAttrs = null;
-
-  const rest = body
-    .replace(OPEN_TAG, (_m, rawName, rawAttrs) => {
-      const name = rawName.toLowerCase();
-      if (!ALLOWED_SVG_TAGS.has(name)) {
-        pushErr('ART_SVG_UNSAFE', where, `disallowed element <${rawName}>; remove it or replace with basic vector shapes`);
-      }
-      const attrs = parseAttrs(rawAttrs, pushErr, where);
-      for (const [k, v] of Object.entries(attrs)) {
-        const key = k.toLowerCase();
-        if (key.startsWith('on')) pushErr('ART_SVG_UNSAFE', where, `event handler attribute "${k}" is forbidden`);
-        if ((key === 'href' || key === 'xlink:href') && !v.startsWith('#')) {
-          pushErr('ART_SVG_UNSAFE', where, `external reference ${k}="${v}" is forbidden; only local #id refs allowed`);
-        }
-        if (/url\(\s*['"]?(?!#)/i.test(v)) {
-          pushErr('ART_SVG_UNSAFE', where, `non-local url() in attribute "${k}" is forbidden`);
-        }
-        if (/@import|expression\s*\(/i.test(v)) {
-          pushErr('ART_SVG_UNSAFE', where, `forbidden CSS construct in attribute "${k}"`);
-        }
-      }
-      if (name === 'svg' && !rootAttrs) rootAttrs = attrs;
-      return '';
-    })
-    .replace(CLOSE_TAG, (_m, rawName) => {
-      if (!ALLOWED_SVG_TAGS.has(rawName.toLowerCase())) {
-        pushErr('ART_SVG_UNSAFE', where, `disallowed closing tag </${rawName}>`);
-      }
-      return '';
-    });
-
-  if (rest.includes('<')) pushErr('ART_SVG_UNSAFE', where, 'unparseable markup remaining after tag scan');
-  if (!rootAttrs) {
-    pushErr('ART_SVG_UNSAFE', where, 'missing <svg> root element');
-    return;
-  }
-  const vb = (rootAttrs.viewBox ?? '').trim().split(/[\s,]+/).map(Number);
-  if (vb.length !== 4 || vb.some((n) => !Number.isFinite(n))) {
-    pushErr('ART_SVG_UNSAFE', where, 'root <svg> must define a numeric viewBox="x y w h"');
-  }
+  checkSvgDocument(text, where, pushErr, {
+    codeUnsafe: 'ART_SVG_UNSAFE',
+    codeMissingDef: 'ART_MISSING_DEF',
+    checkDefRefs: true,
+  });
 }
 
 function validateRigFile(rigPath, label, assetsById, pushErr) {

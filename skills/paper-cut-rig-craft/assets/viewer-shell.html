@@ -6,12 +6,27 @@
   <title>__TITLE__</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
+    :root {
+      --ps-bg: var(--background, #0f1117);
+      --ps-fg: var(--foreground, #e8ecf4);
+      --ps-card: var(--card, #171a23);
+      --ps-border: var(--border, #2a2f3d);
+      --ps-primary: var(--primary, #f59e0b);
+      --ps-primary-fg: var(--primary-foreground, #0f1117);
+      --ps-muted: var(--muted-foreground, #94a3b8);
+      --ps-content: var(--content, #0a0c12);
+    }
     * { box-sizing: border-box; }
+    body {
+      background: var(--ps-bg);
+      color: var(--ps-fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
     input[type="range"] { height: 5px; }
     .pill-btn[data-active="true"], .tab-btn[data-active="true"] {
-      background: var(--primary);
-      color: var(--primary-foreground);
-      border-color: var(--primary);
+      background: var(--ps-primary);
+      color: var(--ps-primary-fg);
+      border-color: var(--ps-primary);
     }
     .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
     .scroll-thin::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 3px; }
@@ -19,24 +34,24 @@
     .ik-handle:active { cursor: grabbing; }
   </style>
 </head>
-<body class="bg-[var(--background)] text-[var(--foreground)] antialiased m-0 p-0">
+<body class="bg-[var(--ps-bg)] text-[var(--ps-fg)] antialiased m-0 p-0">
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--card)] flex flex-wrap items-center justify-between gap-3">
+    <header class="px-4 py-2.5 border-b border-[var(--ps-border)] bg-[var(--ps-card)] flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div id="badgeIcon" class="w-8 h-8 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center font-bold text-sm">✂</div>
+        <div id="badgeIcon" class="w-8 h-8 rounded-lg bg-[var(--ps-primary)] text-[var(--ps-primary-fg)] flex items-center justify-center font-bold text-sm">✂</div>
         <div>
           <div id="hdrTitle" class="font-semibold text-sm leading-tight"></div>
-          <div id="hdrSub" class="text-xs text-[var(--muted-foreground)]"></div>
+          <div id="hdrSub" class="text-xs text-[var(--ps-muted)]"></div>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 text-xs">
         <div id="presetBar" class="flex flex-wrap items-center gap-1.5"></div>
-        <span class="mx-1 text-[var(--border)]">|</span>
-        <button id="btnFlip" class="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] font-medium">⇄ Lật</button>
-        <button id="btnPlay" class="px-2.5 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] font-medium">⏸ Tạm dừng</button>
-        <select id="selSpeed" class="px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]">
+        <span class="mx-1 text-[var(--ps-border)]">|</span>
+        <button id="btnFlip" class="px-2 py-1.5 rounded-md border border-[var(--ps-border)] bg-[var(--ps-bg)] font-medium">⇄ Lật</button>
+        <button id="btnPlay" class="px-2.5 py-1.5 rounded-md border border-[var(--ps-border)] bg-[var(--ps-bg)] font-medium">⏸ Tạm dừng</button>
+        <select id="selSpeed" class="px-2 py-1.5 rounded-md border border-[var(--ps-border)] bg-[var(--ps-bg)] text-[var(--ps-fg)]">
           <option value="1">1.0×</option>
           <option value="0.5">0.5×</option>
           <option value="0.25">0.25×</option>
@@ -46,9 +61,9 @@
 
     <!-- Main Workspace -->
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12">
-      <main class="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-[var(--border)]">
-        <div id="stageWrap" class="relative flex-1 min-h-[520px] bg-[var(--content)] flex items-center justify-center p-3 sm:p-5 overflow-hidden select-none">
-          <div class="w-full max-w-[960px] aspect-[16/9] rounded-xl shadow-2xl border border-[var(--border)] overflow-hidden relative" id="stageBox">
+      <main class="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-[var(--ps-border)]">
+        <div id="stageWrap" class="relative flex-1 min-h-[520px] bg-[var(--ps-content)] flex items-center justify-center p-3 sm:p-5 overflow-hidden select-none">
+          <div class="w-full max-w-[960px] aspect-[16/9] rounded-xl shadow-2xl border border-[var(--ps-border)] overflow-hidden relative" id="stageBox">
             <svg id="sceneSvg" viewBox="0 0 960 540" class="w-full h-full block">
               <defs id="svgDefs"></defs>
               <clipPath id="stageClip"><rect id="stageClipRect" x="0" y="0" width="960" height="540"/></clipPath>
@@ -79,42 +94,44 @@
               </g>
             </svg>
 
-            <!-- Bottom Stage Toggles -->
-            <div class="absolute bottom-3 left-3 flex flex-wrap items-center gap-2 text-xs bg-[var(--card)]/90 backdrop-blur px-2.5 py-1.5 rounded-lg border border-[var(--border)] shadow">
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkBones" type="checkbox" class="accent-[var(--primary)]"> Khung xương</label>
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkAnchors" type="checkbox" class="accent-[var(--primary)]"> Anchors</label>
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkParallax" type="checkbox" checked class="accent-[var(--primary)]"> Parallax 3D</label>
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkAtmos" type="checkbox" checked class="accent-[var(--primary)]"> Ánh sáng</label>
-              <label class="flex items-center gap-1 cursor-pointer"><input id="chkFrame" type="checkbox" checked class="accent-[var(--primary)]"> Khung hộp</label>
+            <!-- Bottom Stage Toggles & Zoom (responsive, zero overlap on narrow viewports) -->
+            <div class="absolute bottom-2.5 inset-x-2.5 flex flex-wrap items-end justify-between gap-2 pointer-events-none">
+              <div class="pointer-events-auto flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] sm:text-xs bg-[var(--ps-card)]/90 backdrop-blur px-2.5 py-1.5 rounded-lg border border-[var(--ps-border)] shadow">
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkBones" type="checkbox" class="accent-[var(--ps-primary)]"> Khung xương</label>
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAnchors" type="checkbox" class="accent-[var(--ps-primary)]"> Anchors</label>
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkParallax" type="checkbox" checked class="accent-[var(--ps-primary)]"> Parallax 3D</label>
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAtmos" type="checkbox" checked class="accent-[var(--ps-primary)]"> Ánh sáng</label>
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkFrame" type="checkbox" checked class="accent-[var(--ps-primary)]"> Khung hộp</label>
+              </div>
+
+              <div class="pointer-events-auto shrink-0 flex items-center gap-1 text-xs bg-[var(--ps-card)]/90 backdrop-blur px-2 py-1 rounded-lg border border-[var(--ps-border)] shadow">
+                <button id="btnZoomOut" class="px-1.5 py-0.5 rounded hover:bg-[var(--ps-bg)]">−</button>
+                <span id="zoomLabel" class="font-mono tabular-nums w-10 text-center">100%</span>
+                <button id="btnZoomIn" class="px-1.5 py-0.5 rounded hover:bg-[var(--ps-bg)]">+</button>
+              </div>
             </div>
 
-            <div class="absolute bottom-3 right-3 flex items-center gap-1 text-xs bg-[var(--card)]/90 backdrop-blur px-2 py-1 rounded-lg border border-[var(--border)] shadow">
-              <button id="btnZoomOut" class="px-1.5 py-0.5 rounded hover:bg-[var(--background)]">−</button>
-              <span id="zoomLabel" class="font-mono tabular-nums w-10 text-center">100%</span>
-              <button id="btnZoomIn" class="px-1.5 py-0.5 rounded hover:bg-[var(--background)]">+</button>
-            </div>
-
-            <div id="phaseBadge" class="absolute top-3 left-3 text-[11px] font-mono px-2.5 py-1 rounded-md bg-[var(--card)]/85 backdrop-blur border border-[var(--border)] text-[var(--muted-foreground)]"></div>
+            <div id="phaseBadge" class="absolute top-3 left-3 text-[11px] font-mono px-2.5 py-1 rounded-md bg-[var(--ps-card)]/85 backdrop-blur border border-[var(--ps-border)] text-[var(--ps-muted)]"></div>
           </div>
         </div>
       </main>
 
       <!-- Inspector -->
-      <aside class="lg:col-span-4 bg-[var(--card)] flex flex-col max-h-[720px]">
-        <div class="p-2 border-b border-[var(--border)] grid grid-cols-3 gap-1.5 text-xs">
-          <button class="tab-btn py-1.5 rounded-md border border-[var(--border)] font-medium" data-tab="rig" data-active="true">Khớp Rig</button>
-          <button class="tab-btn py-1.5 rounded-md border border-[var(--border)] font-medium" data-tab="scene" data-active="false">Cảnh &amp; Ánh sáng</button>
-          <button class="tab-btn py-1.5 rounded-md border border-[var(--border)] font-medium" data-tab="spec" data-active="false">Cấu trúc &amp; JSON</button>
+      <aside class="lg:col-span-4 bg-[var(--ps-card)] flex flex-col max-h-[720px]">
+        <div class="p-2 border-b border-[var(--ps-border)] grid grid-cols-3 gap-1.5 text-xs">
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--ps-border)] font-medium" data-tab="rig" data-active="true">Khớp Rig</button>
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--ps-border)] font-medium" data-tab="scene" data-active="false">Cảnh &amp; Ánh sáng</button>
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--ps-border)] font-medium" data-tab="spec" data-active="false">Cấu trúc &amp; JSON</button>
         </div>
 
         <div id="tab-rig" class="p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
-          <div id="rigSwitcher" class="hidden flex flex-wrap gap-1.5 pb-2 border-b border-[var(--border)]"></div>
-          <div id="variantSection" class="space-y-2 hidden pb-2 border-b border-[var(--border)]"></div>
-          <div class="flex items-center justify-between text-[var(--muted-foreground)]">
+          <div id="rigSwitcher" class="hidden flex flex-wrap gap-1.5 pb-2 border-b border-[var(--ps-border)]"></div>
+          <div id="variantSection" class="space-y-2 hidden pb-2 border-b border-[var(--ps-border)]"></div>
+          <div class="flex items-center justify-between text-[var(--ps-muted)]">
             <span>Chỉnh trực tiếp góc từng khớp (FK)</span>
-            <button id="btnRest" class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--primary)]">↺ Nghỉ</button>
+            <button id="btnRest" class="px-2 py-0.5 rounded border border-[var(--ps-border)] hover:border-[var(--ps-primary)]">↺ Nghỉ</button>
           </div>
-          <div id="rootControls" class="space-y-2 pb-2 border-b border-[var(--border)]"></div>
+          <div id="rootControls" class="space-y-2 pb-2 border-b border-[var(--ps-border)]"></div>
           <div id="boneSliders" class="space-y-2"></div>
         </div>
 
@@ -122,42 +139,42 @@
           <div class="space-y-2">
             <div class="font-semibold">Ánh sáng &amp; Chất liệu giấy</div>
             <label class="flex items-center gap-2">
-              <span class="w-28 text-[var(--muted-foreground)]">Độ sâu bóng giấy</span>
-              <input id="rngShadow" type="range" min="0.2" max="1.8" step="0.1" value="1" class="flex-1 accent-[var(--primary)]"/>
+              <span class="w-28 text-[var(--ps-muted)]">Độ sâu bóng giấy</span>
+              <input id="rngShadow" type="range" min="0.2" max="1.8" step="0.1" value="1" class="flex-1 accent-[var(--ps-primary)]"/>
               <span id="valShadow" class="w-10 text-right font-mono">1.0×</span>
             </label>
             <label class="flex items-center gap-2">
-              <span class="w-28 text-[var(--muted-foreground)]">Nhịp gió &amp; chuyển động</span>
-              <input id="rngAmbient" type="range" min="0" max="2.2" step="0.1" value="1" class="flex-1 accent-[var(--primary)]"/>
+              <span class="w-28 text-[var(--ps-muted)]">Nhịp gió &amp; chuyển động</span>
+              <input id="rngAmbient" type="range" min="0" max="2.2" step="0.1" value="1" class="flex-1 accent-[var(--ps-primary)]"/>
               <span id="valAmbient" class="w-10 text-right font-mono">1.0×</span>
             </label>
             <label class="flex items-center justify-between pt-1">
-              <span class="text-[var(--muted-foreground)]">Hạt bay (Lá / Tuyết / Bọt / Đom đóm)</span>
-              <input id="chkAmbient" type="checkbox" checked class="accent-[var(--primary)]"/>
+              <span class="text-[var(--ps-muted)]">Hạt bay (Lá / Tuyết / Bọt / Đom đóm)</span>
+              <input id="chkAmbient" type="checkbox" checked class="accent-[var(--ps-primary)]"/>
             </label>
             <label class="flex items-center justify-between">
-              <span class="text-[var(--muted-foreground)]">Đàn sinh vật nhỏ (Chim / Cá / Bướm)</span>
-              <input id="chkSwarm" type="checkbox" checked class="accent-[var(--primary)]"/>
+              <span class="text-[var(--ps-muted)]">Đàn sinh vật nhỏ (Chim / Cá / Bướm)</span>
+              <input id="chkSwarm" type="checkbox" checked class="accent-[var(--ps-primary)]"/>
             </label>
             <label class="flex items-center justify-between">
-              <span class="text-[var(--muted-foreground)]">Nhịp thở máy quay điện ảnh</span>
-              <input id="chkCamBreath" type="checkbox" checked class="accent-[var(--primary)]"/>
+              <span class="text-[var(--ps-muted)]">Nhịp thở máy quay điện ảnh</span>
+              <input id="chkCamBreath" type="checkbox" checked class="accent-[var(--ps-primary)]"/>
             </label>
           </div>
         </div>
 
         <div id="tab-spec" class="hidden p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
-          <div id="specSummary" class="p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] space-y-1"></div>
+          <div id="specSummary" class="p-2.5 rounded-lg bg-[var(--ps-bg)] border border-[var(--ps-border)] space-y-1"></div>
           <div class="space-y-1">
             <div class="font-semibold">Cây xương Rig</div>
-            <pre id="boneTreeOut" class="p-2 rounded bg-[var(--background)] border border-[var(--border)] font-mono text-[11px] overflow-x-auto leading-relaxed"></pre>
+            <pre id="boneTreeOut" class="p-2 rounded bg-[var(--ps-bg)] border border-[var(--ps-border)] font-mono text-[11px] overflow-x-auto leading-relaxed"></pre>
           </div>
           <div class="space-y-1">
             <div class="flex items-center justify-between">
               <span class="font-semibold">Pose JSON hiện tại</span>
-              <button id="btnCopyPose" class="px-2 py-0.5 rounded border border-[var(--border)] hover:border-[var(--primary)]">Copy</button>
+              <button id="btnCopyPose" class="px-2 py-0.5 rounded border border-[var(--ps-border)] hover:border-[var(--ps-primary)]">Copy</button>
             </div>
-            <pre id="poseJsonOut" class="p-2 rounded bg-[var(--background)] border border-[var(--border)] font-mono text-[11px] max-h-44 overflow-auto"></pre>
+            <pre id="poseJsonOut" class="p-2 rounded bg-[var(--ps-bg)] border border-[var(--ps-border)] font-mono text-[11px] max-h-44 overflow-auto"></pre>
           </div>
         </div>
       </aside>
@@ -217,6 +234,7 @@
         rootX: r.rootPos?.x ?? VW * 0.5,
         rootY: r.rootPos?.y ?? VH * 0.72,
         facing: r.facing ?? 1,
+        userFlip: 1,
         scale: r.scale ?? 1,
         breath: 0,
         angles: Object.fromEntries(r.bones.map(b => [b.id, b.rest ?? 0])),
@@ -248,28 +266,30 @@
     const fgDef = fg ? `<radialGradient id="autoFocalGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${fg.color ?? '#ffe9a3'}" stop-opacity="${fg.opacity ?? 0.65}"/><stop offset="55%" stop-color="${fg.midColor ?? fg.color ?? '#f5a855'}" stop-opacity="${(fg.opacity ?? 0.65) * 0.35}"/><stop offset="100%" stop-color="${fg.color ?? '#f5a855'}" stop-opacity="0"/></radialGradient>` : '';
     const mst = lit.mist;
     const mstDef = mst ? `<linearGradient id="autoMistGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/><stop offset="52%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="${mst.opacity ?? 0.24}"/><stop offset="100%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/></linearGradient>` : '';
+    const customDefs = BLUEPRINT.scene.defsSvg ?? '';
+    const defaultMeteorDef = /id\s*=\s*["']meteorTrail["']/.test(customDefs) ? '' : `<linearGradient id="meteorTrail" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#fff7d6" stop-opacity="0.92"/></linearGradient>`;
 
     document.getElementById('svgDefs').innerHTML = `
-      <!-- Fine Cardstock Paper Texture (tactile horizontal fibre + grain) -->
-      <filter id="paperTex" x="-5%" y="-5%" width="110%" height="110%">
+      <!-- Fine Cardstock Paper Texture (tactile horizontal fibre + grain, sRGB-synced with pack SVGs) -->
+      <filter id="paperTex" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
         <feTurbulence type="fractalNoise" baseFrequency="0.06 0.72" numOctaves="2" seed="${BLUEPRINT.meta.seed ?? 13}" result="fibre"/>
         <feColorMatrix in="fibre" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0.11 0" result="g"/>
         <feComposite in="g" in2="SourceGraphic" operator="in" result="gc"/>
         <feBlend in="SourceGraphic" in2="gc" mode="multiply"/>
       </filter>
-      <filter id="shadowDeep" x="-25%" y="-25%" width="150%" height="150%">
+      <filter id="shadowDeep" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
         <feDropShadow id="fDeep" dx="0" dy="7" stdDeviation="8" flood-color="#050712" flood-opacity="0.58"/>
       </filter>
-      <filter id="shadowMed" x="-25%" y="-25%" width="150%" height="150%">
+      <filter id="shadowMed" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
         <feDropShadow id="fMed" dx="1.5" dy="4.5" stdDeviation="4.8" flood-color="#060914" flood-opacity="0.42"/>
       </filter>
-      <filter id="shadowSoft" x="-25%" y="-25%" width="150%" height="150%">
+      <filter id="shadowSoft" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
         <feDropShadow id="fSoft" dx="0" dy="3" stdDeviation="4" flood-color="#0c1020" flood-opacity="0.28"/>
       </filter>
-      <filter id="shadowInner" x="-15%" y="-15%" width="130%" height="130%">
+      <filter id="shadowInner" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
         <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#140a10" flood-opacity="0.16"/>
       </filter>
-      <filter id="softGlow" x="-45%" y="-45%" width="190%" height="190%">
+      <filter id="softGlow" x="-45%" y="-45%" width="190%" height="190%" color-interpolation-filters="sRGB">
         <feGaussianBlur stdDeviation="9" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
@@ -287,7 +307,7 @@
         <stop offset="60%" stop-color="#0a0612" stop-opacity="0"/>
         <stop offset="100%" stop-color="#080510" stop-opacity="${lit.vignetteOpacity ?? 0.34}"/>
       </radialGradient>
-      ${fgDef}${mstDef}${BLUEPRINT.scene.defsSvg ?? ''}`;
+      ${defaultMeteorDef}${fgDef}${mstDef}${customDefs}`;
 
     // Universal Data-Driven Proscenium Shadow-Box Frame Builder!
     function buildProsceniumFrame() {
@@ -430,7 +450,8 @@
       const L1 = Math.hypot(uA[0] - uP.pivot[0], uA[1] - uP.pivot[1]) * rs.scale;
       const L2 = Math.hypot(lA[0] - lP.pivot[0], lA[1] - lP.pivot[1]) * rs.scale;
       const off = Math.atan2(uA[1] - uP.pivot[1], uA[0] - uP.pivot[0]);
-      const org = world[chain.upper], pDeg = world[uB.parent].deg;
+      const org = world[chain.upper];
+      const pDeg = uB.parent != null && world[uB.parent] ? world[uB.parent].deg : 0;
       const dx = target.x - org.x, dy = target.y - org.y;
       const d = clamp(Math.hypot(dx, dy), Math.abs(L1 - L2) + 1, L1 + L2 - 0.5);
       const aim = Math.atan2(dy, dx);
@@ -444,21 +465,35 @@
     }
 
     function applyPhaseToRig(rigObj, spec, localT, t) {
-      if (!spec) return;
       const rs = rigStates[rigObj.id];
-      const e = spec.ease === 'back' ? easeOutBack(localT) : smoothstep(localT);
-      if (spec.rootX) rs.rootX = lerp(spec.rootX[0], spec.rootX[1], e);
-      if (spec.rootY) rs.rootY = lerp(spec.rootY[0], spec.rootY[1], e) - (spec.arcY ? Math.sin(localT * Math.PI) * spec.arcY : 0);
-      if (spec.facing != null) rs.facing = spec.facing;
-      rs.emote = spec.emote ?? null;
+      const baseX = rigObj.rootPos?.x ?? VW * 0.5;
+      const baseY = rigObj.rootPos?.y ?? VH * 0.72;
+      const baseFacing = rigObj.facing ?? 1;
       rs.breath = Math.sin(t * 2.3 + rigObj.id.length * 0.7) * 0.015;
+      if (!spec) {
+        rs.rootX = baseX;
+        rs.rootY = baseY;
+        rs.facing = baseFacing * rs.userFlip;
+        rs.emote = null;
+        for (const b of rigObj.bones) rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+        return;
+      }
+      const e = spec.ease === 'back' ? easeOutBack(localT) : smoothstep(localT);
+      rs.rootX = Array.isArray(spec.rootX)
+        ? lerp(spec.rootX[0], spec.rootX[1], e)
+        : (typeof spec.rootX === 'number' ? spec.rootX : baseX);
+      const yLin = Array.isArray(spec.rootY)
+        ? lerp(spec.rootY[0], spec.rootY[1], e)
+        : (typeof spec.rootY === 'number' ? spec.rootY : baseY);
+      rs.rootY = yLin - (spec.arcY ? Math.sin(localT * Math.PI) * spec.arcY : 0);
+      rs.facing = (spec.facing ?? baseFacing) * rs.userFlip;
+      rs.emote = spec.emote ?? null;
       for (const b of rigObj.bones) {
         const k = spec.bones?.[b.id];
-        if (Array.isArray(k)) rs.angles[b.id] = lerp(k[0], k[1], e);
-        else if (typeof k === 'number') rs.angles[b.id] = k;
+        let deg = Array.isArray(k) ? lerp(k[0], k[1], e) : (typeof k === 'number' ? k : (b.rest ?? 0));
         const wv = spec.waves?.[b.id];
-        if (wv) rs.angles[b.id] = (rs.angles[b.id] ?? 0) + Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
-        rs.angles[b.id] = clamp(rs.angles[b.id], b.limits.min, b.limits.max);
+        if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
+        rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
       }
     }
 
@@ -466,7 +501,7 @@
       const m = (BLUEPRINT.motions ?? []).find(x => x.id === state.preset);
       if (!m) return;
       state.vfx.splash = 0; state.vfx.bubbles = 0; state.vfx.glowSpot = 0;
-      if (m.type === 'cycle' && Array.isArray(m.phases)) {
+      if (m.type === 'cycle' && Array.isArray(m.phases) && m.phases.length > 0) {
         const period = m.period ?? 10;
         const u = ((t % period) + period) % period / period;
         let phase = m.phases[m.phases.length - 1], lt = 0;
@@ -475,7 +510,10 @@
         }
         if (phase.label) document.getElementById('phaseBadge').textContent = phase.label;
         if (phase.rigs) for (const r of RIGS) applyPhaseToRig(r, phase.rigs[r.id], lt, t);
-        else applyPhaseToRig(RIGS[0], phase, lt, t);
+        else {
+          applyPhaseToRig(RIGS[0], phase, lt, t);
+          for (let i = 1; i < RIGS.length; i++) applyPhaseToRig(RIGS[i], null, lt, t);
+        }
         if (phase.vfx?.splashAtY != null) {
           const r0 = rigStates[RIGS[0].id], d = Math.abs(r0.rootY - phase.vfx.splashAtY);
           if (d < 90) { state.vfx.splash = 1 - d / 90; state.vfx.splashX = r0.rootX; }
@@ -489,11 +527,20 @@
       } else if (m.type === 'harmonic') {
         if (m.label) document.getElementById('phaseBadge').textContent = m.label;
         const applyH = (r, hm) => {
-          if (!hm) return;
           const rs = rigStates[r.id];
+          rs.breath = Math.sin(t * 2.2 + r.id.length * 0.5) * 0.016;
+          if (!hm) {
+            rs.rootX = r.rootPos?.x ?? VW * 0.5;
+            rs.rootY = r.rootPos?.y ?? VH * 0.7;
+            rs.facing = (r.facing ?? 1) * rs.userFlip;
+            rs.emote = null;
+            for (const b of r.bones) rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+            return;
+          }
           rs.rootX = (r.rootPos?.x ?? VW * 0.5) + (hm.rootWaveX ? Math.sin(t * hm.rootWaveX.freq + (hm.rootWaveX.phase ?? 0)) * hm.rootWaveX.amp : 0);
           rs.rootY = (r.rootPos?.y ?? VH * 0.7) + (hm.rootWaveY ? Math.sin(t * hm.rootWaveY.freq + (hm.rootWaveY.phase ?? 0)) * hm.rootWaveY.amp : 0);
-          rs.breath = Math.sin(t * 2.2) * 0.016;
+          rs.facing = (hm.facing ?? r.facing ?? 1) * rs.userFlip;
+          rs.emote = hm.emote ?? null;
           for (const b of r.bones) {
             let deg = hm.base?.[b.id] ?? b.rest ?? 0;
             const wv = hm.waves?.[b.id];
@@ -502,7 +549,10 @@
           }
         };
         if (m.rigs) for (const r of RIGS) applyH(r, m.rigs[r.id]);
-        else applyH(RIGS[0], m);
+        else {
+          applyH(RIGS[0], m);
+          for (let i = 1; i < RIGS.length; i++) applyH(RIGS[i], null);
+        }
       }
     }
 
@@ -728,7 +778,7 @@
     const presetBar = document.getElementById('presetBar');
     for (const m of [...(BLUEPRINT.motions ?? []), { id: 'manual', name: '🎛️ Tự chỉnh Rig' }]) {
       const btn = document.createElement('button');
-      btn.className = 'pill-btn px-2.5 py-1.5 rounded-md border border-[var(--border)] font-medium';
+      btn.className = 'pill-btn px-2.5 py-1.5 rounded-md border border-[var(--ps-border)] font-medium';
       btn.dataset.preset = m.id; btn.dataset.active = String(m.id === state.preset); btn.textContent = m.name;
       btn.addEventListener('click', () => {
         state.preset = m.id;
@@ -742,7 +792,7 @@
       const sw = document.getElementById('rigSwitcher'); sw.classList.remove('hidden');
       for (const r of RIGS) {
         const b = document.createElement('button');
-        b.className = 'pill-btn px-2.5 py-1 rounded-md border border-[var(--border)] font-medium';
+        b.className = 'pill-btn px-2.5 py-1 rounded-md border border-[var(--ps-border)] font-medium';
         b.dataset.rigbtn = r.id; b.dataset.active = String(r.id === state.activeRigId);
         b.textContent = `${r.label} (${r.bones.length} xương)`;
         b.addEventListener('click', () => {
@@ -766,7 +816,7 @@
         blk.innerHTML = `<div class="font-semibold">${grp}</div><div class="flex flex-wrap gap-1"></div>`;
         for (const opt of opts) {
           const b = document.createElement('button');
-          b.className = 'pill-btn px-2 py-1 rounded border border-[var(--border)]';
+          b.className = 'pill-btn px-2 py-1 rounded border border-[var(--ps-border)]';
           b.dataset.active = String(rs.variants[grp] === opt); b.textContent = opt;
           b.addEventListener('click', () => { rs.variants[grp] = opt; blk.lastChild.querySelectorAll('button').forEach(x => x.dataset.active = String(x.textContent === opt)); });
           blk.lastChild.appendChild(b);
@@ -775,7 +825,7 @@
       }
       const addS = (p, k, lbl, min, max, val, u, fn) => {
         const row = document.createElement('div'); row.className = 'flex items-center gap-2';
-        row.innerHTML = `<span class="w-32 truncate text-[var(--muted-foreground)]" title="${k}">${lbl}</span><input type="range" min="${min}" max="${max}" step="1" value="${val}" class="flex-1 accent-[var(--primary)]"/><span class="w-12 text-right font-mono tabular-nums">${Math.round(val)}${u}</span>`;
+        row.innerHTML = `<span class="w-32 truncate text-[var(--ps-muted)]" title="${k}">${lbl}</span><input type="range" min="${min}" max="${max}" step="1" value="${val}" class="flex-1 accent-[var(--ps-primary)]"/><span class="w-12 text-right font-mono tabular-nums">${Math.round(val)}${u}</span>`;
         const inp = row.querySelector('input'), out = row.querySelectorAll('span')[1];
         inp.addEventListener('input', () => {
           state.preset = 'manual';
@@ -802,7 +852,7 @@
 
     function updateSpecTab() {
       const tot = RIGS.reduce((s, r) => s + r.bones.length, 0);
-      document.getElementById('specSummary').innerHTML = `<div class="font-semibold">${BLUEPRINT.meta.title}</div><div class="text-[var(--muted-foreground)]">${RIGS.length} Rig · ${tot} xương · ${BLUEPRINT.parts.length} SVG parts · Canvas ${VW}×${VH}</div>`;
+      document.getElementById('specSummary').innerHTML = `<div class="font-semibold">${BLUEPRINT.meta.title}</div><div class="text-[var(--ps-muted)]">${RIGS.length} Rig · ${tot} xương · ${BLUEPRINT.parts.length} SVG parts · Canvas ${VW}×${VH}</div>`;
       document.getElementById('boneTreeOut').textContent = RIGS.map(r => {
         const fmt = (pid, pref) => r.bones.filter(b => b.parent === pid).map((k, i, arr) => `${pref}${pid === null ? '' : (i === arr.length - 1 ? '└─ ' : '├─ ')}${k.id} [${k.limits.min}°..${k.limits.max}°]\n` + fmt(k.id, pid === null ? ' ' : pref + (i === arr.length - 1 ? '   ' : '│  '))).join('');
         return `[${r.label}]\n` + fmt(null, '').trim();
@@ -827,12 +877,17 @@
     }));
     document.getElementById('btnCopyPose').addEventListener('click', () => { updatePoseJson(); navigator.clipboard?.writeText(document.getElementById('poseJsonOut').textContent); });
     document.getElementById('btnPlay').addEventListener('click', e => { state.playing = !state.playing; e.target.textContent = state.playing ? '⏸ Tạm dừng' : '▶ Phát'; });
-    document.getElementById('btnFlip').addEventListener('click', () => { rigStates[state.activeRigId].facing *= -1; });
+    document.getElementById('btnFlip').addEventListener('click', () => {
+      const rs = rigStates[state.activeRigId];
+      rs.userFlip *= -1;
+      rs.facing *= -1;
+    });
     document.getElementById('btnRest').addEventListener('click', () => {
       state.preset = 'manual';
       const r = RIG_BY_ID[state.activeRigId], rs = rigStates[r.id];
       for (const b of r.bones) rs.angles[b.id] = b.rest ?? 0;
       rs.rootX = r.rootPos?.x ?? VW * 0.5; rs.rootY = r.rootPos?.y ?? VH * 0.72;
+      rs.userFlip = 1; rs.facing = r.facing ?? 1;
       syncSliders();
     });
     document.getElementById('selSpeed').addEventListener('change', e => state.speed = Number(e.target.value));
