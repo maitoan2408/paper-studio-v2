@@ -1,0 +1,457 @@
+{
+  "schemaVersion": 1,
+  "id": "xuong-giay",
+  "version": "0.1.0",
+  "assets": [
+    {
+      "id": "tam-pelvis",
+      "file": "body/tam-pelvis.svg",
+      "width": 124,
+      "height": 56,
+      "pivot": [
+        62.0,
+        28
+      ],
+      "anchors": {
+        "waist": [
+          62.0,
+          12
+        ],
+        "hip.l": [
+          92.0,
+          34
+        ],
+        "hip.r": [
+          32.0,
+          34
+        ],
+        "carry.l": [
+          91.8,
+          42.0
+        ],
+        "carry.r": [
+          32.2,
+          42.0
+        ]
+      },
+      "category": "body",
+      "sha256": "b375432dbb54550959a7aa7b949d0b1e06c60dc77030f42ebb5f342e67ab48a0"
+    },
+    {
+      "id": "tam-torso",
+      "file": "body/tam-torso.svg",
+      "width": 140,
+      "height": 124,
+      "pivot": [
+        70.0,
+        114
+      ],
+      "anchors": {
+        "neck": [
+          70.0,
+          14
+        ],
+        "shoulder.l": [
+          122.0,
+          30
+        ],
+        "shoulder.r": [
+          18.0,
+          30
+        ]
+      },
+      "category": "body",
+      "sha256": "31cf0b52bb7db019f80d2700ce5a0800b61fc9d93f9610741ee647dab39506ad"
+    },
+    {
+      "id": "tam-head",
+      "file": "head/tam-head.svg",
+      "width": 128,
+      "height": 136,
+      "pivot": [
+        64.0,
+        130
+      ],
+      "anchors": {},
+      "category": "head",
+      "sha256": "58e898e769c1c7899431a6f46b753a48e3af9e28a60d1df1af15a0664e244983"
+    },
+    {
+      "id": "tam-head-tq",
+      "file": "head/tam-head-tq.svg",
+      "width": 128,
+      "height": 136,
+      "pivot": [
+        64.0,
+        130
+      ],
+      "anchors": {},
+      "category": "head",
+      "sha256": "6576b1d1a5a1e407ab9756dffec143845a922a4319cd85a4218b1ba02dc344c1"
+    },
+    {
+      "id": "tam-head-side",
+      "file": "head/tam-head-side.svg",
+      "width": 128,
+      "height": 136,
+      "pivot": [
+        64.0,
+        130
+      ],
+      "anchors": {},
+      "category": "head",
+      "sha256": "48b3d5fa2599e93b1b5849d619655e1ace1eec043205b839a1f3113a40da04a1"
+    },
+    {
+      "id": "tam-uarm",
+      "file": "body/tam-uarm.svg",
+      "width": 34,
+      "height": 96,
+      "pivot": [
+        17.0,
+        17.0
+      ],
+      "anchors": {
+        "elbow": [
+          17.0,
+          79.0
+        ]
+      },
+      "category": "body",
+      "sha256": "37968e77722f63d174d5d48adb60f8dd35b4bb17f70388d6b869d8b42953a501"
+    },
+    {
+      "id": "tam-farm",
+      "file": "body/tam-farm.svg",
+      "width": 30,
+      "height": 84,
+      "pivot": [
+        15.0,
+        15.0
+      ],
+      "anchors": {
+        "wrist": [
+          15.0,
+          69.0
+        ]
+      },
+      "category": "body",
+      "sha256": "2ea96cac0c10d98b8ea7a95bcccb93c6339967edc32402e1decb3d870b146c03"
+    },
+    {
+      "id": "tam-hand",
+      "file": "hand/tam-hand.svg",
+      "width": 36,
+      "height": 42,
+      "pivot": [
+        18,
+        10.5
+      ],
+      "anchors": {
+        "grip": [
+          18,
+          21
+        ]
+      },
+      "category": "hand",
+      "sha256": "8453c39746de3380720581b178d07d37cd4537d378fb4afef3abb39479ee1092"
+    },
+    {
+      "id": "tam-hand-open",
+      "file": "hand/tam-hand-open.svg",
+      "width": 52,
+      "height": 64,
+      "pivot": [
+        26.0,
+        6
+      ],
+      "anchors": {
+        "grip": [
+          26.0,
+          27
+        ]
+      },
+      "category": "hand",
+      "sha256": "145bd385bc5681bdac7a0bd1ff7c7f5a2ff2c703271dba31e11f55fcdf80fdf7"
+    },
+    {
+      "id": "tam-thigh",
+      "file": "body/tam-thigh.svg",
+      "width": 44,
+      "height": 100,
+      "pivot": [
+        22.0,
+        22.0
+      ],
+      "anchors": {
+        "knee": [
+          22.0,
+          78.0
+        ]
+      },
+      "category": "body",
+      "sha256": "4811bcf88a473af9ad53a802c6a014c48a27e97387773889564c188f4fb80d07"
+    },
+    {
+      "id": "tam-shin",
+      "file": "body/tam-shin.svg",
+      "width": 40,
+      "height": 90,
+      "pivot": [
+        20.0,
+        20.0
+      ],
+      "anchors": {
+        "ankle": [
+          20.0,
+          70.0
+        ]
+      },
+      "category": "body",
+      "sha256": "c40d537a168a067a64b6a6ef8955020ccec4990c8162101ff0bc3ca05ac7c288"
+    },
+    {
+      "id": "tam-foot",
+      "file": "body/tam-foot.svg",
+      "width": 70,
+      "height": 32,
+      "pivot": [
+        26.6,
+        7
+      ],
+      "anchors": {
+        "sole": [
+          35.0,
+          29
+        ]
+      },
+      "category": "body",
+      "sha256": "b5809e0785d1ef0f429984c94e0bc0cd96a6e9c441d565ea6367eb45982d18f4"
+    },
+    {
+      "id": "lan-pelvis",
+      "file": "body/lan-pelvis.svg",
+      "width": 96,
+      "height": 56,
+      "pivot": [
+        48.0,
+        28
+      ],
+      "anchors": {
+        "waist": [
+          48.0,
+          12
+        ],
+        "hip.l": [
+          70.0,
+          34
+        ],
+        "hip.r": [
+          26.0,
+          34
+        ],
+        "carry.l": [
+          71.0,
+          42.0
+        ],
+        "carry.r": [
+          25.0,
+          42.0
+        ]
+      },
+      "category": "body",
+      "sha256": "3cca87936d4c6af734a7bd5e5c4a82aa037d526f8a476ecec4107ece85a71d44"
+    },
+    {
+      "id": "lan-torso",
+      "file": "body/lan-torso.svg",
+      "width": 108,
+      "height": 176,
+      "pivot": [
+        54.0,
+        166
+      ],
+      "anchors": {
+        "neck": [
+          54.0,
+          14
+        ],
+        "shoulder.l": [
+          94.0,
+          30
+        ],
+        "shoulder.r": [
+          14.0,
+          30
+        ]
+      },
+      "category": "body",
+      "sha256": "e9b990dbbffbe779fbb52d11b6e3b65739cdda8db145aadc082a11a8fa54481b"
+    },
+    {
+      "id": "lan-head",
+      "file": "head/lan-head.svg",
+      "width": 112,
+      "height": 128,
+      "pivot": [
+        56.0,
+        122
+      ],
+      "anchors": {},
+      "category": "head",
+      "sha256": "4a99fb8f0e6db151f8c345b0be98c82f2a148c5f432fcbbfaaa6bb21d6a545d8"
+    },
+    {
+      "id": "lan-head-tq",
+      "file": "head/lan-head-tq.svg",
+      "width": 112,
+      "height": 128,
+      "pivot": [
+        56.0,
+        122
+      ],
+      "anchors": {},
+      "category": "head",
+      "sha256": "2773dd20236173e65b3193af3fb61108af3e8249a06015977bdc4b01016330a3"
+    },
+    {
+      "id": "lan-head-side",
+      "file": "head/lan-head-side.svg",
+      "width": 112,
+      "height": 128,
+      "pivot": [
+        56.0,
+        122
+      ],
+      "anchors": {},
+      "category": "head",
+      "sha256": "5147f04177e9eec4991f6eab098a276e01237b46afc3ddd0aee2f96465e5a885"
+    },
+    {
+      "id": "lan-uarm",
+      "file": "body/lan-uarm.svg",
+      "width": 28,
+      "height": 120,
+      "pivot": [
+        14.0,
+        14.0
+      ],
+      "anchors": {
+        "elbow": [
+          14.0,
+          106.0
+        ]
+      },
+      "category": "body",
+      "sha256": "d33af252b5689d09e71be1aa79bfb0d073f70b3afb80c8e97f53c2efb484144f"
+    },
+    {
+      "id": "lan-farm",
+      "file": "body/lan-farm.svg",
+      "width": 24,
+      "height": 108,
+      "pivot": [
+        12.0,
+        12.0
+      ],
+      "anchors": {
+        "wrist": [
+          12.0,
+          96.0
+        ]
+      },
+      "category": "body",
+      "sha256": "e66e3bbfa4471d878b9baa20332366938413bf2d705c0d6e8a7f751852eb504f"
+    },
+    {
+      "id": "lan-hand",
+      "file": "hand/lan-hand.svg",
+      "width": 32,
+      "height": 38,
+      "pivot": [
+        16,
+        9.5
+      ],
+      "anchors": {
+        "grip": [
+          16,
+          19
+        ]
+      },
+      "category": "hand",
+      "sha256": "d02c30de41c3162da08622b17825daca8398c22814af881632210ef8db515dcc"
+    },
+    {
+      "id": "lan-hand-open",
+      "file": "hand/lan-hand-open.svg",
+      "width": 48,
+      "height": 60,
+      "pivot": [
+        24.0,
+        6
+      ],
+      "anchors": {
+        "grip": [
+          24.0,
+          25
+        ]
+      },
+      "category": "hand",
+      "sha256": "da12c3e80f83029b966ec01294cce05ad5772effa0ada89fcbc3437f4c1c2f2c"
+    },
+    {
+      "id": "lan-thigh",
+      "file": "body/lan-thigh.svg",
+      "width": 36,
+      "height": 128,
+      "pivot": [
+        18.0,
+        18.0
+      ],
+      "anchors": {
+        "knee": [
+          18.0,
+          110.0
+        ]
+      },
+      "category": "body",
+      "sha256": "68d5a0dae4a81273bfd59b4631935540604387751a2a445ef507be10901b8d9d"
+    },
+    {
+      "id": "lan-shin",
+      "file": "body/lan-shin.svg",
+      "width": 32,
+      "height": 116,
+      "pivot": [
+        16.0,
+        16.0
+      ],
+      "anchors": {
+        "ankle": [
+          16.0,
+          100.0
+        ]
+      },
+      "category": "body",
+      "sha256": "5446adc2e686475bb4ab6f437abb4e1fa7d6a3d3287ab9fc7e3ee63157e4495f"
+    },
+    {
+      "id": "lan-foot",
+      "file": "body/lan-foot.svg",
+      "width": 62,
+      "height": 32,
+      "pivot": [
+        23.56,
+        7
+      ],
+      "anchors": {
+        "sole": [
+          31.0,
+          29
+        ]
+      },
+      "category": "body",
+      "sha256": "3b8f88493f8a05bf4490e8abd625d3445a9d91701e46df537b5761891e95cd6f"
+    }
+  ]
+}

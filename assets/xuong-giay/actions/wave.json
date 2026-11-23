@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "id": "wave",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "bone": "upper-arm.@active",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.3,
+          "v": 130,
+          "ease": "linear"
+        },
+        {
+          "t": 0.75,
+          "v": 130,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "forearm.@active",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.3,
+          "v": 55,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.4,
+          "v": 80,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.5,
+          "v": 35,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.6,
+          "v": 80,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.7,
+          "v": 40,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.75,
+          "v": 55,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "hand.@active",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.35,
+          "v": -20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.45,
+          "v": 20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.55,
+          "v": -20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.65,
+          "v": 20,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.75,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "bone": "hand.@active",
+      "prop": "variant",
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": "default"
+        },
+        {
+          "t": 0.2,
+          "v": "open",
+          "ease": "step"
+        },
+        {
+          "t": 0.85,
+          "v": "default",
+          "ease": "step"
+        }
+      ]
+    },
+    {
+      "bone": "head",
+      "prop": "rotation",
+      "mode": "offset",
+      "keys": [
+        {
+          "t": 0,
+          "v": 0,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.35,
+          "v": 4,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.75,
+          "v": 4,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    }
+  ],
+  "events": [],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ]
+  }
+}
