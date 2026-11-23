@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "id": "tam-truoc-sau",
+  "title": "M1a — Tam trước/sau (cùng phim, frame, camera, vùng cắt)",
+  "columns": 2,
+  "panels": [
+    {
+      "label": "Toàn thân — bê chậu cạnh thân",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-plant.json",
+          "frame": 130,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.l": "relaxed"
+      },
+      "view": {
+        "around": "body",
+        "size": [
+          460,
+          760
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "zoom": 0.8
+      }
+    },
+    {
+      "label": "Cận — Tam bê chậu",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-plant.json",
+          "frame": 130,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.l": "relaxed"
+      },
+      "view": {
+        "around": "hand.r",
+        "size": [
+          300,
+          300
+        ],
+        "offset": [
+          20,
+          -20
+        ],
+        "zoom": 1.4
+      }
+    },
+    {
+      "label": "Cận — Tam với thấp đặt đèn",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 427,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "hand.l",
+        "size": [
+          320,
+          300
+        ],
+        "offset": [
+          30,
+          -40
+        ],
+        "zoom": 1.4
+      }
+    },
+    {
+      "label": "Cận — hai tay trao đèn",
+      "character": "tam",
+      "source": {
+        "film": {
+          "film": "examples/films/m2-handover.json",
+          "frame": 266,
+          "reskin": {
+            "demo-cast": "xuong-giay"
+          }
+        }
+      },
+      "variants": {
+        "torso": "three-quarter",
+        "pelvis": "three-quarter",
+        "head": "three-quarter",
+        "hand.r": "relaxed"
+      },
+      "view": {
+        "around": "hand.l",
+        "size": [
+          320,
+          260
+        ],
+        "offset": [
+          -20,
+          -20
+        ],
+        "zoom": 1.4
+      }
+    }
+  ]
+}

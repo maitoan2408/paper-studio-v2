@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "openMilestone": "M2",
+  "openMilestone": "M1",
   "milestones": {
     "M0": {
       "status": "ACCEPTED",
@@ -42,9 +42,9 @@
       ]
     },
     "M2": {
-      "status": "READY_FOR_USER_REVIEW",
-      "head": "6a2df54c12d2504744a044618c5490f724ce7b5c",
-      "updated": "2026-11-21",
+      "status": "ACCEPTED",
+      "head": "4d01d9df6db7dda0a3d9d4286c35bbad5540df72",
+      "updated": "2026-11-23",
       "checks": {
         "baselineVerify": "PASS_TECHNICAL",
         "baselineCheckRenderer": "PASS_TECHNICAL",
@@ -71,16 +71,18 @@
         "E4: film.turns {character, start, durationFrames?, face: left|right|{character}|{prop}} — chung chuỗi locomotion với walks (không chồng), lật như tờ giấy, x không đổi, chân khóa sàn ngoài các frame lật. Hướng tương đối tính tại frame bắt đầu theo vị trí suy từ các lần đi (không đệ quy qua lần quay). m2-handover: Lan quay tại chỗ về phía tam thay cho bước 60 px; bộ giải E1 tự dời điểm gặp (9.2 → 40.2). Bổ sung E1: explainPoint (chẩn đoán) + bán kính tìm kiếm = tổng tầm với các tay (dữ liệu) thay hằng số 200 px.",
         "E2 (2026-11-21): xem dải khung hình thật (0.25 s/khung) → lỗi thị giác: ngay sau khi nắm, đồ bị kéo chéo xuống XUYÊN mặt bàn (đèn frame ~80–86, chậu cây ~75) vì trọng số reach giảm thẳng về FK. Sửa gốc: (1) kiểm tra mới PROP_THROUGH_SURFACE (props.ts checkLiftClearance): từ lúc nắm tới khi TÂM đạo cụ rời bề ngang chỗ cũ, đáy không thấp hơn chỗ cũ; từ lần cuối tâm vào chỗ đặt tới lúc thả, đáy không thấp hơn chỗ đặt (mặt đỡ chưa có chiều sâu 2.5D — va chạm đầy đủ thuộc M3); (2) đích reach có `offset` {x theo hướng nhìn, y lên; gương khi @active = r} và `clear` (× bề ngang của chính đạo cụ) — không gắn số px theo đạo cụ; (3) pick-up/place là chuỗi đoạn thẳng W = 1: nhấc lên → kéo về phía người (clear 0.6) → hạ cạnh thân (đích = tay theo FK + offset, tự theo tỷ lệ cơ thể) → (FK) → bê bên hông; place đảo ngược. Dàn cảnh: pick-up 144, place 144 frame; lan x 150; phim ngắn: tam scale 1.4, chậu 0.85 đặt ở x −330, dài 332 frame. Biên: tốc độ khớp ≤ 90% ngưỡng, giới hạn khớp ≥ 4.8°. Test: hành vi trên đường đi thật (cả hai phim, tay trái lan/tay phải tam) + đột biến bỏ chặng nhấc → PROP_THROUGH_SURFACE (cả hai nhân vật, cả nhặt và đặt). ĐÁNH ĐỔI CẦN CHỦ DỰ ÁN XEM: khi hạ/nâng đồ sát thân, cẳng tay vắt ngang thân ~0.5–0.75 s (thân chính diện + chiều khuỷu 'flip' chỉ gập được 60°); với tam tay ngắn, đặt lên mặt cao chỉ khả thi khi scale ≥ ~1.4 (không bước chân) — bước chân/cúi người thuộc M1b/M4.",
         "E3 (2026-11-21): WALK_TOO_SHORT và ACTION_SPEED_EXCEEDED kèm '<mục> minimum N frames (now M) at gait + bone limits' cho từng lần đi / mục timeline đang hoạt động tại frame lỗi. N tìm nhị phân trên CHÍNH bộ kiểm chuyển động (gait: số bước/lật hướng; ngưỡng xương: giới hạn + tốc độ), các mục khác giữ nguyên — không công thức xấp xỉ. Không mục nào đủ khi kéo dài tới max(4×, +10 s) → nói rõ. Test: N hợp lệ và N−1 vẫn lỗi (walk thiếu bước, walk quá nhanh, clip wave quá ngắn). Giới hạn: gợi ý không dời các mục phía sau; kéo dài có thể chồng mục kế tiếp (validator báo FILM_TIMELINE_OVERLAP riêng).",
-        "E5 (2026-11-21) @6a2df54: lượt chạy nghiệm thu CI — verify 136785580219/136785592411 success (261 test); render run 44884124225 job 136785592627: check:renderer 8/8 PASS; m2-handover 480 frame AUDIT PASS_TECHNICAL minPSNR 41.34 dB, m2-plant 332 frame 41.16 dB; demo-greeting 41.75 dB, m0-static 42.37 dB (ngưỡng 40). SceneFrame sha256 CI = cục bộ = golden (m2-handover 4522a15f…, m2-plant 1dd97d66…) → tất định cấp 1. MP4 sha CI ≠ cục bộ (khác môi trường; cấp 3 dùng PSNR — đúng PLAN §3.2). Render cục bộ: audit 41.41 / 41.28 dB. Chờ chủ dự án xem video 1× và 0.5× — chỉ chủ dự án đặt ACCEPTED."
+        "E5 (2026-11-21) @6a2df54: lượt chạy nghiệm thu CI — verify 136785580219/136785592411 success (261 test); render run 44884124225 job 136785592627: check:renderer 8/8 PASS; m2-handover 480 frame AUDIT PASS_TECHNICAL minPSNR 41.34 dB, m2-plant 332 frame 41.16 dB; demo-greeting 41.75 dB, m0-static 42.37 dB (ngưỡng 40). SceneFrame sha256 CI = cục bộ = golden (m2-handover 4522a15f…, m2-plant 1dd97d66…) → tất định cấp 1. MP4 sha CI ≠ cục bộ (khác môi trường; cấp 3 dùng PSNR — đúng PLAN §3.2). Render cục bộ: audit 41.41 / 41.28 dB. Chờ chủ dự án xem video 1× và 0.5× — chỉ chủ dự án đặt ACCEPTED.",
+        "ACCEPTED bởi chủ dự án (2026-11-23) tại commit 4d01d9df6db7dda0a3d9d4286c35bbad5540df72 (PR #5, chuỗi PR #3 → #4 → #5 chưa merge). CI cùng commit: verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45100145272 (push) và https://github.com/maitoan2408/paper-studio-v2/actions/runs/45100149697 (PR) success; render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45100149657 success trên merge ref 2122fd76dbacd96572ac747cbf311e9422484411 (= 4d01d9d gộp vào 0697813, cùng cây với 4d01d9d): check:renderer 8/8; SceneFrame demo-greeting f271276f…, m0-static 3b7409d3…, m2-handover 8fcb912a…, m2-plant (timing B) 791a1877… = golden; audit PASS 41.75 / 42.37 / 41.34 / 41.19 dB. Nội dung nghiệm thu so với @6a2df54: lật như tờ giấy không mất hình + chiếu nhất quán (PR #3), audit tương thích manifest cũ, m2-plant 240 frame timing B (PR #4), đồng bộ thả khi trao đèn + kiểm tay đồng cầm (PR #5). Video duyệt thị giác: render cục bộ tại 4d01d9d (artifact CI bị chặn tải trong phiên), SceneFrame trùng CI."
       ]
     },
     "M1": {
       "status": "NOT_RUN",
       "head": null,
-      "updated": "2026-11-20",
+      "updated": "2026-11-23",
       "checks": {},
       "notes": [
-        "Phạm vi + tiêu chí nghiệm thu kỹ thuật và THỊ GIÁC: PLAN.md §6 M1 (M1a art duyệt trước, M1b rig, M1c regression toàn bộ hành động M2). Bắt đầu sau khi M2 ACCEPTED."
+        "Phạm vi + tiêu chí nghiệm thu kỹ thuật và THỊ GIÁC: PLAN.md §6 M1 (M1a art duyệt trước, M1b rig, M1c regression toàn bộ hành động M2). Bắt đầu sau khi M2 ACCEPTED.",
+        "2026-11-23: chủ dự án mở M1 sau khi nghiệm thu M2; giao đợt đầu M1a: công cụ model sheet / sheet tư thế + art mẫu Tam (thân/hông 3 hướng, 4 dáng tay) trên pack Xưởng Giấy v2 (xuong-giay-mau-v2.zip @2e8e7b4, SHA-256 b5cb74a6…33b0). Điểm dừng: chủ dự án duyệt mẫu Tam. Lan, bóng gộp, M1b, M3 thuộc đợt sau."
       ]
     },
     "M3": {
