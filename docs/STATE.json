@@ -87,8 +87,8 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "2e26726e369d585561d4f2de0f321fb6c269e012",
-      "updated": "2026-11-24",
+      "head": "a438f610ae667ff64519f7aa0bb6a974780b4a75",
+      "updated": "2026-11-25",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
         "edgeFixtures": "PASS_TECHNICAL",
@@ -99,7 +99,11 @@
         "tableFloorScenes": "PASS_TECHNICAL",
         "hullValidation": "PASS_TECHNICAL",
         "hullMissBound": "PASS_TECHNICAL",
-        "tableFloorClips": "READY_FOR_USER_REVIEW"
+        "tableFloorClips": "READY_FOR_USER_REVIEW",
+        "sharedImpact": "PASS_TECHNICAL",
+        "sharedSeekOrder": "PASS_TECHNICAL",
+        "sharedPoseDependency": "BLOCKED",
+        "landingTarget": "BLOCKED"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -122,7 +126,10 @@
         "Codex render cục bộ đoạn f140–200 và f215–275 bằng renderer của repo, Chrome 156, đối chiếu state từng frame; chuẩn bị 4 clip 1×/0,5× và 2 ảnh f165/f242. Codex xem ảnh cận và chuỗi frame lấy mẫu. Chủ dự án chưa duyệt chuyển động; cần xem tay Lan sau buông, đường nâng đèn trước cạnh bàn và tay Tam gần chậu.",
         "Codex hậu kiểm 2e26726. Cùng 35 test vật lý, khi dùng drop.ts từ 181a08a tái hiện đúng hai lỗi (33/35); bản mới đạt 35/35. Hull mỏng 1,125 px² bị từ chối tại createCollider với PHYSICS_COLLIDER ở film.physics[0].body.collider; world được free, lần bake đèn tiếp theo nghỉ f263. Giữ kiểm diện tích trước khi gọi Rapier.",
         "Hull lệch tâm chạm ở f168 bước 6/8, không được đỡ. Cận trên tính quanh khối tâm đạt +37,55 px ở f171, +11,60 ở f172 và −21,16 ở f173; báo hụt f173 thay vì f171. Chỉ dùng kết luận này khi sau đó vật bay tự do dưới trọng lực; việc 3 phải xét khả năng có xung lực mới từ vật khác.",
-        "Codex chạy npm run verify đạt 337/337, cả 6 golden. CI PR verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060880 và render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060097 đạt. Fixture hull lệch tâm kiểm bằng test và trace. Clip bàn/sàn chờ chủ dự án duyệt riêng."
+        "Codex chạy npm run verify đạt 337/337, cả 6 golden. CI PR verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060880 và render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060097 đạt. Fixture hull lệch tâm kiểm bằng test và trace. Clip bàn/sàn chờ chủ dự án duyệt riêng.",
+        "Hậu kiểm việc 3 @a438f61. Codex verify 347/347, 8 golden. m3-collide: chậu khóa f180, đèn đánh thức f309 bước 6/8, vx chậu +187,18 px/s, đèn −213,86 px/s, nghỉ lại f326/f343. Cảnh lệch: không va, chậu nghỉ từ f180. CI render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45446269754 đạt. Timeout mới 90 phút. Chưa có duyệt thị giác.",
+        "Trên m3-collide, thêm turns=[{character:\"lan\",start:250,face:{prop:\"plant-1\"}}]. loadFilm đạt trên 2e26726, tràn stack trên a438f61; face:\"right\" đạt. actorOf dựng trước trạng thái thả f303 của Lan, tính hướng ở f250 lại gọi bakeWorld để lấy pose chậu. Cần lấy quỹ đạo đã tính theo thời gian phim.",
+        "Thêm surface ledge x0=-215,x1=-205,y=16, đổi physics[0].onto thành ledge trong m3-collide. loadFilm vẫn đạt: chậu chạm ledge f165 bước 2/8, nghỉ f187 trên floor, pivot y=-0,025 px, cuối phim chỉ sàn đẩy. Phải phân biệt mặt đích với một lần từng chạm. Nhánh khóa còn sao chép supported từ pose cũ; cần kiểm mất điểm tựa và xung lực nhỏ lặp lại. Miss xét cuối phim cần tính cả khả năng đổi quỹ đạo do mặt tĩnh khác."
       ]
     },
     "M4": {
