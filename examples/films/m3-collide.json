@@ -1,0 +1,390 @@
+{
+  "schemaVersion": 1,
+  "id": "m3-collide",
+  "output": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 24,
+    "durationFrames": 384
+  },
+  "packs": [
+    {
+      "id": "sample-m0",
+      "version": "0.1.0",
+      "manifestSha256": "6c42177cfbc6d882cc3485f830a286557e5cdcb21de03f2c6f27c89d44acaa76"
+    },
+    {
+      "id": "demo-cast",
+      "version": "0.1.0",
+      "manifestSha256": "08f7ca7e35b1539605ec9f0005bf4b85603b06f80ffac6536d3d7a5c450109d0"
+    }
+  ],
+  "stage": {
+    "layers": [
+      {
+        "id": "sky",
+        "asset": "sky",
+        "x": 0,
+        "y": -260,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 20
+      },
+      {
+        "id": "sun",
+        "asset": "sun",
+        "x": -400,
+        "y": 560,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 15
+      },
+      {
+        "id": "hills-far",
+        "asset": "hills-far",
+        "x": -100,
+        "y": -10,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 8,
+        "shadow": {
+          "dx": 5,
+          "dy": -6,
+          "blur": 10,
+          "opacity": 0.25
+        }
+      },
+      {
+        "id": "hills-mid",
+        "asset": "hills-mid",
+        "x": 150,
+        "y": -10,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 4,
+        "shadow": {
+          "dx": 6,
+          "dy": -8,
+          "blur": 12,
+          "opacity": 0.3
+        }
+      },
+      {
+        "id": "hills-near",
+        "asset": "hills-near",
+        "x": -80,
+        "y": -10,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 2,
+        "shadow": {
+          "dx": 7,
+          "dy": -9,
+          "blur": 12,
+          "opacity": 0.35
+        }
+      },
+      {
+        "id": "ground",
+        "asset": "ground",
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "rotation": 0,
+        "depth": 1,
+        "shadow": {
+          "dx": 0,
+          "dy": -10,
+          "blur": 14,
+          "opacity": 0.3
+        }
+      }
+    ],
+    "surfaces": [
+      {
+        "id": "floor",
+        "y": 0,
+        "x0": -1300,
+        "x1": 1300
+      },
+      {
+        "id": "table-top",
+        "y": 246,
+        "x0": -760,
+        "x1": -360
+      }
+    ]
+  },
+  "props": [
+    {
+      "id": "table-1",
+      "asset": "table",
+      "x": -560,
+      "y": 0,
+      "scale": 1,
+      "rotation": 0,
+      "depth": 1,
+      "on": "floor",
+      "shadow": {
+        "dx": 9,
+        "dy": -7,
+        "blur": 10,
+        "opacity": 0.35
+      }
+    },
+    {
+      "id": "plant-1",
+      "asset": "plant",
+      "x": -480,
+      "y": 246,
+      "scale": 0.85,
+      "rotation": 0,
+      "depth": 1,
+      "on": "table-top",
+      "shadow": {
+        "dx": 7,
+        "dy": -5,
+        "blur": 8,
+        "opacity": 0.35
+      }
+    },
+    {
+      "id": "lantern-1",
+      "asset": "lantern",
+      "x": -430,
+      "y": 246,
+      "scale": 0.86,
+      "rotation": 0,
+      "depth": 1,
+      "on": "table-top",
+      "shadow": {
+        "dx": 7,
+        "dy": -5,
+        "blur": 8,
+        "opacity": 0.35
+      }
+    }
+  ],
+  "characters": [
+    {
+      "id": "tam",
+      "pack": "demo-cast",
+      "rig": "biped-demo",
+      "character": "tam",
+      "x": -250,
+      "scale": 1.4,
+      "depth": 1,
+      "facing": "right",
+      "on": "floor"
+    },
+    {
+      "id": "lan",
+      "pack": "demo-cast",
+      "rig": "biped-demo",
+      "character": "lan",
+      "x": -580,
+      "scale": 1.1,
+      "depth": 1,
+      "facing": "right",
+      "on": "floor"
+    }
+  ],
+  "camera": {
+    "keys": [
+      {
+        "frame": 0,
+        "x": -300,
+        "y": 330,
+        "zoom": 1.25,
+        "ease": "inOutSine"
+      },
+      {
+        "frame": 383,
+        "x": -200,
+        "y": 330,
+        "zoom": 1.35
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "character": "tam",
+      "clip": "idle-breath",
+      "start": 0,
+      "durationFrames": 384,
+      "bind": {},
+      "repeat": 3
+    },
+    {
+      "character": "tam",
+      "clip": "pick-up",
+      "start": 2,
+      "durationFrames": 110,
+      "bind": {
+        "active": "r",
+        "roles": {
+          "item": "plant-1"
+        }
+      },
+      "layer": 1
+    },
+    {
+      "character": "tam",
+      "clip": "carry",
+      "start": 112,
+      "durationFrames": 39,
+      "bind": {
+        "active": "r"
+      },
+      "layer": 1
+    },
+    {
+      "character": "tam",
+      "clip": "drop",
+      "start": 151,
+      "durationFrames": 30,
+      "bind": {
+        "active": "r"
+      },
+      "layer": 1
+    },
+    {
+      "character": "lan",
+      "clip": "idle-breath",
+      "start": 0,
+      "durationFrames": 384,
+      "bind": {},
+      "repeat": 3
+    },
+    {
+      "character": "lan",
+      "clip": "pick-up",
+      "start": 2,
+      "durationFrames": 144,
+      "bind": {
+        "active": "l",
+        "roles": {
+          "item": "lantern-1"
+        }
+      },
+      "layer": 1
+    },
+    {
+      "character": "lan",
+      "clip": "carry",
+      "start": 146,
+      "durationFrames": 104,
+      "bind": {
+        "active": "l"
+      },
+      "layer": 1
+    },
+    {
+      "character": "lan",
+      "clip": "give",
+      "start": 250,
+      "durationFrames": 96,
+      "bind": {
+        "active": "l",
+        "points": {
+          "meet": {
+            "x": -245.0,
+            "y": 430.0
+          }
+        }
+      },
+      "layer": 1
+    }
+  ],
+  "walks": [
+    {
+      "character": "tam",
+      "start": 112,
+      "durationFrames": 96,
+      "toX": -50
+    },
+    {
+      "character": "lan",
+      "start": 150,
+      "durationFrames": 96,
+      "toX": -375.0
+    }
+  ],
+  "physics": [
+    {
+      "id": "drop-plant",
+      "prop": "plant-1",
+      "release": 3,
+      "onto": "floor",
+      "world": {
+        "gravity": 9.81,
+        "pxPerMeter": 400
+      },
+      "body": {
+        "density": 0.3,
+        "friction": 0.2,
+        "restitution": 0.1
+      }
+    },
+    {
+      "id": "drop-lantern",
+      "prop": "lantern-1",
+      "release": 7,
+      "onto": "floor",
+      "world": {
+        "gravity": 9.81,
+        "pxPerMeter": 400
+      },
+      "body": {
+        "density": 2,
+        "friction": 0.7,
+        "restitution": 0.1,
+        "collider": {
+          "type": "hull",
+          "points": [
+            [
+              30,
+              30
+            ],
+            [
+              60,
+              30
+            ],
+            [
+              78,
+              62
+            ],
+            [
+              85,
+              98
+            ],
+            [
+              78,
+              130
+            ],
+            [
+              66,
+              170
+            ],
+            [
+              24,
+              170
+            ],
+            [
+              12,
+              130
+            ],
+            [
+              5,
+              98
+            ],
+            [
+              12,
+              62
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

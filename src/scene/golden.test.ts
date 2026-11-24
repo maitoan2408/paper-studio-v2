@@ -17,6 +17,9 @@ const GOLDEN: Record<string, string> = {
   'm3-drop': 'e773000116dc5df4616dab74307ef64e59f3828e357f189de96cbb96e8016bfe',
   // M3 việc 2: Lan tay trái thả đèn lồng (collider hull) lên mặt bàn — phim mới, không đổi golden cũ.
   'm3-drop-table': 'afb62ed98f49fe8c6465425f2db0f55389f83cfdb273e31820a12d2dc0da8fe2',
+  // M3 việc 3: thế giới chung hai đạo cụ — B va A đang nằm yên / đối chứng B rơi lệch.
+  'm3-collide': 'f0727be6945ceac212d6fcce3708f138069cffc85049b209215f33a4804b0046',
+  'm3-collide-miss': '5d7cc28b2db7144047aac73f4f5c9813ff407aa7b5e4a44a517e5243ba168050',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {

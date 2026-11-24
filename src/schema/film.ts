@@ -378,6 +378,13 @@ export function validateFilm(
   if (dropIds) fail('FILM_DUP_ID', 'film.physics', `drop id "${dropIds}" is used more than once`);
   const dropItems = firstDuplicate(f.physics.map((d) => String(d.release)));
   if (dropItems) fail('PHYSICS_CONFLICT', 'film.physics', `timeline[${dropItems}] is referenced by two drops`);
+  // Mọi drop chung MỘT thế giới Rapier (src/physics/drop.ts simulateWorld) ⇒ chung trọng lực và tỷ lệ px/m.
+  f.physics.forEach((d, i) => {
+    const w0 = f.physics[0]!.world;
+    if (d.world.gravity !== w0.gravity || d.world.pxPerMeter !== w0.pxPerMeter) {
+      fail('PHYSICS_CONFLICT', `film.physics[${i}].world`, `all drops share one world: gravity ${d.world.gravity} / pxPerMeter ${d.world.pxPerMeter} differ from film.physics[0] (${w0.gravity} / ${w0.pxPerMeter})`);
+    }
+  });
   f.physics.forEach((d, i) => {
     const where = `film.physics[${i}]`;
     if (!props.has(d.prop)) fail('FILM_UNKNOWN_REF', `${where}.prop`, `prop "${d.prop}" does not exist`);
