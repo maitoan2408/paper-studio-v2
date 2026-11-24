@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "181a08abcf274572a53ca77921ad560b658bac56",
+      "head": "2e26726e369d585561d4f2de0f321fb6c269e012",
       "updated": "2026-11-24",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -97,8 +97,8 @@
         "separatingSupport": "PASS_TECHNICAL",
         "visualReview": "NOT_RUN",
         "tableFloorScenes": "PASS_TECHNICAL",
-        "hullValidation": "BLOCKED",
-        "hullMissBound": "BLOCKED",
+        "hullValidation": "PASS_TECHNICAL",
+        "hullMissBound": "PASS_TECHNICAL",
         "tableFloorClips": "READY_FOR_USER_REVIEW"
       },
       "notes": [
@@ -119,7 +119,10 @@
         "Codex chạy verify 335/335, 33/33 test physics của hai file, 6 golden; poses của m3-drop, bounce-tumble, bounce-late, edge-slide trùng toàn bộ với 24505b1. CI verify push https://github.com/maitoan2408/paper-studio-v2/actions/runs/45246663120 và PR https://github.com/maitoan2408/paper-studio-v2/actions/runs/45246676536 đạt; render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45246674931 ở merge ref f10a6de cùng cây với 181a08a, check:renderer 8/8, audit 6 phim đạt, PSNR thấp nhất 41,19 dB.",
         "Hull mỏng: trên m3-drop-table, thay points bằng [[0,0],[90,170],[45,85.025]], diện tích 1,125 px², loadFilm đi qua kiểm tra diện tích rồi world.createCollider ném lỗi nội bộ expected instance of t. Cần PHYSICS_COLLIDER có đường dẫn và thu hồi world khi dựng hình lỗi.",
         "Cận hụt khi hull quay: fixture m3-drop-edge-slide, x1=-185, restitution=0.6, hull [[0,0],[120,0],[0,20]]. f171 cận quanh gốc art là −5,55 px; khi dùng độ cao COM và bán kính quanh COM là +37,55 px. Đối chứng chỉ đổi cận báo PHYSICS_NO_LANDING f173. Cả hai cách đều kết luận hụt ở ca này. Pivot và vận tốc tại điểm chịu lực đã tính quanh worldCom đúng.",
-        "Codex render cục bộ đoạn f140–200 và f215–275 bằng renderer của repo, Chrome 156, đối chiếu state từng frame; chuẩn bị 4 clip 1×/0,5× và 2 ảnh f165/f242. Codex xem ảnh cận và chuỗi frame lấy mẫu. Chủ dự án chưa duyệt chuyển động; cần xem tay Lan sau buông, đường nâng đèn trước cạnh bàn và tay Tam gần chậu."
+        "Codex render cục bộ đoạn f140–200 và f215–275 bằng renderer của repo, Chrome 156, đối chiếu state từng frame; chuẩn bị 4 clip 1×/0,5× và 2 ảnh f165/f242. Codex xem ảnh cận và chuỗi frame lấy mẫu. Chủ dự án chưa duyệt chuyển động; cần xem tay Lan sau buông, đường nâng đèn trước cạnh bàn và tay Tam gần chậu.",
+        "Codex hậu kiểm 2e26726. Cùng 35 test vật lý, khi dùng drop.ts từ 181a08a tái hiện đúng hai lỗi (33/35); bản mới đạt 35/35. Hull mỏng 1,125 px² bị từ chối tại createCollider với PHYSICS_COLLIDER ở film.physics[0].body.collider; world được free, lần bake đèn tiếp theo nghỉ f263. Giữ kiểm diện tích trước khi gọi Rapier.",
+        "Hull lệch tâm chạm ở f168 bước 6/8, không được đỡ. Cận trên tính quanh khối tâm đạt +37,55 px ở f171, +11,60 ở f172 và −21,16 ở f173; báo hụt f173 thay vì f171. Chỉ dùng kết luận này khi sau đó vật bay tự do dưới trọng lực; việc 3 phải xét khả năng có xung lực mới từ vật khác.",
+        "Codex chạy npm run verify đạt 337/337, cả 6 golden. CI PR verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060880 và render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060097 đạt. Fixture hull lệch tâm kiểm bằng test và trace. Clip bàn/sàn chờ chủ dự án duyệt riêng."
       ]
     },
     "M4": {
