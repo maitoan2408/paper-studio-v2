@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "a438f610ae667ff64519f7aa0bb6a974780b4a75",
+      "head": "0cad0a0b4d476bdfac14a4775436b2fc094c6eef",
       "updated": "2026-11-25",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -102,8 +102,9 @@
         "tableFloorClips": "READY_FOR_USER_REVIEW",
         "sharedImpact": "PASS_TECHNICAL",
         "sharedSeekOrder": "PASS_TECHNICAL",
-        "sharedPoseDependency": "BLOCKED",
-        "landingTarget": "BLOCKED"
+        "sharedPoseDependency": "PASS_TECHNICAL",
+        "landingTarget": "PASS_TECHNICAL",
+        "partialWorldCleanup": "BLOCKED"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -129,7 +130,10 @@
         "Codex chạy npm run verify đạt 337/337, cả 6 golden. CI PR verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060880 và render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45418060097 đạt. Fixture hull lệch tâm kiểm bằng test và trace. Clip bàn/sàn chờ chủ dự án duyệt riêng.",
         "Hậu kiểm việc 3 @a438f61. Codex verify 347/347, 8 golden. m3-collide: chậu khóa f180, đèn đánh thức f309 bước 6/8, vx chậu +187,18 px/s, đèn −213,86 px/s, nghỉ lại f326/f343. Cảnh lệch: không va, chậu nghỉ từ f180. CI render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45446269754 đạt. Timeout mới 90 phút. Chưa có duyệt thị giác.",
         "Trên m3-collide, thêm turns=[{character:\"lan\",start:250,face:{prop:\"plant-1\"}}]. loadFilm đạt trên 2e26726, tràn stack trên a438f61; face:\"right\" đạt. actorOf dựng trước trạng thái thả f303 của Lan, tính hướng ở f250 lại gọi bakeWorld để lấy pose chậu. Cần lấy quỹ đạo đã tính theo thời gian phim.",
-        "Thêm surface ledge x0=-215,x1=-205,y=16, đổi physics[0].onto thành ledge trong m3-collide. loadFilm vẫn đạt: chậu chạm ledge f165 bước 2/8, nghỉ f187 trên floor, pivot y=-0,025 px, cuối phim chỉ sàn đẩy. Phải phân biệt mặt đích với một lần từng chạm. Nhánh khóa còn sao chép supported từ pose cũ; cần kiểm mất điểm tựa và xung lực nhỏ lặp lại. Miss xét cuối phim cần tính cả khả năng đổi quỹ đạo do mặt tĩnh khác."
+        "Thêm surface ledge x0=-215,x1=-205,y=16, đổi physics[0].onto thành ledge trong m3-collide. loadFilm vẫn đạt: chậu chạm ledge f165 bước 2/8, nghỉ f187 trên floor, pivot y=-0,025 px, cuối phim chỉ sàn đẩy. Phải phân biệt mặt đích với một lần từng chạm. Nhánh khóa còn sao chép supported từ pose cũ; cần kiểm mất điểm tựa và xung lực nhỏ lặp lại. Miss xét cuối phim cần tính cả khả năng đổi quỹ đạo do mặt tĩnh khác.",
+        "Hậu kiểm 0cad0a0. Cùng test quay, a438f61 lỗi tràn stack cả hai; test world hiện tại trên 53cd5f2 đạt 9/13, trên 0cad0a0 đạt 13/13. Codex chạy verify 352/352 gồm 8 golden. Đích phải trực tiếp đỡ trong cửa sổ nghỉ cuối và tới hết phim. Cận năng lượng ở ca nhiều collider cho phép xét va sàn f312 trước kết luận hụt f313. CI render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45500006856 đạt; thị giác chờ chủ dự án.",
+        "Đối chứng ba vật qua loadFilm: từ m3-collide, 480 frame, đặt meet.x/walk.toX của Lan là −200/−330, nhân bản Lan (third), đèn (lamp3), walk và bốn timeline gốc của Lan trễ 70 frame cho nhân vật mới; meet.x/walk.toX mới −265/−395, release index 11, density 8. Đèn thứ nhất nghỉ f333, f376 đỡ bởi plant-1, f377 airborne và wake lost-support, f378 có điểm tựa trở lại. Có xung lực cùng frame thức; ca này không cô lập mất tựa thụ động.",
+        "Chặn vòng đời WorldSim: m3-collide thêm Lan quay f250 face.prop=plant-1 và đổi timeline[7].bind.points.meet.y=900. loadFilm từ chối ACTION_SPEED_EXCEEDED f283. Bọc World.prototype.createRigidBody và free, đếm các instance khác nhau: 13 tạo thân / 0 gọi free khi trả lỗi (gồm film tạm trong hint). Bản y=430 hợp lệ: 1/1; bản y=900 face=right: 0/0. Kiểm thêm API: sau lỗi dựng hull thứ hai trong simulateWorld, dropPose(drop-plant,180) vẫn trả rest do bỏ qua lỗi đã lưu. Cần cleanup rõ ràng cả đường validate/hint và quy ước đọc sau lỗi trước việc 4."
       ]
     },
     "M4": {
