@@ -72,8 +72,11 @@ function faceSign(film: Film, ci: number, face: NonNullable<Film['data']['turns'
 /**
  * Chuỗi locomotion của nhân vật: các lần đi (`film.walks`) và quay tại chỗ (`film.turns`) theo thời gian.
  * Quay: không đổi x; lật như tờ giấy trong durationFrames (mặc định gait.turnFrames) nếu đổi hướng, không thì giữ nguyên.
+ * `upTo`: chỉ dựng các sự kiện bắt đầu ≤ upTo (mỗi đoạn chỉ phụ thuộc các đoạn TRƯỚC nó ⇒ các đoạn trả về y hệt bản đầy
+ * đủ). Cần cho quay mặt về một đạo cụ đã thả (face.prop): tư thế ở frame f không được đòi pose đạo cụ ở frame > f
+ * (thế giới vật lý chung tính tăng dần — src/physics/drop.ts).
  */
-export function walkSegments(film: Film, ci: number, legLength: number): WalkSegment[] {
+export function walkSegments(film: Film, ci: number, legLength: number, upTo = Infinity): WalkSegment[] {
   const c = film.data.characters[ci]!;
   const rig = film.rigs.get(c.pack)!;
   const gait = rig.data.gait;
@@ -85,7 +88,7 @@ export function walkSegments(film: Film, ci: number, legLength: number): WalkSeg
   const events = [
     ...walks.map((w) => ({ start: w.start, walk: w, turn: undefined })),
     ...turns.map((t) => ({ start: t.start, walk: undefined, turn: t })),
-  ].sort((a, b) => a.start - b.start);
+  ].sort((a, b) => a.start - b.start).filter((e) => e.start <= upTo);
   let x = c.x;
   let sign: 1 | -1 = c.facing === 'right' ? 1 : -1;
   return events.map(({ walk: w, turn: t }) => {
@@ -113,7 +116,7 @@ export function walkSegments(film: Film, ci: number, legLength: number): WalkSeg
 
 export function walkState(film: Film, ci: number, frame: number, legLength: number, liftRatio: number, swingRatio: number): WalkState {
   const c = film.data.characters[ci]!;
-  const segs = walkSegments(film, ci, legLength);
+  const segs = walkSegments(film, ci, legLength, frame); // chỉ các đoạn đã bắt đầu — đoạn sau không ảnh hưởng frame này
   let rootX = c.x;
   let fx: number = c.facing === 'right' ? 1 : -1;
   for (const s of segs) {

@@ -133,32 +133,31 @@ export interface DropBake {
   poses: DropPose[];
 }
 
-const cache = new WeakMap<Film, Map<string, DropBake>>();
+/** Bộ mô phỏng thế giới chung theo film (ghi nhớ NGAY khi tạo ⇒ truy vấn lồng nhau dùng lại cùng một bộ). */
+const sims = new WeakMap<Film, WorldSim>();
 
-function spec(film: Film, id: string): DropSpec {
-  const d = film.data.physics.find((x) => x.id === id);
-  if (!d) return fail('FILM_UNKNOWN_REF', `drop ${id}`, 'no such drop');
-  return d;
+function simOf(film: Film): WorldSim {
+  let s = sims.get(film);
+  if (!s) {
+    s = new WorldSim(film);
+    sims.set(film, s);
+  }
+  return s;
 }
 
-/** Bake MỘT thế giới chung cho mọi drop của phim (một lần, ghi nhớ theo film), trả bake của drop `id`. */
+/** Bake của drop `id` trong thế giới chung (mô phỏng tới hết phim + kết luận lỗi, một lần mỗi film). */
 export function dropBake(film: Film, id: string): DropBake {
-  let m = cache.get(film);
-  if (!m) {
-    m = bakeWorld(film);
-    cache.set(film, m);
-  }
-  const hit = m.get(id);
+  const hit = simOf(film).bakes().get(id);
   if (!hit) return fail('FILM_UNKNOWN_REF', `drop ${id}`, 'no such drop');
   return hit;
 }
 
-/** Tư thế đạo cụ ở frame ≥ frame thả (hàm thuần: tra bảng bake). */
+/**
+ * Tư thế đạo cụ ở frame ≥ frame thả: tra bảng đã tính, chỉ chạy tiếp thế giới tới `frame` khi frame đó chưa được tính
+ * (hàm thuần của film: lịch mô phỏng luôn tuần tự từ đầu, nên thứ tự truy vấn không đổi kết quả).
+ */
 export function dropPose(film: Film, id: string, frame: number): DropPose {
-  const b = dropBake(film, id);
-  const p = b.poses[frame - b.releaseFrame];
-  if (!p) return fail('PHYSICS_FRAME', `drop ${id}`, `frame ${frame} outside [${b.releaseFrame}, ${b.releaseFrame + b.poses.length - 1}]`);
-  return p;
+  return simOf(film).pose(id, frame);
 }
 
 /** Diễn biến của một drop trong thế giới chung của phim (không xét lỗi vật lý) — cho test/CLI. */
@@ -168,8 +167,14 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
   return t;
 }
 
-type Body = ReturnType<InstanceType<typeof RAPIER.World>['createRigidBody']>;
-type Shape = ReturnType<InstanceType<typeof RAPIER.World>['createCollider']>;
+/** Diễn biến mọi drop (mô phỏng tới hết phim, không xét lỗi vật lý). */
+export function simulateWorld(film: Film): Map<string, DropTrace> {
+  return simOf(film).traces();
+}
+
+type World = InstanceType<typeof RAPIER.World>;
+type Body = ReturnType<World['createRigidBody']>;
+type Shape = ReturnType<World['createCollider']>;
 
 /** Trạng thái mô phỏng của một đạo cụ trong thế giới chung. */
 interface Actor {
@@ -179,8 +184,9 @@ interface Actor {
   path: string;
   where: string;
   R: number;
-  p1: V2;
-  v0: V2;
+  /** Trạng thái lúc buông (pivot R−1, vận tốc tay) — tính khi DỰNG vật ở frame R (có thể đọc pose đạo cụ khác < R). */
+  p1?: V2;
+  v0?: V2;
   angle0: number;
   c0: V2;
   verts: V2[];
@@ -200,42 +206,118 @@ interface Actor {
   /** Đang khóa nằm yên: pose hiển thị + trạng thái thân Rapier để ghim lại đầu mỗi frame. */
   lock: { pose: DropPose; t: { x: number; y: number }; r: number } | null;
   restFrame: number;
-  /** Frame thỏa điều kiện hụt (không tiếp xúc, cận đạn đạo dưới mặt). */
+  /** Frame thỏa điều kiện hụt (không tiếp xúc, cận dưới mặt). */
   missCond: number[];
   /** Frame mà một đạo cụ KHÁC đẩy vật này (xung lực > 0). */
   pushedByPropFrames: number[];
 }
+
+type FrameInfo = { touching: boolean; byProp: Map<string, number>; pushes: Map<string, number>; last?: ContactSummary };
 
 /**
  * Thế giới Rapier chung theo thời gian phim (M3 việc 3).
  *  - Thành phần: các mặt đỡ mà drop tham chiếu (`onto`), sắp theo id; mỗi đạo cụ được thêm vào ĐẦU frame thả R của nó
  *    (trạng thái R−1 trong tay, như một vật), sắp theo (R, id đạo cụ) ⇒ không phụ thuộc thứ tự khai báo trong film.
  *  - Lịch bước chung: từ R nhỏ nhất tới hết phim, mỗi frame SUBSTEPS bước dt = 1/(fps·SUBSTEPS) cho cả thế giới.
+ *  - TĂNG DẦN: thế giới chỉ chạy tới frame được hỏi (`advanceTo`). Dựng vật ở frame R cần tư thế nhân vật ở R−1/R−2,
+ *    có thể phụ thuộc pose đạo cụ ĐÃ THẢ trước đó (vd. quay mặt về phía một đạo cụ: film.turns face.prop) — các truy vấn
+ *    đó đọc thẳng bảng đã tính (frame < R). Truy vấn cần frame CHƯA tính trong lúc đang chạy = vòng phụ thuộc thật
+ *    ⇒ PHYSICS_CYCLE (không dùng vị trí ban đầu hay hướng cố định làm giá trị thay).
  *  - Vật liệu: mặt đỡ friction = restitution = 0 với luật kết hợp Max ⇒ tiếp xúc (đạo cụ, mặt) dùng đúng hệ số của đạo cụ
  *    (như phim một vật trước đây: trung bình(f, f) = f); đạo cụ–đạo cụ: trung bình hai hệ số (luật mặc định của Rapier).
  *  - Nằm yên KHÔNG còn là khóa vĩnh viễn: pose hiển thị khóa từ frame rest, thân Rapier được ghim về đúng trạng thái khóa
  *    (vận tốc 0) ở đầu mỗi frame; nếu trong frame một đạo cụ KHÁC đẩy vật (xung lực > 0) và sau frame vật vượt ngưỡng nằm
  *    yên ⇒ ĐÁNH THỨC (wakes), vật chuyển động tiếp theo mô phỏng. Mặt đỡ tĩnh không bao giờ đánh thức vật.
- *  - Hụt: frame f thỏa (không tiếp xúc ∧ cận đạn đạo < mặt − LAND_GAP_PX) chỉ là ỨNG VIÊN; kết luận hụt tại ứng viên sớm
- *    nhất mà từ đó tới hết phim KHÔNG đạo cụ nào khác đẩy vật (va chạm sau có thể cấp thêm xung lực). Một vật một mình:
- *    trùng quy tắc cũ (dừng ở ứng viên đầu tiên).
+ *  - Hụt: frame f thỏa (không tiếp xúc ∧ cận < mặt − LAND_GAP_PX) chỉ là ỨNG VIÊN; kết luận hụt tại ứng viên sớm nhất mà
+ *    từ đó tới hết phim KHÔNG đạo cụ nào khác đẩy vật (va chạm sau có thể cấp thêm xung lực). Một vật một mình: trùng
+ *    quy tắc cũ (dừng ở ứng viên đầu tiên).
  */
-export function simulateWorld(film: Film): Map<string, DropTrace> {
-  const drops = film.data.physics;
-  if (drops.length === 0) return new Map();
-  const { fps, durationFrames: N } = film.data.output;
-  const w0 = drops[0]!.world;
-  const ppm = w0.pxPerMeter;
-  const g = w0.gravity * ppm; // px/s²
-  const actors: Actor[] = drops.map((d) => actorOf(film, d)).sort((a, b) => a.R - b.R || (a.d.prop < b.d.prop ? -1 : a.d.prop > b.d.prop ? 1 : 0));
-  const surfaces = [...new Set(drops.map((d) => d.onto))].sort().map((id) => film.data.stage.surfaces.find((s) => s.id === id)!);
-  const sepMax = g / (fps * SUBSTEPS); // dung sai vₙ của "đỡ" (xem chú thích dưới)
-  const world = new RAPIER.World({ x: 0, y: -w0.gravity });
-  try {
+class WorldSim {
+  private readonly film: Film;
+  private readonly N: number;
+  private readonly actors: Actor[];
+  private readonly byId = new Map<string, Actor>();
+  private world: World | null = null;
+  private readonly owner = new Map<number, { key: string; actor?: Actor }>();
+  private readonly active: Actor[] = [];
+  /** Frame kế tiếp sẽ mô phỏng. */
+  private next: number;
+  private busy = false;
+  private error: unknown = null;
+  private readonly ppm: number;
+  private readonly g: number;
+  private readonly sepMax: number;
+  private baked: Map<string, DropBake> | null = null;
+
+  constructor(film: Film) {
+    this.film = film;
+    const drops = film.data.physics;
+    this.N = film.data.output.durationFrames;
+    this.actors = drops.map((d) => actorOf(film, d)).sort((a, b) => a.R - b.R || (a.d.prop < b.d.prop ? -1 : a.d.prop > b.d.prop ? 1 : 0));
+    for (const a of this.actors) this.byId.set(a.d.id, a);
+    this.next = this.actors[0]?.R ?? this.N;
+    const w0 = drops[0]?.world ?? { gravity: 9.81, pxPerMeter: 400 };
+    this.ppm = w0.pxPerMeter;
+    this.g = w0.gravity * this.ppm; // px/s²
+    this.sepMax = this.g / (film.data.output.fps * SUBSTEPS); // dung sai vₙ của "đỡ" (xem contactsOf)
+  }
+
+  pose(id: string, frame: number): DropPose {
+    const a = this.byId.get(id);
+    if (!a) return fail('FILM_UNKNOWN_REF', `drop ${id}`, 'no such drop');
+    if (frame >= this.next && frame < this.N) {
+      if (this.busy) {
+        fail('PHYSICS_CYCLE', `${a.where} frame ${frame}`, `the pose of "${a.d.prop}" at frame ${frame} is needed while the shared world is still being built at frame ${this.next} (a release state depends on a later pose)`);
+      }
+      this.advanceTo(frame);
+    }
+    const p = a.poses[frame - a.R];
+    if (!p) return fail('PHYSICS_FRAME', `drop ${id}`, `frame ${frame} outside [${a.R}, ${a.R + a.poses.length - 1}]`);
+    return p;
+  }
+
+  traces(): Map<string, DropTrace> {
+    this.advanceTo(this.N - 1);
+    const out = new Map<string, DropTrace>();
+    for (const a of this.actors) out.set(a.d.id, traceOf(a));
+    return out;
+  }
+
+  bakes(): Map<string, DropBake> {
+    if (!this.baked) this.baked = verdicts(this.film, this.traces());
+    return this.baked;
+  }
+
+  /** Chạy thế giới tới hết frame `target` (tuần tự). Lỗi ⇒ giải phóng world, ghi lỗi, ném lại ở mọi lần gọi sau. */
+  private advanceTo(target: number): void {
+    if (this.error) throw this.error;
+    if (this.next > target || this.next >= this.N) return;
+    this.busy = true;
+    try {
+      if (!this.world) this.open();
+      while (this.next <= target && this.next < this.N) {
+        this.stepFrame(this.next);
+        this.next++;
+      }
+      if (this.next >= this.N) this.close();
+    } catch (e) {
+      this.error = e;
+      this.close();
+      throw e;
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  private open(): void {
+    const { fps } = this.film.data.output;
+    const w0 = this.film.data.physics[0]!.world;
+    const world = new RAPIER.World({ x: 0, y: -w0.gravity });
+    this.world = world;
     world.timestep = 1 / (fps * SUBSTEPS);
     world.numSolverIterations = SOLVER_ITERATIONS;
-    /** collider handle → khóa chủ: `surface:<id>` (tĩnh) hoặc `prop:<id>` (đạo cụ). */
-    const owner = new Map<number, { key: string; actor?: Actor }>();
+    const ppm = this.ppm;
+    const surfaces = [...new Set(this.film.data.physics.map((d) => d.onto))].sort().map((id) => this.film.data.stage.surfaces.find((s) => s.id === id)!);
     for (const surface of surfaces) {
       const slab = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation((surface.x0 + surface.x1) / 2 / ppm, (surface.y - SLAB_PX) / ppm));
       const c = world.createCollider(
@@ -244,47 +326,53 @@ export function simulateWorld(film: Film): Map<string, DropTrace> {
           .setRestitution(0).setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max),
         slab,
       );
-      owner.set(c.handle, { key: `surface:${surface.id}` });
+      this.owner.set(c.handle, { key: `surface:${surface.id}` });
     }
-    const R0 = actors[0]!.R;
-    const active: Actor[] = [];
-    for (let fr = R0; fr < N; fr++) {
-      for (const a of actors) if (a.R === fr) { spawn(world, a, ppm); owner.set(a.shape!.handle, { key: a.key, actor: a }); active.push(a); }
-      // ghim vật đang khóa nằm yên về đúng trạng thái khóa
-      for (const a of active) {
-        if (!a.lock) continue;
-        a.body!.setTranslation(a.lock.t, true);
-        a.body!.setRotation(a.lock.r, true);
-        a.body!.setLinvel({ x: 0, y: 0 }, true);
-        a.body!.setAngvel(0, true);
-      }
-      const frameInfo = new Map<Actor, { touching: boolean; byProp: Map<string, number>; pushes: Map<string, number>; last?: ContactSummary }>();
-      for (const a of active) frameInfo.set(a, { touching: false, byProp: new Map(), pushes: new Map() });
-      for (let k = 1; k <= SUBSTEPS; k++) {
-        world.step();
-        for (const a of active) {
-          const ct = contactsOf(world, a, owner, ppm, sepMax);
-          const fi = frameInfo.get(a)!;
-          for (const [key, imp] of ct.pushes) {
-            fi.touching = true;
-            fi.pushes.set(key, (fi.pushes.get(key) ?? 0) + imp);
-            if (key.startsWith('prop:')) fi.byProp.set(key, (fi.byProp.get(key) ?? 0) + imp);
-            if (!a.contacts.some((e) => e.other === key)) a.contacts.push({ other: key, frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS });
-          }
-          if (ct.onto.pushed && !a.firstContact) {
-            a.firstContact = { frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS };
-            a.firstContactPoints = ct.onto.points;
-          }
-          if (k === SUBSTEPS) fi.last = ct;
+  }
+
+  private close(): void {
+    this.world?.free();
+    this.world = null;
+  }
+
+  private stepFrame(fr: number): void {
+    const world = this.world!, ppm = this.ppm;
+    for (const a of this.actors) {
+      if (a.R !== fr) continue;
+      release(this.film, a);
+      spawn(world, a, ppm);
+      this.owner.set(a.shape!.handle, { key: a.key, actor: a });
+      this.active.push(a);
+    }
+    // ghim vật đang khóa nằm yên về đúng trạng thái khóa
+    for (const a of this.active) {
+      if (!a.lock) continue;
+      a.body!.setTranslation(a.lock.t, true);
+      a.body!.setRotation(a.lock.r, true);
+      a.body!.setLinvel({ x: 0, y: 0 }, true);
+      a.body!.setAngvel(0, true);
+    }
+    const frameInfo = new Map<Actor, FrameInfo>();
+    for (const a of this.active) frameInfo.set(a, { touching: false, byProp: new Map(), pushes: new Map() });
+    for (let k = 1; k <= SUBSTEPS; k++) {
+      world.step();
+      for (const a of this.active) {
+        const ct = contactsOf(world, a, this.owner, ppm, this.sepMax);
+        const fi = frameInfo.get(a)!;
+        for (const [key, imp] of ct.pushes) {
+          fi.touching = true;
+          fi.pushes.set(key, (fi.pushes.get(key) ?? 0) + imp);
+          if (key.startsWith('prop:')) fi.byProp.set(key, (fi.byProp.get(key) ?? 0) + imp);
+          if (!a.contacts.some((e) => e.other === key)) a.contacts.push({ other: key, frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS });
         }
+        if (ct.onto.pushed && !a.firstContact) {
+          a.firstContact = { frame: fr, substep: k, time: fr - 1 + k / SUBSTEPS };
+          a.firstContactPoints = ct.onto.points;
+        }
+        if (k === SUBSTEPS) fi.last = ct;
       }
-      for (const a of active) frameEnd(a, fr, frameInfo.get(a)!, ppm, g);
     }
-    const out = new Map<string, DropTrace>();
-    for (const a of actors) out.set(a.d.id, traceOf(a));
-    return out;
-  } finally {
-    world.free();
+    for (const a of this.active) frameEnd(a, fr, frameInfo.get(a)!, ppm, this.g);
   }
 }
 
@@ -309,17 +397,12 @@ function actorOf(film: Film, d: DropSpec): Actor {
   const where = `film.physics(${d.id})`;
   const idx = film.data.physics.indexOf(d);
   const path = idx >= 0 ? `film.physics[${idx}]` : where;
-  const fps = film.data.output.fps;
   const seg = propTimeline(film).get(d.prop)!.find((s) => s.drop === d.id);
   if (!seg) return fail('PHYSICS_NO_RELEASE', where, `"${d.prop}" is never let go by timeline[${d.release}]`);
   const R = seg.from;
-  const held = (fr: number): V2 => propPivot(film, d.prop, fr, (ci, c) => contactWorld(film, ci, fr, c));
   const list = propTimeline(film).get(d.prop)!;
   const heldAt = (fr: number) => fr >= 0 && list.filter((s) => s.from <= fr).at(-1)!.holders.length > 0;
   if (!heldAt(R - 1) || !heldAt(R - 2)) fail('PHYSICS_RELEASE_TOO_EARLY', where, `release at frame ${R} needs the prop held at frames ${R - 2} and ${R - 1} (hand velocity)`);
-  const p1 = held(R - 1);
-  const p2 = held(R - 2);
-  const v0: V2 = [(p1[0] - p2[0]) * fps, (p1[1] - p2[1]) * fps];
   const prop = film.data.props.find((x) => x.id === d.prop)!;
   const asset = film.assets.get(prop.asset)!;
   // Gốc thân Rapier = TÂM KHUNG ART × scale (tính từ pivot trong khung local, y-lên) — với mọi hình collider, nên pivot ↔
@@ -335,13 +418,22 @@ function actorOf(film: Film, d: DropSpec): Actor {
     : collider.points.map((a) => { const l = artToLocal(a, asset.pivot); return [l[0] * prop.scale - c0[0], l[1] * prop.scale - c0[1]] as V2; });
   const surface = film.data.stage.surfaces.find((s) => s.id === d.onto)!;
   return {
-    d, key: `prop:${d.prop}`, path, where, R, p1, v0, angle0: prop.rotation, c0, verts, collider, hw, hh, surface, rCom: 0,
+    d, key: `prop:${d.prop}`, path, where, R, angle0: prop.rotation, c0, verts, collider, hw, hh, surface, rCom: 0,
     poses: [], firstContact: null, firstContactPoints: [], contacts: [], wakes: [], calm: 0, lock: null, restFrame: -1, missCond: [], pushedByPropFrames: [],
   };
 }
 
-function spawn(world: InstanceType<typeof RAPIER.World>, a: Actor, ppm: number): void {
-  const { d, c0, p1, angle0, v0, verts, collider, hw, hh } = a;
+/** Trạng thái buông: pivot ở R−1 và vận tốc tay (pivot(R−1) − pivot(R−2))·fps — đọc tư thế nhân vật ở chính các frame đó. */
+function release(film: Film, a: Actor): void {
+  const held = (fr: number): V2 => propPivot(film, a.d.prop, fr, (ci, c) => contactWorld(film, ci, fr, c));
+  const p1 = held(a.R - 1), p2 = held(a.R - 2), fps = film.data.output.fps;
+  a.p1 = p1;
+  a.v0 = [(p1[0] - p2[0]) * fps, (p1[1] - p2[1]) * fps];
+}
+
+function spawn(world: World, a: Actor, ppm: number): void {
+  const { d, c0, angle0, verts, collider, hw, hh } = a;
+  const p1 = a.p1!, v0 = a.v0!;
   const r = rotate(c0, angle0);
   a.body = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
@@ -381,7 +473,7 @@ function spawn(world: InstanceType<typeof RAPIER.World>, a: Actor, ppm: number):
  * con — dưới độ lún cho phép của Rapier (~0,4 px). Cú bật thật có vₙ ≫ g·h (đo được 91,7–644,8 px/s).
  * Đối tượng khác ĐỠ vật ⇔ pháp tuyến hướng lên (ny ≥ SUPPORT_MIN_NY) và CÓ điểm vừa chịu xung lực > 0 mà vₙ ≤ g·h.
  */
-function contactsOf(world: InstanceType<typeof RAPIER.World>, a: Actor, owner: Map<number, { key: string; actor?: Actor }>, ppm: number, sepMax: number): ContactSummary {
+function contactsOf(world: World, a: Actor, owner: Map<number, { key: string; actor?: Actor }>, ppm: number, sepMax: number): ContactSummary {
   const others: { key: string; actor?: Actor; c: Shape }[] = [];
   world.contactPairsWith(a.shape!, (c) => { const o = owner.get(c.handle); if (o) others.push({ ...o, c }); });
   others.sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0)); // thứ tự tất định, không phụ thuộc đồ thị va chạm
@@ -417,7 +509,7 @@ function contactsOf(world: InstanceType<typeof RAPIER.World>, a: Actor, owner: M
   return out;
 }
 
-function frameEnd(a: Actor, fr: number, fi: { touching: boolean; byProp: Map<string, number>; pushes: Map<string, number>; last?: ContactSummary }, ppm: number, g: number): void {
+function frameEnd(a: Actor, fr: number, fi: FrameInfo, ppm: number, g: number): void {
   const body = a.body!;
   const t = body.translation(), lv = body.linvel(), com = body.worldCom();
   const w = body.angvel();
@@ -465,13 +557,12 @@ function traceOf(a: Actor): DropTrace {
   const poses = missFrame >= 0 ? a.poses.filter((q) => q.frame <= missFrame) : a.poses;
   const lastSupported = poses.filter((q) => q.supported).at(-1)?.frame ?? -1;
   return {
-    releaseFrame: a.R, init: { pivot: a.p1, velocity: a.v0, angle: a.angle0 }, poses, firstContact: a.firstContact, firstContactPoints: a.firstContactPoints,
+    releaseFrame: a.R, init: { pivot: a.p1!, velocity: a.v0!, angle: a.angle0 }, poses, firstContact: a.firstContact, firstContactPoints: a.firstContactPoints,
     contacts: a.contacts, wakes: a.wakes, lastSupported, restFrame: missFrame >= 0 ? -1 : a.restFrame, missFrame, missCandidates: a.missCond,
   };
 }
 
-function bakeWorld(film: Film): Map<string, DropBake> {
-  const traces = simulateWorld(film);
+function verdicts(film: Film, traces: Map<string, DropTrace>): Map<string, DropBake> {
   const N = film.data.output.durationFrames;
   const out = new Map<string, DropBake>();
   for (const d of [...film.data.physics].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {

@@ -146,3 +146,45 @@ test('one shared world: all drops share gravity and pxPerMeter, otherwise PHYSIC
   d.physics[1].world.pxPerMeter = 300;
   assert.throws(() => loadData(d), code('PHYSICS_CONFLICT'));
 });
+
+// ─── Hậu kiểm Codex @a438f61 (1): hướng nhìn phụ thuộc pose đạo cụ đã thả, đọc theo lịch mô phỏng ─────────────────
+import { characterState } from '../motion/character.ts';
+import { restPivot } from '../motion/props.ts';
+
+test('turn to face a dropped prop reads its simulated pose at that frame (no bake recursion, no initial-position fallback)', () => {
+  const withTurn = (face: unknown, reverse = false) => {
+    const d = raw('m3-collide');
+    d.turns = [{ character: 'lan', start: 250, face }];
+    if (reverse) { d.props = [...d.props].reverse(); d.physics = [...d.physics].reverse(); }
+    return loadData(d);
+  };
+  const f = withTurn({ prop: 'plant-1' });
+  const lan = f.data.characters.findIndex((c) => c.id === 'lan');
+  // ở f250: chậu đã nằm yên trên sàn bên PHẢI Lan; vị trí ban đầu của chậu (trên bàn, x −480) ở bên TRÁI Lan
+  const plantAt250 = restPivot(f, 'plant-1', 250)[0], lanX = characterState(f, lan, 250).root[0];
+  assert.ok(f.data.props.find((p) => p.id === 'plant-1')!.x < lanX && plantAt250 > lanX, `initial ${f.data.props.find((p) => p.id === 'plant-1')!.x}, simulated ${plantAt250.toFixed(2)}, Lan ${lanX.toFixed(2)}`);
+  assert.equal(plantAt250, at(A(f), 250).x);
+  assert.ok(characterState(f, lan, 260).fx > 0, 'Lan faces right, towards the simulated plant');
+  // đối chứng face:"right" ⇒ cùng toàn bộ SceneFrame và cùng bake
+  const right = withTurn('right');
+  for (let fr = 0; fr < f.data.output.durationFrames; fr++) assert.equal(canonicalSha256(sampleFrame(f, fr)), canonicalSha256(sampleFrame(right, fr)), `frame ${fr}`);
+  assert.deepEqual(B(f).poses, B(right).poses);
+  // tua thẳng (phim mới, bắt đầu từ frame sau lượt quay) và đảo thứ tự khai báo
+  const seek = withTurn({ prop: 'plant-1' });
+  assert.equal(canonicalSha256(sampleFrame(seek, 330)), canonicalSha256(sampleFrame(f, 330)));
+  const sw = withTurn({ prop: 'plant-1' }, true);
+  for (const id of ['drop-plant', 'drop-lantern']) assert.deepEqual(dropBake(sw, id).poses, dropBake(f, id).poses, id);
+});
+
+test('turns facing a dropped prop AFTER the same character releases (f310 during the hit, f360 after) — no false cycle', () => {
+  for (const start of [310, 360]) {
+    const d = raw('m3-collide');
+    d.turns = [{ character: 'lan', start, face: { prop: 'plant-1' } }];
+    const f = loadData(d);
+    const lan = f.data.characters.findIndex((c) => c.id === 'lan');
+    const px = restPivot(f, 'plant-1', start)[0], lx = characterState(f, lan, start).root[0];
+    assert.equal(px, at(A(f), start).x, `plant pose at f${start} from the shared world`);
+    assert.ok(px > lx && characterState(f, lan, start + 20).fx > 0, `f${start}: plant ${px.toFixed(2)} right of Lan ${lx.toFixed(2)}`);
+    assert.deepEqual(B(f).poses, B(hit).poses, 'a later turn does not change the earlier release');
+  }
+});
