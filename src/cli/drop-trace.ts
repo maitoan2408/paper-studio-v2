@@ -26,9 +26,9 @@ if (json) {
   console.log(JSON.stringify({ ...d, poses }));
 } else {
   console.log(`${name}: release f${d.releaseFrame} v0=(${d.init.velocity.map((x) => x.toFixed(2)).join(', ')}) firstContact=${JSON.stringify(d.firstContact)} lastSupported=f${d.lastSupported} rest=f${d.restFrame} miss=f${d.missFrame}`);
-  console.log('frame\tx\ty\tvx\tvy\tangle\tspin\tsep\ttouch\tsupp\tstate');
+  console.log('frame\tx\ty\tvx\tvy\tangle\tspin\tsep\ttouch\tsupp\tstate\tbound');
   for (const q of poses) {
-    console.log([q.frame, q.x.toFixed(2), q.y.toFixed(2), q.vx.toFixed(2), q.vy.toFixed(2), q.angle.toFixed(2), q.spin.toFixed(1), q.separation === null ? '-' : q.separation.toFixed(2), q.touching ? 'T' : '-', q.supported ? 'S' : '-', q.state].join('\t'));
+    console.log([q.frame, q.x.toFixed(2), q.y.toFixed(2), q.vx.toFixed(2), q.vy.toFixed(2), q.angle.toFixed(2), q.spin.toFixed(1), q.separation === null ? '-' : q.separation.toFixed(2), q.touching ? 'T' : '-', q.supported ? 'S' : '-', q.state, q.missBound.toFixed(2)].join('\t'));
     // điểm manifold ở bước con cuối: vị trí trên vật, xung lực, vₙ (dương = tách)
     if (showPoints) for (const [i, p] of q.points.entries()) console.log(`\t  M${i} (${p.x.toFixed(2)}, ${p.y.toFixed(2)}) impulse=${p.impulse.toExponential(3)} vn=${p.separation.toFixed(2)}`);
   }

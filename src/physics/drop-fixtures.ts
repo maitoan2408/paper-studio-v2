@@ -61,6 +61,15 @@ export const DROP_FIXTURES: Record<string, (d: Raw) => void> = {
    * Biến thể của bounce-late (hậu kiểm Codex @cabaf67): giữ restitution 0.65 và mặt [−600, 600], ma sát 1.5, mặt hạ
    * xuống y = −20 — chậu nảy, quay và đập MỘT GÓC xuống mặt ở bước con cuối của f182 rồi bật đi (góc kia không chịu lực).
    */
+  /**
+   * Hull lệch tâm đang quay (hậu kiểm Codex @181a08a): edge-slide với mép phải −185, restitution 0.6 và collider là tam
+   * giác mỏng ở góc trên-trái khung art chậu (khối tâm cách xa tâm khung) — chậu chạm mép, bật, quay rồi rơi khỏi mép.
+   */
+  'm3-drop-edge-slide-hull': (d) => {
+    d.physics[0].body.restitution = 0.6;
+    d.physics[0].body.collider = { type: 'hull', points: [[0, 0], [120, 0], [0, 20]] };
+    ledge(d, { id: 'ledge', y: 0, x0: -400, x1: -185 });
+  },
   'm3-drop-bounce-tumble': (d) => {
     d.physics[0].body.restitution = 0.65;
     d.physics[0].body.friction = 1.5;

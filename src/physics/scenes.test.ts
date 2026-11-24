@@ -121,3 +121,29 @@ test('PHYSICS_COLLIDER: hull point outside the art frame, or a degenerate hull, 
   assert.throws(() => loadVariant('m3-drop-table', (d) => (d.physics[0].body.collider.points = [[10, 10], [20, 20], [30, 30]])), code('PHYSICS_COLLIDER'));
   assert.throws(() => loadVariant('m3-drop-table', (d) => (d.physics[0].body.collider.points = [[10, 10], [20, 20]])), code('FILM_SCHEMA'));
 });
+
+// ─── Hậu kiểm Codex @181a08a: hull Rapier không dựng được; cận báo hụt quanh khối tâm ───────────────────────────────
+import { RAPIER } from './rapier.ts';
+
+test('thin hull Rapier cannot build (area 1.125 px²): PHYSICS_COLLIDER with the collider path, and the world is freed', () => {
+  // theo dõi vòng đời World: mọi world đã tạo thân phải được free kể cả khi dựng collider thất bại
+  const proto = RAPIER.World.prototype as any;
+  const made = new Set<object>(), freed = new Set<object>();
+  const create = proto.createRigidBody, free = proto.free;
+  proto.createRigidBody = function (this: object, ...a: unknown[]) { made.add(this); return create.apply(this, a); };
+  proto.free = function (this: object, ...a: unknown[]) { freed.add(this); return free.apply(this, a); };
+  try {
+    assert.throws(
+      () => loadVariant('m3-drop-table', (d) => (d.physics[0].body.collider.points = [[0, 0], [90, 170], [45, 85.025]])),
+      (e: Error) => /^PHYSICS_COLLIDER: film\.physics\[0\]\.body\.collider/.test(e.message) && /Rapier could not build/.test(e.message),
+    );
+    assert.ok(made.size >= 1 && [...made].every((w) => freed.has(w)), `worlds created ${made.size}, freed ${[...made].filter((w) => freed.has(w)).length}`);
+  } finally {
+    proto.createRigidBody = create;
+    proto.free = free;
+  }
+  // engine vẫn dùng được sau lỗi; các ca đối chứng giữ nguyên
+  assert.equal(dropBake(loadFilm('examples/films/m3-drop-table.json', 'assets'), 'drop-lantern').restFrame, 263);
+  assert.throws(() => loadVariant('m3-drop-table', (d) => (d.physics[0].body.collider.points = [[10, 10], [20, 20], [30, 30]])), (e: Error) => /^PHYSICS_COLLIDER: film\.physics\[0\]\.body\.collider/.test(e.message));
+  assert.throws(() => loadVariant('m3-drop-table', (d) => d.physics[0].body.collider.points.push([95, 10])), (e: Error) => /^PHYSICS_COLLIDER: film\.physics\[0\]\.body\.collider\.points\[10\]/.test(e.message));
+});

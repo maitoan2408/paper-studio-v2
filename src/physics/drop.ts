@@ -23,8 +23,8 @@
  *  - NẰM YÊN: đang được đỡ, tốc độ ≤ REST_SPEED, quay ≤ REST_SPIN liên tục REST_FRAMES frame → khóa tư thế từ đó.
  *    Thân động KHÔNG được tự ngủ trong Rapier (ngủ = engine ép vận tốc về 0 ⇒ vật đang trượt bị "đóng băng" giả).
  * Hụt (PHYSICS_NO_LANDING): chỉ khi CHẮC CHẮN không thể lên mặt đỡ — frame không có tiếp xúc và ngay cả theo quỹ đạo đạn đạo
- * (chỉ trọng lực) điểm cao nhất vật còn với tới được: tâm + max(vy,0)²/2g + bán kính ngoại tiếp, vẫn thấp hơn mặt đỡ quá
- * LAND_GAP_PX. Vị trí tâm khi còn trên không KHÔNG đủ để kết luận (vật bay từ ngoài mép vào vẫn đáp được).
+ * (chỉ trọng lực) điểm cao nhất vật còn với tới được: KHỐI TÂM + max(v_kt,y,0)²/2g + bán kính lớn nhất của đỉnh quanh khối
+ * tâm (pose.missBound), vẫn thấp hơn mặt đỡ quá LAND_GAP_PX. Vị trí tâm khi còn trên không KHÔNG đủ để kết luận (vật bay từ ngoài mép vào vẫn đáp được).
  * Chưa nằm yên trước hết phim → PHYSICS_NOT_AT_REST.
  * Va chạm đợt 1: chỉ mặt đỡ `onto` (khối tĩnh trên [x0, x1], dày SLAB_PX); bàn, đạo cụ khác, nhân vật: đợt sau.
  */
@@ -68,6 +68,8 @@ export interface DropPose {
   separation: number | null;
   /** Mọi điểm manifold của cặp (vật, mặt đỡ) ở bước con cuối, kể cả điểm dự đoán xung lực 0 — bằng chứng cho test/bàn giao. */
   points: ContactPoint[];
+  /** Cận đạn đạo (px, y thế giới): điểm cao nhất vật còn với tới nếu bay tự do từ frame này, tính quanh khối tâm. */
+  missBound: number;
   /** falling: chưa từng chạm · supported: đã chạm và đang được đỡ · airborne: đã chạm, đang không được đỡ (nảy/lật/trượt mép)
    *  · rest: đã khóa nằm yên. */
   state: 'falling' | 'supported' | 'airborne' | 'rest';
@@ -148,6 +150,9 @@ export function dropPose(film: Film, id: string, frame: number): DropPose {
 
 export function simulateDrop(film: Film, d: DropSpec): DropTrace {
   const where = `film.physics(${d.id})`;
+  const idx = film.data.physics.indexOf(d);
+  /** Đường dẫn dữ liệu cụ thể (như validator): film.physics[i]. */
+  const path = idx >= 0 ? `film.physics[${idx}]` : where;
   const { fps, durationFrames: N } = film.data.output;
   const seg = propTimeline(film).get(d.prop)!.find((s) => s.drop === d.id);
   if (!seg) return fail('PHYSICS_NO_RELEASE', where, `"${d.prop}" is never let go by timeline[${d.release}]`);
@@ -176,79 +181,87 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
   const verts: V2[] = collider.type === 'box'
     ? [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]]
     : collider.points.map((a) => { const l = artToLocal(a, asset.pivot); return [l[0] * prop.scale - c0[0], l[1] * prop.scale - c0[1]] as V2; });
-  const radius = Math.max(...verts.map((v) => Math.hypot(v[0], v[1])));
   const centerOf = (pivot: V2, angle: number): V2 => { const r = rotate(c0, angle); return [pivot[0] + r[0], pivot[1] + r[1]]; };
   const pivotOf = (center: V2, angle: number): V2 => { const r = rotate(c0, angle); return [center[0] - r[0], center[1] - r[1]]; };
 
   const world = new RAPIER.World({ x: 0, y: -d.world.gravity });
-  world.timestep = 1 / (fps * SUBSTEPS);
-  world.numSolverIterations = SOLVER_ITERATIONS;
-  const floor = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation((surface.x0 + surface.x1) / 2 / ppm, (surface.y - SLAB_PX) / ppm));
-  const support = world.createCollider(RAPIER.ColliderDesc.cuboid((surface.x1 - surface.x0) / 2 / ppm, SLAB_PX / ppm).setFriction(d.body.friction).setRestitution(d.body.restitution), floor);
-  const c = centerOf(p1, angle0);
-  const body = world.createRigidBody(
-    RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(c[0] / ppm, c[1] / ppm)
-      .setRotation((angle0 * Math.PI) / 180)
-      .setLinvel(v0[0] / ppm, v0[1] / ppm)
-      .setAngvel(0)
-      .setCcdEnabled(true)
-      // Không cho Rapier tự ngủ: khi ngủ, Rapier ĐẶT VẬN TỐC VỀ 0 cho vật chậm (kể cả vật đang trượt đều trên mặt không
-      // ma sát) — nằm yên chỉ do tiêu chí của file này quyết định (REST_*), không do ngưỡng ngủ nội bộ của engine.
-      .setCanSleep(false),
-  );
-  const desc = collider.type === 'box' ? RAPIER.ColliderDesc.cuboid(hw / ppm, hh / ppm) : RAPIER.ColliderDesc.convexHull(new Float32Array(verts.flatMap((v) => [v[0] / ppm, v[1] / ppm])));
-  if (!desc) {
-    world.free();
-    return fail('PHYSICS_COLLIDER', `${where}.body.collider`, `the hull of ${verts.length} points is degenerate (collinear or repeated points)`);
-  }
-  const shape = world.createCollider(desc.setDensity(d.body.density).setFriction(d.body.friction).setRestitution(d.body.restitution), body);
-  /**
-   * Dung sai vₙ của "đỡ" = g·h (h = bước con). Không phải ngưỡng vật lý của cú nảy mà là độ phân giải của mô phỏng: một
-   * điểm rời mặt với vₙ ≤ g·h chỉ dưới trọng lực sẽ cao lên tối đa vₙ²/2g ≤ g·h²/2 (≈ 0,05 px ở 9,81 m/s², 400 px/m,
-   * 192 bước/s) và trở lại mặt sau ≤ 2 bước con — nhỏ hơn độ lún cho phép của Rapier (~0,4 px), tức không phân biệt được
-   * với tiếp xúc liên tục (vận tốc đẩy ra khi bộ giải sửa lún cũng nằm trong mức này). Cú bật thật có vₙ ≫ g·h
-   * (đo được 91,7–644,8 px/s). Ước lượng bỏ qua gia tốc do quay của chính điểm đó.
-   */
-  const sepMax = g / (fps * SUBSTEPS);
-  /**
-   * Tiếp xúc của đúng cặp (vật, mặt đỡ) ở bước vừa chạy, từng ĐIỂM MANIFOLD i (Rapier 0.21):
-   *  - contactImpulse(i): xung lực pháp tuyến bộ giải đặt lên đúng điểm i trong bước này;
-   *  - localContactPoint1/2(i): điểm i trên collider 1/2, trong khung local của collider (= khung thân, collider không lệch).
-   *    Lấy phía THÂN ĐỘNG, biến đổi bằng tư thế SAU bước ⇒ vị trí hiện tại của chính điểm vật chất đã chịu lực;
-   *  - normal(): pháp tuyến thế giới của manifold, từ collider 1 sang 2 (flipped ⇒ collider 1 là mặt đỡ).
-   * Không dùng solverContactPoint: Rapier chỉ tạo điểm solver cho điểm trong khoảng dự đoán, đặt ở giữa hai bề mặt và
-   * không cho biết nó ứng với điểm manifold nào — ghép theo chỉ số là sai khi có điểm bị bỏ.
-   * Mỗi điểm: vₙ = (v_tâm + ω × (p − tâm)) · n sau bước giải (tính quay; góc làm trục lật có vₙ ≈ 0).
-   * Mặt đỡ ĐỠ vật ⇔ pháp tuyến hướng lên và CÓ một điểm vừa chịu xung lực > 0 mà không tách (vₙ ≤ sepMax).
-   */
-  const contact = (): { pushed: boolean; supports: boolean; sep: number | null; points: ContactPoint[] } => {
-    let pushed = false, supports = false, sep: number | null = null;
-    const points: ContactPoint[] = [];
-    world.contactPair(shape, support, (m, flipped) => {
-      const n = m.normal(), s = flipped ? 1 : -1, nx = s * n.x, ny = s * n.y;
-      const c = body.worldCom(), t = body.translation(), v = body.linvel(), w = body.angvel(), r = body.rotation();
-      const cr = Math.cos(r), sr = Math.sin(r);
-      for (let i = 0; i < m.numContacts(); i++) {
-        const lb = (flipped ? m.localContactPoint2(i) : m.localContactPoint1(i))!;
-        const px = t.x + cr * lb.x - sr * lb.y, py = t.y + sr * lb.x + cr * lb.y; // điểm local quanh GỐC thân
-        const vn = ((v.x - w * (py - c.y)) * nx + (v.y + w * (px - c.x)) * ny) * ppm;
-        const impulse = m.contactImpulse(i);
-        points.push({ x: px * ppm, y: py * ppm, impulse, separation: vn });
-        if (!(impulse > 0)) continue;
-        pushed = true;
-        sep = sep === null ? vn : Math.min(sep, vn);
-        if (ny >= SUPPORT_MIN_NY && vn <= sepMax) supports = true;
-      }
-    });
-    return { pushed, supports, sep, points };
-  };
-
-  const poses: DropPose[] = [];
-  let firstContact: FirstContact | null = null;
-  let firstContactPoints: ContactPoint[] = [];
-  let restFrame = -1, missFrame = -1, lastSupported = -1, calm = 0;
+  // Vòng đời world: MỌI bước sau khi tạo (dựng thân/collider, mô phỏng) nằm trong try … finally world.free() — kể cả
+  // khi dựng collider thất bại.
   try {
+    world.timestep = 1 / (fps * SUBSTEPS);
+    world.numSolverIterations = SOLVER_ITERATIONS;
+    const floor = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation((surface.x0 + surface.x1) / 2 / ppm, (surface.y - SLAB_PX) / ppm));
+    const support = world.createCollider(RAPIER.ColliderDesc.cuboid((surface.x1 - surface.x0) / 2 / ppm, SLAB_PX / ppm).setFriction(d.body.friction).setRestitution(d.body.restitution), floor);
+    const c = centerOf(p1, angle0);
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(c[0] / ppm, c[1] / ppm)
+        .setRotation((angle0 * Math.PI) / 180)
+        .setLinvel(v0[0] / ppm, v0[1] / ppm)
+        .setAngvel(0)
+        .setCcdEnabled(true)
+        // Không cho Rapier tự ngủ: khi ngủ, Rapier ĐẶT VẬN TỐC VỀ 0 cho vật chậm (kể cả vật đang trượt đều trên mặt không
+        // ma sát) — nằm yên chỉ do tiêu chí của file này quyết định (REST_*), không do ngưỡng ngủ nội bộ của engine.
+        .setCanSleep(false),
+    );
+    // Rapier 0.21: ColliderDesc.convexHull chỉ giữ đỉnh; bao lồi được tính khi createCollider, và bao rỗng (vd. tam giác
+    // gần thẳng hàng vượt qua kiểm diện tích của validator) làm binding ném "expected instance of t" — đổi thành mã dự án.
+    const desc = collider.type === 'box' ? RAPIER.ColliderDesc.cuboid(hw / ppm, hh / ppm) : RAPIER.ColliderDesc.convexHull(new Float32Array(verts.flatMap((v) => [v[0] / ppm, v[1] / ppm])));
+    let shape: ReturnType<typeof world.createCollider>;
+    try {
+      if (!desc) throw new Error('convexHull returned null');
+      shape = world.createCollider(desc.setDensity(d.body.density).setFriction(d.body.friction).setRestitution(d.body.restitution), body);
+    } catch (e) {
+      return fail('PHYSICS_COLLIDER', `${path}.body.collider`, `Rapier could not build the ${collider.type} collider of "${d.prop}" (${verts.length} points; ${(e as Error).message}) — the shape is too thin or degenerate`);
+    }
+    // Cận báo hụt quanh KHỐI TÂM: bán kính lớn nhất của đỉnh quanh khối tâm local (Rapier tính từ hình; hộp: = gốc thân).
+    const lc = body.localCom();
+    const rCom = Math.max(...verts.map((v) => Math.hypot(v[0] - lc.x * ppm, v[1] - lc.y * ppm)));
+    /**
+     * Dung sai vₙ của "đỡ" = g·h (h = bước con). Không phải ngưỡng vật lý của cú nảy mà là độ phân giải của mô phỏng: một
+     * điểm rời mặt với vₙ ≤ g·h chỉ dưới trọng lực sẽ cao lên tối đa vₙ²/2g ≤ g·h²/2 (≈ 0,05 px ở 9,81 m/s², 400 px/m,
+     * 192 bước/s) và trở lại mặt sau ≤ 2 bước con — nhỏ hơn độ lún cho phép của Rapier (~0,4 px), tức không phân biệt được
+     * với tiếp xúc liên tục (vận tốc đẩy ra khi bộ giải sửa lún cũng nằm trong mức này). Cú bật thật có vₙ ≫ g·h
+     * (đo được 91,7–644,8 px/s). Ước lượng bỏ qua gia tốc do quay của chính điểm đó.
+     */
+    const sepMax = g / (fps * SUBSTEPS);
+    /**
+     * Tiếp xúc của đúng cặp (vật, mặt đỡ) ở bước vừa chạy, từng ĐIỂM MANIFOLD i (Rapier 0.21):
+     *  - contactImpulse(i): xung lực pháp tuyến bộ giải đặt lên đúng điểm i trong bước này;
+     *  - localContactPoint1/2(i): điểm i trên collider 1/2, trong khung local của collider (= khung thân, collider không lệch).
+     *    Lấy phía THÂN ĐỘNG, biến đổi bằng tư thế SAU bước ⇒ vị trí hiện tại của chính điểm vật chất đã chịu lực;
+     *  - normal(): pháp tuyến thế giới của manifold, từ collider 1 sang 2 (flipped ⇒ collider 1 là mặt đỡ).
+     * Không dùng solverContactPoint: Rapier chỉ tạo điểm solver cho điểm trong khoảng dự đoán, đặt ở giữa hai bề mặt và
+     * không cho biết nó ứng với điểm manifold nào — ghép theo chỉ số là sai khi có điểm bị bỏ.
+     * Mỗi điểm: vₙ = (v_tâm + ω × (p − tâm)) · n sau bước giải (tính quay; góc làm trục lật có vₙ ≈ 0).
+     * Mặt đỡ ĐỠ vật ⇔ pháp tuyến hướng lên và CÓ một điểm vừa chịu xung lực > 0 mà không tách (vₙ ≤ sepMax).
+     */
+    const contact = (): { pushed: boolean; supports: boolean; sep: number | null; points: ContactPoint[] } => {
+      let pushed = false, supports = false, sep: number | null = null;
+      const points: ContactPoint[] = [];
+      world.contactPair(shape, support, (m, flipped) => {
+        const n = m.normal(), s = flipped ? 1 : -1, nx = s * n.x, ny = s * n.y;
+        const c = body.worldCom(), t = body.translation(), v = body.linvel(), w = body.angvel(), r = body.rotation();
+        const cr = Math.cos(r), sr = Math.sin(r);
+        for (let i = 0; i < m.numContacts(); i++) {
+          const lb = (flipped ? m.localContactPoint2(i) : m.localContactPoint1(i))!;
+          const px = t.x + cr * lb.x - sr * lb.y, py = t.y + sr * lb.x + cr * lb.y; // điểm local quanh GỐC thân
+          const vn = ((v.x - w * (py - c.y)) * nx + (v.y + w * (px - c.x)) * ny) * ppm;
+          const impulse = m.contactImpulse(i);
+          points.push({ x: px * ppm, y: py * ppm, impulse, separation: vn });
+          if (!(impulse > 0)) continue;
+          pushed = true;
+          sep = sep === null ? vn : Math.min(sep, vn);
+          if (ny >= SUPPORT_MIN_NY && vn <= sepMax) supports = true;
+        }
+      });
+      return { pushed, supports, sep, points };
+    };
+
+    const poses: DropPose[] = [];
+    let firstContact: FirstContact | null = null;
+    let firstContactPoints: ContactPoint[] = [];
+    let restFrame = -1, missFrame = -1, lastSupported = -1, calm = 0;
     for (let fr = R; fr < N; fr++) {
       if (restFrame >= 0) {
         poses.push({ ...poses[poses.length - 1]!, frame: fr, vx: 0, vy: 0, spin: 0 });
@@ -284,19 +297,20 @@ export function simulateDrop(film: Film, d: DropSpec): DropTrace {
       const calmNow = supported && Math.hypot(lv.x * ppm, lv.y * ppm) <= REST_SPEED_PX && Math.abs(spin) <= REST_SPIN_DEG;
       calm = calmNow ? calm + 1 : 0;
       const state: DropPose['state'] = calm >= REST_FRAMES ? 'rest' : !firstContact ? 'falling' : supported ? 'supported' : 'airborne';
-      poses.push({ frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching, supported, separation, points, state });
+      // Cận đạn đạo: điểm cao nhất vật còn với tới khi bay tự do = khối tâm + max(v_kt,y, 0)²/2g + bán kính quanh khối tâm.
+      const missBound = com.y * ppm + Math.max(lv.y * ppm, 0) ** 2 / (2 * g) + rCom;
+      poses.push({ frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching, supported, separation, points, missBound, state });
       if (state === 'rest') restFrame = fr;
       // Hụt chắc chắn: không chạm trong frame, và theo đạn đạo điểm cao nhất với tới được vẫn dưới mặt đỡ.
-      const reach = center[1] + Math.max(lv.y * ppm, 0) ** 2 / (2 * g) + radius;
-      if (!touching && reach < surface.y - LAND_GAP_PX) {
+      if (!touching && missBound < surface.y - LAND_GAP_PX) {
         missFrame = fr;
         break;
       }
     }
+    return { releaseFrame: R, init: { pivot: p1, velocity: v0, angle: angle0 }, poses, firstContact, firstContactPoints, lastSupported, restFrame, missFrame };
   } finally {
     world.free();
   }
-  return { releaseFrame: R, init: { pivot: p1, velocity: v0, angle: angle0 }, poses, firstContact, firstContactPoints, lastSupported, restFrame, missFrame };
 }
 
 function bake(film: Film, d: DropSpec): DropBake {

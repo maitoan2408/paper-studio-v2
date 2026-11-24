@@ -378,3 +378,31 @@ test('bounce-tumble (friction 1.5, ledge y −20): at f182 one corner is hit and
   assert.ok(e.restFrame > 183);
   calmWindowSupported(e.poses, e.restFrame);
 });
+
+// ─── Hậu kiểm Codex @181a08a: cận đạn đạo báo hụt phải tính quanh KHỐI TÂM (hull lệch tâm đang quay) ─────────────────
+test('off-centre spinning hull: the miss bound uses the centre of mass, so the miss is reported at f173, not f171', () => {
+  assert.throws(() => build(dropFixture('m3-drop-edge-slide-hull')), (err: Error) => /PHYSICS_NO_LANDING/.test(err.message) && /frame 173/.test(err.message));
+  const { f, d } = unbaked('m3-drop-edge-slide-hull');
+  const fx = f.data.physics[0]!, prop = f.data.props.find((p) => p.id === 'plant-1')!, a = f.assets.get(prop.asset)!;
+  const g = fx.world.gravity * fx.world.pxPerMeter;
+  // Tính lại độc lập: đỉnh hull quanh pivot (y-lên), khối tâm = trọng tâm tam giác (mật độ đều), bán kính quanh khối tâm.
+  const vs = (fx.body.collider as { points: [number, number][] }).points.map(([x, y]) => [(x - a.pivot[0]) * prop.scale, (a.pivot[1] - y) * prop.scale] as [number, number]);
+  const com: [number, number] = [vs.reduce((s, v) => s + v[0], 0) / 3, vs.reduce((s, v) => s + v[1], 0) / 3];
+  const rCom = Math.max(...vs.map((v) => Math.hypot(v[0] - com[0], v[1] - com[1])));
+  // v_kt = v_pivot + ω × (kt − pivot); với ω × r = (−ω·r_y, ω·r_x) ⇒ v_kt,y = vy + ω·c_x (c = kt − pivot, đã xoay).
+  const vComY = (q: DropPose) => q.vy + ((q.spin * Math.PI) / 180) * rotate(com, q.angle)[0];
+  const bound = (q: DropPose) => q.y + rotate(com, q.angle)[1] + Math.max(vComY(q), 0) ** 2 / (2 * g) + rCom;
+  // Cận cũ (gốc thân = tâm khung art, bán kính quanh gốc) — tái hiện số Codex đo ở f171.
+  const c0: [number, number] = [0, (a.height * prop.scale) / 2];
+  const rOrigin = Math.max(...vs.map((v) => Math.hypot(v[0] - c0[0], v[1] - c0[1])));
+  const oldBound = (q: DropPose) => q.y + rotate(c0, q.angle)[1] + Math.max(vComY(q), 0) ** 2 / (2 * g) + rOrigin;
+  const f171 = at(d.poses, 171);
+  assert.ok(oldBound(f171) < -drop.LAND_GAP_PX, `old origin bound at f171 ${oldBound(f171).toFixed(2)} would report a miss`);
+  assert.ok(bound(f171) > -drop.LAND_GAP_PX, `centre-of-mass bound at f171 ${bound(f171).toFixed(2)} px: the pot can still reach the ledge`);
+  for (const q of d.poses.filter((q) => q.frame >= 170)) assert.ok(Math.abs(q.missBound - bound(q)) < 1e-3, `frame ${q.frame}: engine bound ${q.missBound} vs ${bound(q)}`);
+  // mô phỏng tiếp tục: f171, f172 chưa đủ điều kiện; f173 là frame đầu tiên không tiếp xúc và cận < mặt − 1 px
+  assert.equal(d.missFrame, 173);
+  for (const q of d.poses.filter((q) => q.frame < 173)) assert.ok(q.touching || q.missBound >= -drop.LAND_GAP_PX, `frame ${q.frame} already met the miss condition`);
+  const f173 = at(d.poses, 173);
+  assert.ok(!f173.touching && f173.missBound < -drop.LAND_GAP_PX && Math.abs(f173.spin) > 100, 'f173: free flight, spinning, bound below the ledge');
+});
