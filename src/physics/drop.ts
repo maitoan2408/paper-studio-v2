@@ -61,8 +61,11 @@ export interface DropPose {
   spin: number;
   /** Trong frame này (bước con bất kỳ) mặt đỡ có đẩy vật — sự kiện tiếp xúc. */
   touching: boolean;
-  /** Ở bước con cuối của frame mặt đỡ đỡ vật từ bên dưới (xem đầu file). */
+  /** Ở bước con cuối của frame có đối tượng đỡ vật từ bên dưới (xem đầu file). */
   supported: boolean;
+  /** Danh tính các đối tượng THỰC SỰ đỡ vật ở bước con cuối (`surface:<id>` / `prop:<id>`), sắp theo khóa — kể cả khi
+   *  đang khóa nằm yên (tính lại mỗi frame, không chép từ pose khóa). */
+  supportedBy: string[];
   /** Vận tốc tách theo pháp tuyến (px/s, dương = rời mặt) ở bước con cuối, nhỏ nhất trên các điểm CHỊU XUNG LỰC > 0;
    *  null nếu bước con cuối không có điểm nào chịu xung lực. */
   separation: number | null;
@@ -70,6 +73,8 @@ export interface DropPose {
   points: ContactPoint[];
   /** Cận đạn đạo (px, y thế giới): điểm cao nhất vật còn với tới nếu bay tự do từ frame này, tính quanh khối tâm. */
   missBound: number;
+  /** Cận ĐẠN ĐẠO (khối tâm + max(v_kt,y,0)²/2g + bán kính) — bằng missBound khi world chỉ có vật này và mặt đích. */
+  ballisticBound: number;
   /** Tổng xung lực pháp tuyến trong frame theo đối tượng đẩy (`surface:<id>` / `prop:<id>`), sắp theo khóa. */
   pushes: { by: string; impulse: number }[];
   /** falling: chưa từng chạm · supported: đã chạm và đang được đỡ · airborne: đã chạm, đang không được đỡ (nảy/lật/trượt mép)
@@ -197,6 +202,11 @@ interface Actor {
   body?: Body;
   shape?: Shape;
   rCom: number;
+  /** Khối lượng (kg) và mô-men quán tính chính (kg·m²) — cho cận năng lượng. */
+  mass: number;
+  inertia: number;
+  /** Cận hụt theo năng lượng (world có collider khác ngoài mặt đích của vật này) thay vì đạn đạo. */
+  energyBound: boolean;
   poses: DropPose[];
   firstContact: FirstContact | null;
   firstContactPoints: ContactPoint[];
@@ -255,6 +265,8 @@ class WorldSim {
     this.N = film.data.output.durationFrames;
     this.actors = drops.map((d) => actorOf(film, d)).sort((a, b) => a.R - b.R || (a.d.prop < b.d.prop ? -1 : a.d.prop > b.d.prop ? 1 : 0));
     for (const a of this.actors) this.byId.set(a.d.id, a);
+    const surfaceCount = new Set(drops.map((d) => d.onto)).size;
+    for (const a of this.actors) a.energyBound = this.actors.length > 1 || surfaceCount > 1;
     this.next = this.actors[0]?.R ?? this.N;
     const w0 = drops[0]?.world ?? { gravity: 9.81, pxPerMeter: 400 };
     this.ppm = w0.pxPerMeter;
@@ -389,6 +401,8 @@ interface ContactSummary {
   pushes: Map<string, number>;
   /** Có đối tượng (tĩnh hay động) đỡ vật: điểm chịu lực, pháp tuyến hướng lên, vận tốc tách tương đối ≤ sepMax. */
   supports: boolean;
+  /** Khóa các đối tượng đang ĐỠ vật (theo tiêu chí trên), sắp theo khóa. */
+  supporters: string[];
   /** Cặp (vật, mặt đích `onto`) — giữ nghĩa cũ cho firstContact/points/separation. */
   onto: { pushed: boolean; sep: number | null; points: ContactPoint[] };
 }
@@ -418,7 +432,7 @@ function actorOf(film: Film, d: DropSpec): Actor {
     : collider.points.map((a) => { const l = artToLocal(a, asset.pivot); return [l[0] * prop.scale - c0[0], l[1] * prop.scale - c0[1]] as V2; });
   const surface = film.data.stage.surfaces.find((s) => s.id === d.onto)!;
   return {
-    d, key: `prop:${d.prop}`, path, where, R, angle0: prop.rotation, c0, verts, collider, hw, hh, surface, rCom: 0,
+    d, key: `prop:${d.prop}`, path, where, R, angle0: prop.rotation, c0, verts, collider, hw, hh, surface, rCom: 0, mass: 0, inertia: 0, energyBound: false,
     poses: [], firstContact: null, firstContactPoints: [], contacts: [], wakes: [], calm: 0, lock: null, restFrame: -1, missCond: [], pushedByPropFrames: [],
   };
 }
@@ -458,6 +472,8 @@ function spawn(world: World, a: Actor, ppm: number): void {
   // Cận báo hụt quanh KHỐI TÂM: bán kính lớn nhất của đỉnh quanh khối tâm local (Rapier tính từ hình; hộp: = gốc thân).
   const lc = a.body.localCom();
   a.rCom = Math.max(...verts.map((v) => Math.hypot(v[0] - lc.x * ppm, v[1] - lc.y * ppm)));
+  a.mass = a.body.mass();
+  a.inertia = a.body.principalInertia();
 }
 
 /**
@@ -477,7 +493,7 @@ function contactsOf(world: World, a: Actor, owner: Map<number, { key: string; ac
   const others: { key: string; actor?: Actor; c: Shape }[] = [];
   world.contactPairsWith(a.shape!, (c) => { const o = owner.get(c.handle); if (o) others.push({ ...o, c }); });
   others.sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0)); // thứ tự tất định, không phụ thuộc đồ thị va chạm
-  const out: ContactSummary = { pushes: new Map(), supports: false, onto: { pushed: false, sep: null, points: [] } };
+  const out: ContactSummary = { pushes: new Map(), supports: false, supporters: [], onto: { pushed: false, sep: null, points: [] } };
   const body = a.body!;
   const velAt = (b: Body | undefined, px: number, py: number) => {
     if (!b) return { x: 0, y: 0 };
@@ -501,7 +517,10 @@ function contactsOf(world: World, a: Actor, owner: Map<number, { key: string; ac
         if (!(impulse > 0)) continue;
         imp += impulse;
         if (o.key === ontoKey) { out.onto.pushed = true; out.onto.sep = out.onto.sep === null ? vn : Math.min(out.onto.sep, vn); }
-        if (ny >= SUPPORT_MIN_NY && vn <= sepMax) out.supports = true;
+        if (ny >= SUPPORT_MIN_NY && vn <= sepMax) {
+          out.supports = true;
+          if (!out.supporters.includes(o.key)) out.supporters.push(o.key); // others đã sắp theo khóa ⇒ danh sách sắp sẵn
+        }
       }
       if (imp > 0) out.pushes.set(o.key, (out.pushes.get(o.key) ?? 0) + imp);
     });
@@ -516,19 +535,21 @@ function frameEnd(a: Actor, fr: number, fi: FrameInfo, ppm: number, g: number): 
   const speed = Math.hypot(lv.x * ppm, lv.y * ppm), spin = (w * 180) / Math.PI;
   const pushes = [...fi.pushes].map(([by, impulse]) => ({ by, impulse }));
   if (fi.byProp.size > 0) a.pushedByPropFrames.push(fr);
+  const last = fi.last!;
   if (a.lock) {
-    // Đánh thức chỉ khi một ĐẠO CỤ khác vừa đẩy vật và vật vượt ngưỡng nằm yên; còn lại giữ pose khóa (thân được ghim lại).
-    const woken = fi.byProp.size > 0 && (speed > REST_SPEED_PX || Math.abs(spin) > REST_SPIN_DEG);
-    if (!woken) {
-      a.poses.push({ ...a.lock.pose, frame: fr, vx: 0, vy: 0, spin: 0, pushes });
+    // Đánh thức khi (a) một ĐẠO CỤ khác vừa đẩy vật và vật vượt ngưỡng nằm yên, hoặc (b) vật MẤT điểm tựa (vd. vật đỡ nó
+    // bị đẩy đi). Còn lại giữ pose khóa (thân được ghim lại); điểm tựa/xung lực của frame vẫn là số thật của frame đó.
+    const pushedAway = fi.byProp.size > 0 && (speed > REST_SPEED_PX || Math.abs(spin) > REST_SPIN_DEG);
+    const unsupported = !last.supports;
+    if (!pushedAway && !unsupported) {
+      a.poses.push({ ...a.lock.pose, frame: fr, vx: 0, vy: 0, spin: 0, touching: fi.touching, supported: true, supportedBy: last.supporters, separation: last.onto.sep, points: last.onto.points, pushes });
       return;
     }
-    a.wakes.push({ frame: fr, by: [...fi.byProp.keys()].join(',') });
+    a.wakes.push({ frame: fr, by: unsupported ? 'lost-support' : [...fi.byProp.keys()].join(',') });
     a.lock = null;
     a.restFrame = -1;
     a.calm = 0;
   }
-  const last = fi.last!;
   const angle = (body.rotation() * 180) / Math.PI;
   const r0 = rotate(a.c0, angle);
   const pv: V2 = [t.x * ppm - r0[0], t.y * ppm - r0[1]];
@@ -538,10 +559,17 @@ function frameEnd(a: Actor, fr: number, fi: FrameInfo, ppm: number, g: number): 
   const supported = last.supports;
   const calmNow = supported && speed <= REST_SPEED_PX && Math.abs(spin) <= REST_SPIN_DEG;
   a.calm = calmNow ? a.calm + 1 : 0;
-  const state: DropPose['state'] = a.calm >= REST_FRAMES ? 'rest' : !a.firstContact ? 'falling' : supported ? 'supported' : 'airborne';
-  // Cận đạn đạo: điểm cao nhất vật còn với tới khi bay tự do = khối tâm + max(v_kt,y, 0)²/2g + bán kính quanh khối tâm.
-  const missBound = com.y * ppm + Math.max(lv.y * ppm, 0) ** 2 / (2 * g) + a.rCom;
-  const pose: DropPose = { frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching: fi.touching, supported, separation: last.onto.sep, points: last.onto.points, missBound, pushes, state };
+  // falling = chưa chạm BẤT KỲ đối tượng nào (một vật: = chưa chạm mặt đích như trước); đã chạm thì supported/airborne.
+  const state: DropPose['state'] = a.calm >= REST_FRAMES ? 'rest' : a.contacts.length === 0 ? 'falling' : supported ? 'supported' : 'airborne';
+  // Cận điểm cao nhất vật còn với tới (quanh khối tâm, + bán kính đỉnh quanh khối tâm):
+  //  - một vật, một mặt (chỉ mặt đích trong world): ĐẠN ĐẠO — khối tâm + max(v_kt,y, 0)²/2g (không có gì để nảy lên);
+  //  - world có collider khác (mặt tĩnh khác / đạo cụ khác): NĂNG LƯỢNG — khối tâm + (|v_kt|² + ω²·I/m)/2g: vật có thể nảy
+  //    khỏi mặt tĩnh khác (restitution ≤ 1, ma sát tiêu tán ⇒ không vượt cơ năng); đạo cụ khác có thể cấp thêm năng lượng
+  //    nên kết luận hụt còn chờ lần đẩy cuối từ đạo cụ (traceOf).
+  const vy2 = a.energyBound ? (lv.x * lv.x + lv.y * lv.y) * ppm * ppm + (w * w * a.inertia * ppm * ppm) / a.mass : Math.max(lv.y * ppm, 0) ** 2;
+  const missBound = com.y * ppm + vy2 / (2 * g) + a.rCom;
+  const ballisticBound = com.y * ppm + Math.max(lv.y * ppm, 0) ** 2 / (2 * g) + a.rCom;
+  const pose: DropPose = { frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching: fi.touching, supported, supportedBy: last.supporters, separation: last.onto.sep, points: last.onto.points, missBound, ballisticBound, pushes, state };
   a.poses.push(pose);
   if (state === 'rest') {
     a.lock = { pose, t: { x: t.x, y: t.y }, r: body.rotation() };
@@ -575,11 +603,24 @@ function verdicts(film: Film, traces: Map<string, DropTrace>): Map<string, DropB
       const p = tr.poses[tr.poses.length - 1]!;
       fail('PHYSICS_NO_LANDING', `${where} frame ${tr.missFrame}`, `"${d.prop}" ${history}; it is now below "${d.onto}" (y=${s.y}, x∈[${s.x0}, ${s.x1}]) and cannot reach it any more (pivot ${p.x.toFixed(1)}, ${p.y.toFixed(1)})`);
     }
-    if (tr.restFrame < 0 || !fc) {
+    if (tr.restFrame < 0) {
       const last = tr.poses[tr.poses.length - 1];
       fail('PHYSICS_NOT_AT_REST', where, `"${d.prop}" ${history} but is not at rest at the last frame ${N - 1}${last ? ` (speed ${Math.hypot(last.vx, last.vy).toFixed(1)} px/s, ${last.state})` : ''}; lengthen the film or release earlier`);
     }
-    out.set(d.id, { id: d.id, prop: d.prop, engine: `rapier2d-deterministic-compat@${RAPIER_VERSION}`, releaseFrame: tr.releaseFrame, landFrame: fc.frame, firstContact: fc, firstContactPoints: tr.firstContactPoints, contacts: tr.contacts, wakes: tr.wakes, restFrame: tr.restFrame, init: tr.init, poses: tr.poses });
+    // Mặt đích = mặt THỰC SỰ đỡ vật khi nằm yên: trong cả cửa sổ nghỉ cuối (REST_FRAMES frame tới restFrame) và mọi frame
+    // khóa sau đó, `surface:<onto>` phải nằm trong supportedBy. Từng chạm/quệt mặt đích trước đó không đủ, và chưa từng chạm
+    // nó cũng không bị coi là "chưa nằm yên". Quy ước chồng vật: đạo cụ nằm trên đạo cụ khác mà không chạm trực tiếp mặt
+    // đích ⇒ sai đích (chưa hỗ trợ "đích = đạo cụ"), bất kể trước đó nó từng quệt mặt nào.
+    const ontoKey = `surface:${d.onto}`;
+    const settled = tr.poses.filter((q) => q.frame > tr.restFrame - REST_FRAMES);
+    const off = settled.filter((q) => !q.supportedBy.includes(ontoKey));
+    if (off.length > 0 || !fc) {
+      const actual = [...new Set((off.length ? off : settled).flatMap((q) => q.supportedBy))].sort();
+      const w0 = tr.restFrame - REST_FRAMES + 1, last = tr.poses.at(-1)!.frame;
+      const touch = fc ? `it touched "${d.onto}" at frame ${fc.frame} substep ${fc.substep}/${SUBSTEPS} — a touch is not a landing` : `it never touched "${d.onto}"`;
+      fail('PHYSICS_WRONG_SUPPORT', `${where} frames ${w0}–${tr.restFrame}`, `"${d.prop}" comes to rest on ${actual.length ? actual.join(' + ') : 'nothing'}, not on its target "${d.onto}" (rest window ${w0}–${tr.restFrame}; ${off.length}/${settled.length} settled frames up to ${last} lack "${d.onto}"); ${touch}`);
+    }
+    out.set(d.id, { id: d.id, prop: d.prop, engine: `rapier2d-deterministic-compat@${RAPIER_VERSION}`, releaseFrame: tr.releaseFrame, landFrame: fc!.frame, firstContact: fc!, firstContactPoints: tr.firstContactPoints, contacts: tr.contacts, wakes: tr.wakes, restFrame: tr.restFrame, init: tr.init, poses: tr.poses });
   }
   return out;
 }

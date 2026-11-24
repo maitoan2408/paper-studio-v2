@@ -102,19 +102,27 @@ test('control: B falls clear of A — no contact between them, A keeps its locke
   assert.ok(b.restFrame > 0 && b.firstContact.frame > b.releaseFrame);
 });
 
-test('no early exclusion: B meets the ballistic miss test BEFORE hitting A, stays in the world, and still wakes A', () => {
-  // Cùng phim va, chỉ đổi đích của B sang một kệ cao y=330 ngoài khung: B thỏa điều kiện hụt từ f307 (trước cú va f309).
+test('no early exclusion: B aimed at a high shelf is not dropped from the world before it hits A; the miss is decided after the hit', () => {
+  // Cùng phim va, chỉ đổi đích của B sang một kệ cao y=330 ngoài khung. Cận ĐẠN ĐẠO (một vật) đã coi B "chắc chắn hụt" từ
+  // f307 — trước cú va f309. Thế giới chung dùng cận NĂNG LƯỢNG (B có thể nảy/được đẩy) và chỉ kết luận sau lần đẩy cuối
+  // từ đạo cụ khác ⇒ B ở lại thế giới, vẫn đập vào A ở f309 và đánh thức A; kết luận hụt ở f313 (sau va A, sau khi chạm sàn
+  // f312 mất năng lượng).
   const d = raw('m3-collide');
   d.stage.surfaces.push({ id: 'shelf', y: 330, x0: -1250, x1: -1100 });
   d.physics[1].onto = 'shelf';
-  assert.throws(() => loadData(d), (e: Error) => /PHYSICS_NO_LANDING: film\.physics\(drop-lantern\) frame 310/.test(e.message));
+  assert.throws(() => loadData(d), (e: Error) => /PHYSICS_NO_LANDING: film\.physics\(drop-lantern\) frame 313/.test(e.message));
   const w = simulateWorld({ ...hit, data: d } as Film);
   const a = w.get('drop-plant')!, b = w.get('drop-lantern')!;
   const hitFrame = b.contacts.find((c) => c.other === 'prop:plant-1')!.frame;
-  assert.equal(hitFrame, 309);
-  assert.ok(b.missCandidates.filter((f) => f < hitFrame).length >= 1, `candidates ${b.missCandidates}`);
-  assert.equal(b.missFrame, b.missCandidates.find((f) => f > hitFrame), 'verdict only after the last push from another prop');
-  // quy tắc cũ (dừng ở ứng viên đầu) sẽ loại B ở f307 và A không bao giờ bị đánh thức; nay A vẫn bị B đánh thức ở f309
+  const floorFrame = b.contacts.find((c) => c.other === 'surface:floor')!.frame;
+  assert.deepEqual([hitFrame, floorFrame], [309, 312]);
+  // cận đạn đạo (quy tắc một vật) đã dưới kệ ở f307, f308; cận năng lượng (thế giới chung) thì chưa
+  for (const fr of [307, 308]) {
+    const q = b.poses.find((p) => p.frame === fr)!;
+    assert.ok(!q.touching && q.ballisticBound < 330 - 1 && q.missBound >= 330 - 1, `f${fr}: ballistic ${q.ballisticBound.toFixed(1)}, energy ${q.missBound.toFixed(1)}`);
+  }
+  assert.ok(b.missCandidates.every((f) => f > floorFrame), `candidates ${b.missCandidates}`);
+  assert.equal(b.missFrame, 313);
   assert.deepEqual(a.wakes, [{ frame: 309, by: 'prop:lantern-1' }]);
 });
 
@@ -187,4 +195,60 @@ test('turns facing a dropped prop AFTER the same character releases (f310 during
     assert.ok(px > lx && characterState(f, lan, start + 20).fx > 0, `f${start}: plant ${px.toFixed(2)} right of Lan ${lx.toFixed(2)}`);
     assert.deepEqual(B(f).poses, B(hit).poses, 'a later turn does not change the earlier release');
   }
+});
+
+// ─── Hậu kiểm Codex @a438f61 (2): mặt đích phải là mặt THỰC SỰ đỡ vật trong cửa sổ nghỉ cuối ───────────────────────
+test('wrong landing target: the pot only grazes the narrow ledge (f165 substep 2) and rests on the floor — PHYSICS_WRONG_SUPPORT', () => {
+  const d = raw('m3-collide');
+  d.stage.surfaces.push({ id: 'ledge', x0: -215, x1: -205, y: 16 });
+  d.physics[0].onto = 'ledge';
+  assert.throws(() => loadData(d), (e: Error) =>
+    /^PHYSICS_WRONG_SUPPORT: film\.physics\(drop-plant\) frames 176–187/.test(e.message) && /"plant-1"/.test(e.message) && /target "ledge"/.test(e.message) && /surface:floor/.test(e.message));
+  const a = simulateWorld({ ...hit, data: d } as Film).get('drop-plant')!;
+  assert.deepEqual([a.firstContact?.frame, a.firstContact?.substep, a.restFrame], [165, 2, 187]);
+  assert.deepEqual(a.contacts.map((c) => c.other), ['surface:ledge', 'surface:floor']);
+  for (const q of a.poses.filter((q) => q.frame >= 176 && q.frame <= 187)) assert.deepEqual(q.supportedBy, ['surface:floor'], `frame ${q.frame}`);
+  // đúng đích: hai cảnh mẫu — cả cửa sổ nghỉ cuối được chính mặt đích đỡ
+  for (const f of [hit, miss]) for (const b of [A(f), B(f)]) {
+    for (let fr = b.restFrame - REST_FRAMES + 1; fr <= b.restFrame; fr++) assert.ok(at(b, fr).supportedBy.includes('surface:floor'), `${b.id} frame ${fr}`);
+  }
+});
+
+// ─── Kiểm bổ sung (Codex @a438f61 mục 3): xung lực nhỏ lặp lại; ứng viên hụt trước va chạm với mặt tĩnh khác ───────
+test('repeated small pushes: B comes to rest stacked on the locked A — A stays locked, the floor carries both weights, B fails as wrong support', () => {
+  const d = raw('m3-collide');
+  d.timeline[7].bind.points.meet.x = -165; // đèn rơi giữa đỉnh chậu
+  d.walks[1].toX = -295;
+  assert.throws(() => loadData(d), (e: Error) => /^PHYSICS_WRONG_SUPPORT: film\.physics\(drop-lantern\)/.test(e.message) && /rest on prop:plant-1/.test(e.message) && /never touched "floor"/.test(e.message));
+  const w = simulateWorld({ ...hit, data: d } as Film);
+  const a = w.get('drop-plant')!, b = w.get('drop-lantern')!;
+  const lock = a.poses.find((q) => q.frame === a.restFrame)!;
+  assert.equal(a.restFrame, 180);
+  assert.deepEqual(a.wakes, []);
+  const stacked = a.poses.filter((q) => q.frame >= 312);
+  for (const q of stacked) {
+    const fromB = q.pushes.find((p) => p.by === 'prop:lantern-1')?.impulse ?? 0, floor = q.pushes.find((p) => p.by === 'surface:floor')!.impulse;
+    assert.ok(fromB > 0 && q.state === 'rest' && q.x === lock.x && q.y === lock.y && q.angle === lock.angle, `frame ${q.frame}`);
+    assert.deepEqual(q.supportedBy, ['surface:floor']);
+    // sàn mang trọng lượng chậu (trước khi có đèn) + lực đèn đè lên chậu
+    const alone = a.poses.find((p) => p.frame === 300)!.pushes.find((p) => p.by === 'surface:floor')!.impulse;
+    assert.ok(Math.abs(floor - (alone + fromB)) < 0.01 * floor, `frame ${q.frame}: floor ${floor} vs ${alone} + ${fromB}`);
+  }
+  assert.ok(b.restFrame > 0 && b.contacts.every((c) => c.other === 'prop:plant-1'));
+  for (const q of b.poses.filter((q) => q.frame > b.restFrame - REST_FRAMES)) assert.deepEqual(q.supportedBy, ['prop:plant-1']);
+});
+
+test('miss candidate before a collision with ANOTHER static surface: energy bound keeps B in play until it has hit the floor', () => {
+  const d = raw('m3-collide-miss');
+  d.stage.surfaces.push({ id: 'shelf', y: 330, x0: -1250, x1: -1100 });
+  d.physics[1].onto = 'shelf';
+  assert.throws(() => loadData(d), (e: Error) => /PHYSICS_NO_LANDING: film\.physics\(drop-lantern\) frame 313/.test(e.message));
+  const b = simulateWorld({ ...miss, data: d } as Film).get('drop-lantern')!;
+  assert.deepEqual(b.contacts.map((c) => [c.other, c.frame]), [['surface:floor', 312]]);
+  // rơi tự do: cận năng lượng gần như không đổi (cơ năng bảo toàn) và ≥ kệ; cận đạn đạo đã dưới kệ từ f307
+  for (const fr of [307, 308, 309, 310, 311]) {
+    const q = b.poses.find((p) => p.frame === fr)!;
+    assert.ok(!q.touching && q.ballisticBound < 329 && q.missBound >= 329 && Math.abs(q.missBound - 408.5) < 1, `f${fr}: ballistic ${q.ballisticBound.toFixed(1)} energy ${q.missBound.toFixed(1)}`);
+  }
+  assert.ok(b.missCandidates.every((f) => f > 312) && b.missFrame === 313);
 });
