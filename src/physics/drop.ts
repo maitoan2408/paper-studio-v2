@@ -150,6 +150,17 @@ function simOf(film: Film): WorldSim {
   return s;
 }
 
+/**
+ * Giải phóng world Rapier đang mở (nếu có) của film — đúng một lần. Dùng khi film bị bỏ dở: validator ném lỗi trước khi
+ * bake xong, hoặc film tạm của phép tìm thời lượng tối thiểu (src/schema/film.ts hint). Bộ mô phỏng chưa lỗi bị xóa khỏi
+ * bộ nhớ đệm ⇒ truy vấn sau (nếu có) mô phỏng lại từ đầu, cùng kết quả (tất định). Bộ mô phỏng đã lỗi giữ lỗi để ném lại.
+ */
+export function disposeWorld(film: Film): void {
+  const s = sims.get(film);
+  if (!s) return;
+  if (!s.dispose()) sims.delete(film);
+}
+
 /** Bake của drop `id` trong thế giới chung (mô phỏng tới hết phim + kết luận lỗi, một lần mỗi film). */
 export function dropBake(film: Film, id: string): DropBake {
   const hit = simOf(film).bakes().get(id);
@@ -275,6 +286,8 @@ class WorldSim {
   }
 
   pose(id: string, frame: number): DropPose {
+    // Lỗi engine đã lưu (dựng collider, chu trình…) ⇒ mọi truy vấn trên film này ném lại CÙNG lỗi, kể cả frame đã tính.
+    if (this.error) throw this.error;
     const a = this.byId.get(id);
     if (!a) return fail('FILM_UNKNOWN_REF', `drop ${id}`, 'no such drop');
     if (frame >= this.next && frame < this.N) {
@@ -319,6 +332,12 @@ class WorldSim {
     } finally {
       this.busy = false;
     }
+  }
+
+  /** Giải phóng world nếu đang mở; trả true nếu bộ mô phỏng đang giữ lỗi engine. */
+  dispose(): boolean {
+    this.close();
+    return this.error !== null;
   }
 
   private open(): void {

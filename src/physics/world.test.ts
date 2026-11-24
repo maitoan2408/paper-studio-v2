@@ -252,3 +252,97 @@ test('miss candidate before a collision with ANOTHER static surface: energy boun
   }
   assert.ok(b.missCandidates.every((f) => f > 312) && b.missFrame === 313);
 });
+
+// ─── Hậu kiểm Codex @0cad0a0: vòng đời world dở dang (validator / film tạm của hint) và đọc pose sau lỗi ──────────────
+import { RAPIER } from './rapier.ts';
+import { dropPose } from './drop.ts';
+
+/** Theo dõi mọi instance World đã tạo thân và số lần free của từng instance trong lúc chạy `fn`. */
+function trackWorlds<T>(fn: () => T): { made: number; freedOnce: number; freedTwice: number; result?: T; error?: Error } {
+  const proto = RAPIER.World.prototype as any;
+  const made = new Set<object>(), frees = new Map<object, number>();
+  const create = proto.createRigidBody, free = proto.free;
+  proto.createRigidBody = function (this: object, ...a: unknown[]) { made.add(this); return create.apply(this, a); };
+  proto.free = function (this: object, ...a: unknown[]) { frees.set(this, (frees.get(this) ?? 0) + 1); return free.apply(this, a); };
+  let result: T | undefined, error: Error | undefined;
+  try { result = fn(); } catch (e) { error = e as Error; } finally { proto.createRigidBody = create; proto.free = free; }
+  const n = (k: number) => [...made].filter((w) => (frees.get(w) ?? 0) === k).length;
+  return { made: made.size, freedOnce: n(1), freedTwice: [...made].filter((w) => (frees.get(w) ?? 0) > 1).length, result, error };
+}
+
+test('every world opened while validating is freed exactly once — including the temporary films of the duration hint', () => {
+  const variant = (face: unknown, y: number) => {
+    const d = raw('m3-collide');
+    d.turns = [{ character: 'lan', start: 250, face }];
+    d.timeline[7].bind.points.meet.y = y;
+    return d;
+  };
+  // y = 900: tay với quá cao ⇒ ACTION_SPEED_EXCEEDED f283; hint dựng film tạm, mỗi film tạm mở world riêng (quay về chậu)
+  const bad = trackWorlds(() => loadData(variant({ prop: 'plant-1' }, 900)));
+  assert.match(bad.error?.message ?? '', /^ACTION_SPEED_EXCEEDED: film\.characters\[1\]\(lan\) frame 283/);
+  assert.ok(bad.made >= 1, `worlds opened ${bad.made}`);
+  assert.deepEqual([bad.freedOnce, bad.freedTwice], [bad.made, 0], `opened ${bad.made}, freed once ${bad.freedOnce}, twice ${bad.freedTwice}`);
+  // đối chứng: phim hợp lệ y = 430 — một world, free một lần; face:"right" không cần pose chậu ⇒ không mở world nào
+  const ok = trackWorlds(() => loadData(variant({ prop: 'plant-1' }, 430)));
+  assert.ok(!ok.error);
+  assert.deepEqual([ok.made, ok.freedOnce, ok.freedTwice], [1, 1, 0]);
+  const right = trackWorlds(() => loadData(variant('right', 900)));
+  assert.match(right.error?.message ?? '', /^ACTION_SPEED_EXCEEDED: film\.characters\[1\]\(lan\) frame 283/);
+  assert.deepEqual([right.made, right.freedOnce], [0, 0]);
+});
+
+test('after a stored engine error, every query on that film re-throws it; a fresh valid film still runs', () => {
+  const d = raw('m3-collide');
+  d.physics[1].body.collider.points = [[0, 0], [90, 170], [45, 85.025]];
+  const f = { ...hit, data: d } as Film;
+  let first: Error | undefined;
+  try { simulateWorld(f); } catch (e) { first = e as Error; }
+  assert.match(first?.message ?? '', /^PHYSICS_COLLIDER: film\.physics\[1\]\.body\.collider/);
+  // f180 đã được mô phỏng trước khi lỗi xảy ra ở f303 — vẫn phải trả CÙNG lỗi, không trả pose cũ
+  for (const q of [() => dropPose(f, 'drop-plant', 180), () => dropPose(f, 'drop-plant', 350), () => dropBake(f, 'drop-plant'), () => simulateWorld(f)]) {
+    assert.throws(q, (e: Error) => e === first);
+  }
+  const fresh = loadFilm('examples/films/m3-collide.json', 'assets');
+  assert.equal(dropPose(fresh, 'drop-plant', 180).state, 'rest');
+  assert.equal(dropBake(fresh, 'drop-plant').restFrame, 326);
+});
+
+test('three props (Codex control): the first lantern, locked on the pot, loses its support at f377 and is woken (lost-support)', () => {
+  // Tham số theo docs/STATE.json: m3-collide 480 frame, Lan meet/walk −200/−330; nhân bản Lan ("third") + đèn "lamp3",
+  // walk và bốn mục timeline của Lan trễ 70 frame, meet/walk −265/−395, release index 11, density 8.
+  // Lưu ý: cùng frame đánh thức có xung lực từ lamp3 ⇒ ca này KHÔNG cô lập mất tựa thụ động.
+  const d = raw('m3-collide');
+  d.output.durationFrames = 480;
+  d.camera.keys[1].frame = 479;
+  for (const t of d.timeline) if (t.clip === 'idle-breath') { t.durationFrames = 480; t.repeat = 4; }
+  d.timeline[7].bind.points.meet.x = -200;
+  d.walks[1].toX = -330;
+  d.characters.push({ ...d.characters.find((c: any) => c.id === 'lan'), id: 'third' });
+  d.props.push({ ...d.props.find((p: any) => p.id === 'lantern-1'), id: 'lamp3' });
+  for (const t of d.timeline.filter((t: any) => t.character === 'lan')) {
+    const c = structuredClone(t);
+    c.character = 'third';
+    if (c.clip !== 'idle-breath') c.start += 70;
+    if (c.bind?.roles?.item === 'lantern-1') c.bind.roles.item = 'lamp3';
+    if (c.clip === 'give') c.bind.points.meet.x = -265;
+    d.timeline.push(c);
+  }
+  const lw = d.walks.find((w: any) => w.character === 'lan');
+  d.walks.push({ ...lw, character: 'third', start: lw.start + 70, toX: -395 });
+  assert.equal(d.timeline.findIndex((t: any) => t.character === 'third' && t.clip === 'give'), 11);
+  d.physics.push({ ...structuredClone(d.physics[1]), id: 'drop-lamp3', prop: 'lamp3', release: 11 });
+  d.physics[2].body.density = 8;
+  const b = simulateWorld({ ...hit, data: d } as Film).get('drop-lantern')!;
+  const q = (fr: number) => b.poses.find((p) => p.frame === fr)!;
+  // khóa nghỉ đầu trên chậu: f329 (đo tại chỗ; ghi chú Codex nêu f333 — cùng các mốc f376/f377/f378 bên dưới)
+  assert.equal(b.poses.find((p) => p.state === 'rest')!.frame, 329);
+  for (let fr = 329; fr <= 376; fr++) assert.equal(q(fr).state, 'rest', `frame ${fr}`);
+  assert.ok(q(376).state === 'rest' && q(376).supportedBy.join() === 'prop:plant-1');
+  assert.deepEqual(b.wakes, [{ frame: 377, by: 'lost-support' }]);
+  assert.deepEqual(q(377).supportedBy, []);
+  assert.notEqual(q(377).state, 'rest');
+  assert.ok((q(377).pushes.find((p) => p.by === 'prop:lamp3')?.impulse ?? 0) > 0, 'lamp3 pushes in the same frame');
+  assert.deepEqual(q(378).supportedBy, ['prop:plant-1']);
+  // đèn thứ nhất cuối cùng nằm trên chậu ⇒ sai đích theo quy ước chồng vật
+  assert.throws(() => loadData(d), (e: Error) => /^PHYSICS_WRONG_SUPPORT: film\.physics\(drop-lantern\)/.test(e.message) && /prop:plant-1/.test(e.message));
+});

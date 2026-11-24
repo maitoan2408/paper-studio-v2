@@ -12,7 +12,7 @@ import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
 import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
-import { dropBake } from '../physics/drop.ts';
+import { dropBake, disposeWorld } from '../physics/drop.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
 import { Finite, Id, Semver, Sha256, firstDuplicate } from './common.ts';
@@ -409,6 +409,17 @@ export function validateFilm(
   });
 
   const film: Film = { data: f, assets, packs, rigs, clips };
+  try {
+    return checkFilm(film, f, N);
+  } catch (e) {
+    // Film bị từ chối: thu hồi world vật lý đang mô phỏng dở (nếu có) trước khi ném lỗi.
+    disposeWorld(film);
+    throw e;
+  }
+}
+
+/** Các kiểm tra cần film đã dựng (chuyển động, đạo cụ, vật lý) — tách ra để validateFilm thu hồi world khi có lỗi. */
+function checkFilm(film: Film, f: Film['data'], N: number): Film {
   propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
   // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
   // Lỗi do quá ngắn (WALK_TOO_SHORT, ACTION_SPEED_EXCEEDED) kèm số frame tối thiểu của mục gây lỗi (E3).
@@ -479,7 +490,12 @@ function hint(film: Film, ci: number, kind: 'walks' | 'timeline', index: number)
       output: { ...film.data.output, durationFrames: Math.max(film.data.output.durationFrames, item.start + D + 2) },
       [kind]: film.data[kind].map((x, i) => (i === index ? { ...x, durationFrames: D } : x)),
     };
-    return !motionFault({ ...film, data }, ci, item.start - 1, item.start + D + 2);
+    const tmp: Film = { ...film, data };
+    try {
+      return !motionFault(tmp, ci, item.start - 1, item.start + D + 2);
+    } finally {
+      disposeWorld(tmp); // film tạm: world (nếu kiểm chuyển động cần pose đạo cụ đã thả) không sống quá phép thử
+    }
   };
   let lo = cur;
   let hi = cur;
