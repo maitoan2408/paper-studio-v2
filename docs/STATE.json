@@ -87,8 +87,8 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "3ce544ed5df346cb0557ce46b31fdd011b0f5976",
-      "updated": "2026-11-25",
+      "head": "c656f25676b04a469470c06feda3ab7684ee0160",
+      "updated": "2026-11-26",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
         "edgeFixtures": "PASS_TECHNICAL",
@@ -107,8 +107,8 @@
         "partialWorldCleanup": "PASS_TECHNICAL",
         "bakeReplayAudit": "PASS_TECHNICAL",
         "bakeCrossEnvironment": "PASS_TECHNICAL",
-        "bakeMotionInputs": "BLOCKED",
-        "bakeFormatErrors": "BLOCKED"
+        "bakeMotionInputs": "PASS_TECHNICAL",
+        "bakeFormatErrors": "PASS_TECHNICAL"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -142,7 +142,10 @@
         "Đối chiếu hai cảnh ba vật trên cùng code: bản Codex giữ idle-breath 384 frame × 3 lần lặp, nhân vật third bắt đầu clip f70; lần khóa đầu f333, nghỉ cuối f459, loadFilm đạt. Trong fixture hồi quy, idle-breath dài 480 frame với repeat=4 và cả ba clip bắt đầu f0: khóa đầu f329, nghỉ cuối f397 trên chậu, WRONG_SUPPORT đúng. Đổi riêng các clip idle-breath tái hiện khác biệt; đổi riêng camera và ID drop vẫn ra f333. Cả hai mất tựa ở f377 kèm xung lực. Chưa cô lập mất tựa thụ động. Cho triển khai việc 4 theo PLAN; duyệt thị giác ghi riêng.",
         "Việc 4 @3ce544e. Codex verify 361/361, 8 golden. SHA chuẩn hóa bake cục bộ trùng đủ 64 ký tự trong log CI cho m3-drop c5a2917b…, m3-drop-table d28d5f25…, m3-collide 517895bb…, m3-collide-miss 825a3289…. CI render/audit và check:bake đạt https://github.com/maitoan2408/paper-studio-v2/actions/runs/45549505762. CLI audit từ process mới bắt đúng pose đã băm lại ở drop-plant f170.x (+0,25 px).",
         "bakeMotionInputs: manifest art không bao gồm rig.json và actions/*.json. Codex thử trên bản sao assets với m3-drop: drop.events[0].t 0.3 → 0.301 giữ frame, SceneFrame và SHA bake; verifyPhysicsBake chấp nhận bake gốc. Đổi thành 0.34 làm đổi quỹ đạo nhưng báo MISMATCH tại contacts[0].frame (166 so với 165) thay vì STALE. Đổi riêng giới hạn tốc độ xương pelvis từ 12 lên 13 cũng giữ nguyên SHA. Cần định danh dữ liệu motion thực tế đã nạp.",
-        "bakeFormatErrors: CLI audit với JSON null và SHA đúng trả TypeError khi đọc format. Cần xác nhận đối tượng gốc trước khi truy cập và trả AUDIT_BAKE_FORMAT. Giữ tương thích manifest v1 cho phim không vật lý, manifest v2 khai physics tường minh. Chưa nghiệm thu thị giác."
+        "bakeFormatErrors: CLI audit với JSON null và SHA đúng trả TypeError khi đọc format. Cần xác nhận đối tượng gốc trước khi truy cập và trả AUDIT_BAKE_FORMAT. Giữ tương thích manifest v1 cho phim không vật lý, manifest v2 khai physics tường minh. Chưa nghiệm thu thị giác.",
+        "Hậu kiểm c656f25. Bake v2 băm rig và mọi action đã nạp của mỗi pack trên dữ liệu sau validate. Đổi thứ tự khóa và khoảng trắng giữ SHA. Với m3-drop, đổi thời điểm buông từ 0.3 sang 0.301 hoặc 0.34 đều báo AUDIT_BAKE_STALE tại $.inputs.motion[demo-cast].clips[drop].sha256. Đổi giới hạn pelvis từ 12 lên 13 báo STALE tại .rig.sha256. Ca 0.301 và ca pelvis giữ nguyên SceneFrame. Chấp nhận phải render lại khi sửa cả clip đã nạp mà timeline không dùng.",
+        "CLI audit đọc bản sao pack qua --assets <dir>. Bake null có SHA đúng trả AUDIT_BAKE_FORMAT ở gốc $. Bake vật lý v1 cần render lại, manifest v1 của phim không vật lý vẫn audit được. Sửa x ở f170 thêm 0,25 px rồi băm lại với đúng nguồn vẫn báo AUDIT_BAKE_MISMATCH tại $.drops[drop-plant].poses[frame 170].x. Cờ --assets đặt cuối lệnh mà thiếu thư mục hiện dùng assets mặc định.",
+        "Bộ test bake mới đạt 6/9 trên 3ce544e và 9/9 trên c656f25. Codex chạy verify 364/364, đủ 8 golden. Bốn SHA bake v2 tại chỗ khớp toàn bộ SHA trong log CI, theo thứ tự m3-drop 65cb9b8b…, m3-drop-table 59ca7f70…, m3-collide b56f0071…, m3-collide-miss f9f34767…. CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45658528211 trên merge ref b23b607 đạt check:renderer 8/8, audit 8 phim và check:bake 26/26. Việc 4 đạt kỹ thuật. Giao việc 5 kiểm vật rơi trúng nhân vật trước render. Chủ dự án duyệt thị giác riêng."
       ]
     },
     "M4": {
