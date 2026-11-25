@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { loadFilm } from '../schema/film.ts';
+import { StudioError } from '../core/errors.ts';
 import { BAKE_FILE, bakeSha256, physicsBakeRecord } from '../physics/bake.ts';
 
 const args = process.argv.slice(2);
@@ -78,7 +79,9 @@ for (const src of physicsDirs) {
           console.log(`   variant: physics[0].body.restitution = ${r}`);
           break;
         } catch (e) {
-          console.log(`   variant restitution ${r} rejected by the validator: ${(e as Error).message.slice(0, 120)}`);
+          // Chỉ bỏ qua lý do ĐÃ DỰ KIẾN (vật nảy trúng nhân vật — m3-collide 0.12–0.2); lỗi khác báo ngay.
+          if (!(e instanceof StudioError && e.code === 'PHYSICS_HITS_CHARACTER')) throw e;
+          console.log(`   variant restitution ${r} rejected (expected: character hit): ${e.message.slice(0, 120)}`);
         }
       }
       if (!stale) throw new Error('no valid restitution variant');

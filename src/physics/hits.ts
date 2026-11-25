@@ -8,14 +8,23 @@
  *    co ngang |fx| (paperX) quanh P. Kết quả: hình bình hành lồi.
  *  - Đạo cụ: đúng collider của drop (hộp = khung art; hull = điểm art khai báo) đặt theo pose bake (pivot, góc).
  *  - Trúng: hai đa giác lồi giao nhau (định lý trục tách, có diện tích chung > 0; chạm cạnh không tính).
- * Thời điểm: chỉ xét lúc vật ĐANG RƠI — frame có state falling/airborne (gồm nảy lên lại); nằm yên/trượt trên mặt không
- * xét (cảnh 2,5D không có chiều sâu: vật đặt trước chân nhân vật vẫn chồng hình mà không "trúng"). Đi nhanh giữa hai
- * frame: nội suy tuyến tính pose vật (pivot, góc) và mọi đỉnh vùng cơ thể giữa f−1 và f, số mẫu n = ⌈dịch chuyển lớn nhất
- * / SWEEP_STEP_PX⌉ ⇒ không bỏ sót vật thể dày hơn SWEEP_STEP_PX. Trúng trong (f−1, f] ⇒ báo frame f (như quy ước bước con).
- * Khoảng (R−1, R]: từ pose cầm tay ở R−1 (pivot init, góc dàn cảnh) tới pose bake ở R.
- * Tay lúc buông: ở R vật còn chồng lên người buông (tay, và thân — đồ cầm trước người trong 2,5D). Người buông được miễn
- * cho tới mẫu ĐẦU TIÊN vật tách hẳn khỏi MỌI phần cơ thể của họ (graceEnd); sau đó quay lại trúng họ vẫn bị bắt. Nhân
- * vật khác không có miễn trừ.
+ * Thời điểm: xét frame f nếu vật ĐANG BAY trong (f−1, f]: state(f) hoặc state(f−1) là falling/airborne, hoặc f = R —
+ * gồm cả phần bay của frame đáp (f165 kết thúc supported nhưng 5 bước con đầu còn bay). Nằm yên/trượt đã được đỡ liên tục
+ * không xét (2,5D không có chiều sâu: vật đặt trước chân nhân vật vẫn chồng hình mà không "trúng").
+ * Quét theo BƯỚC CON: đường đi của vật là các pose pivot sau từng bước con (DropPose.sub, mô phỏng thật — không nội suy
+ * qua cú đáp/nảy); giữa hai bước con liên tiếp chia đều sao cho mỗi mẫu dịch ≤ SWEEP_STEP_PX (vật và mọi đỉnh vùng cơ thể,
+ * vùng cơ thể nội suy tuyến tính giữa frame f−1 và f theo thời điểm bước con). Góc nội suy theo HIỆU NGẮN NHẤT (góc dàn
+ * cảnh 360/−360 so với góc Rapier 0, hoặc qua biên ±180°, không tạo vòng quay giả). Trúng trong bước con k của frame f
+ * ⇒ báo "frame f, substep k/SUBSTEPS". Khoảng (R−1, R] bắt đầu từ pose cầm tay ở R−1 (pivot init, góc dàn cảnh).
+ * Đa giác collider = BAO LỒI của các điểm (src/core/hull.ts, như Rapier dựng) — không phụ thuộc thứ tự điểm nhập.
+ * Tay lúc buông: lúc buông (pose cầm tay ở R−1, cơ thể ở R−1) các phần cơ thể người buông đang chồng vật là TIẾP XÚC
+ * BAN ĐẦU (exemptAtRelease); mỗi phần chỉ còn là tiếp xúc ban đầu chừng nào còn chồng LIÊN TỤC.
+ *  - CHẶN (PHYSICS_HITS_CHARACTER): nhân vật khác bị chồng; người buông bị chồng SAU graceEnd = mẫu đầu tiên vật không còn
+ *    chồng phần nào của người buông (vật đã rời hẳn rồi quay lại).
+ *  - CHỈ BÁO (releaserNewContacts, chưa chặn): trước graceEnd, một phần KHÁC của người buông (không thuộc tiếp xúc ban đầu
+ *    còn kéo dài) bắt đầu chồng vật — vd. m3-drop: chậu rơi trước chân Tam đang bước, foot.l chồng ở f164 bước 3/8. Cảnh
+ *    2,5D không có thông tin trước/sau (vật vẽ trong lượt của người buông, trước thân/chân), nên chặn hay không chờ quyết
+ *    định của chủ dự án / Codex về chiều sâu lớp. Nhân vật khác không có miễn trừ.
  */
 import { fail } from '../core/errors.ts';
 import { artToLocal, rotate, type V2 } from '../core/space.ts';
@@ -23,7 +32,8 @@ import type { Film } from '../schema/film.ts';
 import { characterState } from '../motion/character.ts';
 import { propTimeline } from '../motion/props.ts';
 import { forwardKinematics } from '../rig/pose.ts';
-import { dropBake } from './drop.ts';
+import { dropBake, SUBSTEPS } from './drop.ts';
+import { convexHull } from '../core/hull.ts';
 
 /** Bước nội suy tối đa giữa hai mẫu (px thế giới). */
 export const SWEEP_STEP_PX = 2;
@@ -56,7 +66,7 @@ export function propPolygon(film: Film, dropId: string, pivot: V2, angle: number
   const d = film.data.physics.find((x) => x.id === dropId)!;
   const prop = film.data.props.find((p) => p.id === d.prop)!;
   const a = film.assets.get(prop.asset)!;
-  const pts: V2[] = d.body.collider?.type === 'hull' ? d.body.collider.points : [[0, 0], [a.width, 0], [a.width, a.height], [0, a.height]];
+  const pts: V2[] = d.body.collider?.type === 'hull' ? convexHull(d.body.collider.points) : [[0, 0], [a.width, 0], [a.width, a.height], [0, a.height]];
   return pts.map((p) => {
     const l = artToLocal(p, a.pivot);
     const r = rotate([l[0] * prop.scale, l[1] * prop.scale], angle);
@@ -90,6 +100,12 @@ export function polyDistance(a: V2[], b: V2[]): number {
   return d;
 }
 
+/** Nội suy góc (độ) theo hiệu NGẮN NHẤT ∈ [−180, 180): 360→0 hay 179→−179 không thành một vòng quay giả. */
+export function lerpAngle(a0: number, a1: number, u: number): number {
+  const da = ((((a1 - a0) % 360) + 540) % 360) - 180;
+  return a0 + da * u;
+}
+
 const lerp = (a: V2[], b: V2[], t: number): V2[] => a.map((p, i) => [p[0] + (b[i]![0] - p[0]) * t, p[1] + (b[i]![1] - p[1]) * t] as V2);
 const maxDisp = (a: V2[], b: V2[]) => a.reduce((m, p, i) => Math.max(m, Math.hypot(b[i]![0] - p[0], b[i]![1] - p[1])), 0);
 
@@ -100,8 +116,12 @@ export interface FallingHitReport {
   releaseFrame: number;
   /** Mẫu đầu tiên vật tách hẳn khỏi người buông (frame, phần frame đã đi trong (f−1, f]), null nếu không tách khi đang rơi. */
   graceEnd: { frame: number; t: number } | null;
-  /** Lần trúng đầu tiên (null nếu không). */
-  hit: { frame: number; t: number; character: string; bone: string } | null;
+  /** Lần trúng đầu tiên (null nếu không): frame, bước con 1..SUBSTEPS, t ∈ (0, 1] trong frame. */
+  hit: { frame: number; substep: number; t: number; character: string; bone: string } | null;
+  /** Phần cơ thể người buông chồng vật lúc buông (tiếp xúc ban đầu, kéo dài khi còn chồng liên tục). */
+  exemptAtRelease: string[];
+  /** Tiếp xúc MỚI ở vùng khác của người buông trước graceEnd (lần đầu mỗi xương) — báo, chưa chặn (xem đầu file). */
+  releaserNewContacts: { frame: number; substep: number; t: number; bone: string }[];
   /** Mẫu sượt gần nhất không trúng (khoảng cách px) trong các frame đang rơi, với mọi nhân vật trừ người buông lúc miễn. */
   nearest: { frame: number; t: number; character: string; bone: string; distance: number } | null;
   /** Như nearest nhưng theo từng nhân vật (khóa = id nhân vật). */
@@ -117,37 +137,61 @@ export function fallingHits(film: Film): FallingHitReport[] {
     const rci = seg.releasedBy!.ci;
     const releaser = film.data.characters[rci]!.id;
     const prop = film.data.props.find((p) => p.id === d.prop)!;
-    const rep: FallingHitReport = { drop: d.id, prop: d.prop, releaser, releaseFrame: b.releaseFrame, graceEnd: null, hit: null, nearest: null, nearestByCharacter: {} };
-    let grace = true;
+    const rep: FallingHitReport = { drop: d.id, prop: d.prop, releaser, releaseFrame: b.releaseFrame, graceEnd: null, hit: null, nearest: null, nearestByCharacter: {}, exemptAtRelease: [], releaserNewContacts: [] };
+    const inFlight = (st: string | undefined) => st === 'falling' || st === 'airborne';
+    const pose = (fr: number) => b.poses[fr - b.releaseFrame];
+    let exempt: Set<string> | null = null; // tiếp xúc ban đầu của người buông còn kéo dài
+    let grace = true; // chưa rời hẳn người buông
     for (const q of b.poses) {
-      if (q.state !== 'falling' && q.state !== 'airborne') continue;
       const f = q.frame;
-      const prev = f === b.releaseFrame ? { x: b.init.pivot[0], y: b.init.pivot[1], angle: prop.rotation } : b.poses[f - 1 - b.releaseFrame]!;
-      const A0 = propPolygon(film, d.id, [prev.x, prev.y], prev.angle), A1 = propPolygon(film, d.id, [q.x, q.y], q.angle);
+      if (!(f === b.releaseFrame || inFlight(q.state) || inFlight(pose(f - 1)?.state))) continue;
+      const prev = f === b.releaseFrame ? { x: b.init.pivot[0], y: b.init.pivot[1], angle: prop.rotation } : pose(f - 1)!;
+      // đường đi trong frame: pose đầu khoảng + pose sau từng bước con (frame khóa nghỉ không có sub ⇒ chỉ pose frame)
+      const path: [number, number, number][] = [[prev.x, prev.y, prev.angle], ...(q.sub.length ? q.sub : [[q.x, q.y, q.angle] as [number, number, number]])];
+      const steps = path.length - 1;
       const bodies0 = film.data.characters.flatMap((_, ci) => bodyParts(film, ci, f - 1));
       const bodies1 = film.data.characters.flatMap((_, ci) => bodyParts(film, ci, f));
-      let n = Math.max(1, Math.ceil(maxDisp(A0, A1) / SWEEP_STEP_PX));
-      for (let i = 0; i < bodies1.length; i++) n = Math.max(n, Math.ceil(maxDisp(bodies0[i]!.poly, bodies1[i]!.poly) / SWEEP_STEP_PX));
-      for (let k = 1; k <= n; k++) {
-        const t = k / n;
-        // pose vật nội suy (pivot + góc) rồi dựng đa giác — giữ đúng hình dạng khi xoay
-        const angle = prev.angle + (q.angle - prev.angle) * t;
-        const A = propPolygon(film, d.id, [prev.x + (q.x - prev.x) * t, prev.y + (q.y - prev.y) * t], angle);
-        const parts = bodies1.map((p, i) => ({ ...p, poly: lerp(bodies0[i]!.poly, p.poly, t) }));
-        if (grace && !parts.some((p) => p.ci === rci && intersects(A, p.poly))) {
-          grace = false;
-          rep.graceEnd = { frame: f, t };
-        }
-        for (const p of parts) {
-          if (grace && p.ci === rci) continue;
-          if (intersects(A, p.poly)) {
-            if (!rep.hit) rep.hit = { frame: f, t, character: p.character, bone: p.bone };
-          } else {
-            const dist = polyDistance(A, p.poly);
-            if (!rep.nearest || dist < rep.nearest.distance) rep.nearest = { frame: f, t, character: p.character, bone: p.bone, distance: dist };
-            const nc = rep.nearestByCharacter[p.character];
-            if (!nc || dist < nc.distance) rep.nearestByCharacter[p.character] = { frame: f, t, bone: p.bone, distance: dist };
+      if (!exempt) {
+        const A0 = propPolygon(film, d.id, [prev.x, prev.y], prev.angle);
+        exempt = new Set(bodies0.filter((p) => p.ci === rci && intersects(A0, p.poly)).map((p) => p.bone));
+        rep.exemptAtRelease = [...exempt].sort();
+        if (exempt.size === 0) { grace = false; rep.graceEnd = { frame: f, t: 0 }; }
+      }
+      for (let k = 1; k <= steps; k++) {
+        const [x0, y0, a0] = path[k - 1]!, [x1, y1, a1] = path[k]!;
+        const t0 = (k - 1) / steps, t1 = k / steps;
+        const P0 = propPolygon(film, d.id, [x0, y0], a0), P1 = propPolygon(film, d.id, [x1, y1], lerpAngle(a0, a1, 1));
+        const B0 = bodies1.map((p, i) => lerp(bodies0[i]!.poly, p.poly, t0)), B1 = bodies1.map((p, i) => lerp(bodies0[i]!.poly, p.poly, t1));
+        let n = Math.max(1, Math.ceil(maxDisp(P0, P1) / SWEEP_STEP_PX));
+        for (let i = 0; i < bodies1.length; i++) n = Math.max(n, Math.ceil(maxDisp(B0[i]!, B1[i]!) / SWEEP_STEP_PX));
+        for (let m = 1; m <= n; m++) {
+          const u = m / n, t = t0 + (t1 - t0) * u;
+          const A = propPolygon(film, d.id, [x0 + (x1 - x0) * u, y0 + (y1 - y0) * u], lerpAngle(a0, a1, u));
+          const parts = bodies1.map((p, i) => ({ ...p, poly: lerp(B0[i]!, B1[i]!, u) }));
+          const sub = Math.round(steps === SUBSTEPS ? k : Math.ceil(t * SUBSTEPS));
+          const hits = parts.map((p) => intersects(A, p.poly));
+          if (grace && !parts.some((p, i) => p.ci === rci && hits[i])) {
+            grace = false; // vật đã rời hẳn người buông
+            exempt.clear();
+            rep.graceEnd = { frame: f, t };
           }
+          parts.forEach((p, i) => {
+            const hit = hits[i]!;
+            if (p.ci === rci && grace) {
+              if (exempt!.has(p.bone)) { if (!hit) exempt!.delete(p.bone); return; } // tiếp xúc ban đầu kéo dài / vừa tách
+              if (hit && !rep.releaserNewContacts.some((c) => c.bone === p.bone)) rep.releaserNewContacts.push({ frame: f, substep: sub, t, bone: p.bone });
+              return;
+            }
+            if (hit) {
+              if (!rep.hit) rep.hit = { frame: f, substep: sub, t, character: p.character, bone: p.bone };
+            } else {
+              const dist = polyDistance(A, p.poly);
+              if (!rep.nearest || dist < rep.nearest.distance) rep.nearest = { frame: f, t, character: p.character, bone: p.bone, distance: dist };
+              const nc = rep.nearestByCharacter[p.character];
+              if (!nc || dist < nc.distance) rep.nearestByCharacter[p.character] = { frame: f, t, bone: p.bone, distance: dist };
+            }
+          });
+          if (rep.hit) break;
         }
         if (rep.hit) break;
       }
@@ -164,5 +208,5 @@ export function checkFallingProps(film: Film): void {
   const r = hits[0];
   if (!r) return;
   const h = r.hit!;
-  fail('PHYSICS_HITS_CHARACTER', `film.physics(${r.drop}) frame ${h.frame}`, `falling "${r.prop}" hits ${h.character} (${h.bone}) between frames ${h.frame - 1} and ${h.frame} (at ${(h.frame - 1 + h.t).toFixed(3)})${h.character === r.releaser ? ` — it had left ${r.releaser}'s body at frame ${r.graceEnd?.frame} and came back` : ''}`);
+  fail('PHYSICS_HITS_CHARACTER', `film.physics(${r.drop}) frame ${h.frame}`, `falling "${r.prop}" hits ${h.character} (${h.bone}) at frame ${h.frame} substep ${h.substep}/${SUBSTEPS} (t ${(h.frame - 1 + h.t).toFixed(3)})${h.character === r.releaser ? ` — it had left ${r.releaser}'s body at frame ${r.graceEnd?.frame} and came back` : ''}`);
 }

@@ -73,6 +73,9 @@ export interface DropPose {
   points: ContactPoint[];
   /** Cận đạn đạo (px, y thế giới): điểm cao nhất vật còn với tới nếu bay tự do từ frame này, tính quanh khối tâm. */
   missBound: number;
+  /** Pose pivot (x, y, góc độ) sau từng bước con 1..SUBSTEPS của frame (phần tử cuối = pose frame). Chẩn đoán / kiểm va
+   *  nhân vật theo bước con; KHÔNG thuộc bản ghi bake (src/physics/bake.ts chọn trường tường minh). */
+  sub: [number, number, number][];
   /** Cận ĐẠN ĐẠO (khối tâm + max(v_kt,y,0)²/2g + bán kính) — bằng missBound khi world chỉ có vật này và mặt đích. */
   ballisticBound: number;
   /** Tổng xung lực pháp tuyến trong frame theo đối tượng đẩy (`surface:<id>` / `prop:<id>`), sắp theo khóa. */
@@ -233,7 +236,7 @@ interface Actor {
   pushedByPropFrames: number[];
 }
 
-type FrameInfo = { touching: boolean; byProp: Map<string, number>; pushes: Map<string, number>; last?: ContactSummary };
+type FrameInfo = { touching: boolean; byProp: Map<string, number>; pushes: Map<string, number>; last?: ContactSummary; sub: [number, number, number][] };
 
 /**
  * Thế giới Rapier chung theo thời gian phim (M3 việc 3).
@@ -384,7 +387,7 @@ class WorldSim {
       a.body!.setAngvel(0, true);
     }
     const frameInfo = new Map<Actor, FrameInfo>();
-    for (const a of this.active) frameInfo.set(a, { touching: false, byProp: new Map(), pushes: new Map() });
+    for (const a of this.active) frameInfo.set(a, { touching: false, byProp: new Map(), pushes: new Map(), sub: [] });
     for (let k = 1; k <= SUBSTEPS; k++) {
       world.step();
       for (const a of this.active) {
@@ -401,6 +404,9 @@ class WorldSim {
           a.firstContactPoints = ct.onto.points;
         }
         if (k === SUBSTEPS) fi.last = ct;
+        // pivot + góc sau bước con k (cho phép quét va nhân vật theo bước con — src/physics/hits.ts; không vào bake)
+        const bt = a.body!.translation(), ba = (a.body!.rotation() * 180) / Math.PI, r0 = rotate(a.c0, ba);
+        fi.sub.push([bt.x * ppm - r0[0], bt.y * ppm - r0[1], ba]);
       }
     }
     for (const a of this.active) frameEnd(a, fr, frameInfo.get(a)!, ppm, this.g);
@@ -561,7 +567,7 @@ function frameEnd(a: Actor, fr: number, fi: FrameInfo, ppm: number, g: number): 
     const pushedAway = fi.byProp.size > 0 && (speed > REST_SPEED_PX || Math.abs(spin) > REST_SPIN_DEG);
     const unsupported = !last.supports;
     if (!pushedAway && !unsupported) {
-      a.poses.push({ ...a.lock.pose, frame: fr, vx: 0, vy: 0, spin: 0, touching: fi.touching, supported: true, supportedBy: last.supporters, separation: last.onto.sep, points: last.onto.points, pushes });
+      a.poses.push({ ...a.lock.pose, frame: fr, vx: 0, vy: 0, spin: 0, sub: [], touching: fi.touching, supported: true, supportedBy: last.supporters, separation: last.onto.sep, points: last.onto.points, pushes });
       return;
     }
     a.wakes.push({ frame: fr, by: unsupported ? 'lost-support' : [...fi.byProp.keys()].join(',') });
@@ -588,7 +594,7 @@ function frameEnd(a: Actor, fr: number, fi: FrameInfo, ppm: number, g: number): 
   const vy2 = a.energyBound ? (lv.x * lv.x + lv.y * lv.y) * ppm * ppm + (w * w * a.inertia * ppm * ppm) / a.mass : Math.max(lv.y * ppm, 0) ** 2;
   const missBound = com.y * ppm + vy2 / (2 * g) + a.rCom;
   const ballisticBound = com.y * ppm + Math.max(lv.y * ppm, 0) ** 2 / (2 * g) + a.rCom;
-  const pose: DropPose = { frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, touching: fi.touching, supported, supportedBy: last.supporters, separation: last.onto.sep, points: last.onto.points, missBound, ballisticBound, pushes, state };
+  const pose: DropPose = { frame: fr, x: pv[0], y: pv[1], angle, vx, vy, spin, sub: fi.sub, touching: fi.touching, supported, supportedBy: last.supporters, separation: last.onto.sep, points: last.onto.points, missBound, ballisticBound, pushes, state };
   a.poses.push(pose);
   if (state === 'rest') {
     a.lock = { pose, t: { x: t.x, y: t.y }, r: body.rotation() };

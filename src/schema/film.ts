@@ -17,6 +17,7 @@ import { checkFallingProps } from '../physics/hits.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
 import { Finite, Id, Semver, Sha256, firstDuplicate } from './common.ts';
+import { convexHull, polygonArea } from '../core/hull.ts';
 
 export const MAX_FRAMES = 24 * 600;
 const Frame = z.number().int().min(0);
@@ -52,22 +53,9 @@ const Collider = z.union([
   z.object({ type: z.literal('hull'), points: z.array(z.tuple([Finite, Finite])).min(3).max(64) }).strict(),
 ]);
 export type ColliderSpec = z.output<typeof Collider>;
-/** Diện tích bao lồi của các điểm 2D (thuật toán chuỗi đơn điệu; tất định, không phụ thuộc thứ tự nhập). */
+/** Diện tích bao lồi của các điểm 2D (bao lồi dùng chung với phép kiểm va chạm — src/core/hull.ts). */
 export function convexHullArea(points: readonly (readonly [number, number])[]): number {
-  const ps = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cross = (o: readonly number[], a: readonly number[], b: readonly number[]) => (a[0]! - o[0]!) * (b[1]! - o[1]!) - (a[1]! - o[1]!) * (b[0]! - o[0]!);
-  const half = (list: typeof ps) => {
-    const h: (readonly [number, number])[] = [];
-    for (const p of list) {
-      while (h.length >= 2 && cross(h[h.length - 2]!, h[h.length - 1]!, p) <= 0) h.pop();
-      h.push(p);
-    }
-    return h.slice(0, -1);
-  };
-  const hull = [...half(ps), ...half([...ps].reverse())];
-  let a2 = 0;
-  for (let k = 0; k < hull.length; k++) { const p = hull[k]!, q = hull[(k + 1) % hull.length]!; a2 += p[0] * q[1] - q[0] * p[1]; }
-  return Math.abs(a2) / 2;
+  return polygonArea(convexHull(points));
 }
 const Drop = z
   .object({
