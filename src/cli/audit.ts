@@ -14,7 +14,7 @@ if (!manifest) {
 try {
   const r = await auditRender(manifest, 'assets', 'config/audit.json', seedIdx >= 0 ? args[seedIdx + 1] : undefined);
   writeFileSync(join(dirname(manifest), 'audit-report.json'), JSON.stringify(r, null, 2) + '\n');
-  console.log(`AUDIT ${r.status} seed=${r.seed} frames=[${r.frames}] minPSNR=${Math.min(...Object.values(r.psnrDb)).toFixed(2)} dB (>= ${r.minPsnrDb})`);
+  console.log(`AUDIT ${r.status} seed=${r.seed} frames=[${r.frames}] minPSNR=${Math.min(...Object.values(r.psnrDb)).toFixed(2)} dB (>= ${r.minPsnrDb}) bake=${r.bakeSha256 ?? 'none'}`);
 } catch (e) {
   console.error(`AUDIT FAIL ${e instanceof StudioError ? e.message : e}`);
   process.exit(1);

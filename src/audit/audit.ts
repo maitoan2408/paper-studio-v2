@@ -4,6 +4,11 @@
  * 3. MP4: sha256, ffprobe (1920x1080, 24/1, yuv420p, h264, số frame), decode toàn bộ (-xerror).
  * 4. Render lại K frame ngẫu nhiên (seed in ra để tái lập) → hash pixel + state trùng manifest.
  * 5. Frame decode từ MP4 so với RGBA render lại: PSNR ≥ ngưỡng trong config/audit.json.
+ * Vật lý (manifest v2, film có physics — chạy ngay sau bước 1, trước SceneFrame): đọc bake, kiểm SHA, định dạng,
+ * engine, cấu hình, nguồn đầu vào; rồi so từng trường với một lượt MÔ PHỎNG LẠI từ film + asset đã xác minh (loadFilm
+ * của chính process audit) ⇒ bake bị sửa rồi băm lại vẫn bị bắt (AUDIT_BAKE_MISMATCH + đường dẫn trường lệch đầu tiên).
+ * Tương thích: manifest v1 (trước M3 việc 4, không có trường physics) chỉ hợp lệ cho film KHÔNG có physics; film có
+ * physics cần manifest v2 có physics.bake — bỏ trường hay hạ về v1 đều bị AUDIT_BAKE_MISSING.
  */
 import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
@@ -17,10 +22,11 @@ import { capture } from '../render/browser.ts';
 import { checkProbe, decodeAll, extractFrames, psnr } from '../render/ffmpeg.ts';
 import { openSession, sampleAll, shuffledPick, stateSha } from '../render/render.ts';
 import { compareState, expectedState } from '../render/state.ts';
+import { BAKE_FORMAT, BAKE_FORMAT_VERSION, bakeSha256, currentConfig, filmInputs, firstDifference, physicsBakeRecord, RAPIER_PACKAGE } from '../physics/bake.ts';
+import { RAPIER_VERSION } from '../physics/rapier.ts';
+import type { Film } from '../schema/film.ts';
 
-const ManifestSchema = z
-  .object({
-    schemaVersion: z.literal(1),
+const ManifestFields = {
     renderer: z.string(),
     film: z.object({ id: z.string(), path: z.string(), sha256: Sha256 }).strict(),
     packs: z.array(z.object({ id: z.string(), version: z.string(), manifestSha256: Sha256 }).strict()),
@@ -32,8 +38,53 @@ const ManifestSchema = z
     mp4: z.object({ file: z.string().regex(/^[\w.-]+\.mp4$/), sha256: Sha256 }).strict(),
     rechecks: z.object({ sameSession: z.array(z.number().int()), newSession: z.array(z.number().int()) }).strict(),
     review: z.object({ halfSpeed: z.string(), contactSheet: z.string(), audited: z.literal(false) }).strict(),
-  })
-  .strict();
+};
+const BakeRef = z.object({ bake: z.object({ file: z.string().regex(/^[\w.-]+\.json$/), formatVersion: z.number().int(), sha256: Sha256 }).strict() }).strict();
+const ManifestSchema = z.discriminatedUnion('schemaVersion', [
+  z.object({ schemaVersion: z.literal(1), ...ManifestFields }).strict(),
+  z.object({ schemaVersion: z.literal(2), ...ManifestFields, physics: BakeRef.nullable() }).strict(),
+]);
+type Manifest = z.output<typeof ManifestSchema>;
+
+/** Kiểm bake vật lý (xem đầu file). Trả SHA bake đã xác minh, null nếu film không có physics. */
+export function verifyPhysicsBake(manifestPath: string, m: Manifest, film: Film): string | null {
+  const hasPhysics = film.data.physics.length > 0;
+  const ref = m.schemaVersion === 2 ? m.physics : null;
+  if (!hasPhysics) {
+    if (ref) fail('AUDIT_MANIFEST', `${manifestPath}.physics`, 'film has no physics but the manifest references a bake');
+    return null;
+  }
+  if (!ref) fail('AUDIT_BAKE_MISSING', `${manifestPath}.physics`, `film "${film.data.id}" has ${film.data.physics.length} drop(s); a schemaVersion 2 manifest with physics.bake is required (manifest v${m.schemaVersion}${m.schemaVersion === 2 ? ' has physics: null' : ''})`);
+  const file = join(dirname(manifestPath), ref.bake.file);
+  let text: string;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    return fail('AUDIT_BAKE_FILE', file, 'bake file is missing or unreadable');
+  }
+  let disk: unknown;
+  try {
+    disk = JSON.parse(text);
+  } catch (e) {
+    return fail('AUDIT_BAKE_FILE', file, `not valid JSON (${(e as Error).message})`);
+  }
+  const sha = bakeSha256(disk);
+  if (sha !== ref.bake.sha256) fail('AUDIT_BAKE_HASH', file, `sha256 ${sha} != manifest ${ref.bake.sha256}`);
+  const r = disk as Record<string, any>;
+  if (r.format !== BAKE_FORMAT || r.formatVersion !== BAKE_FORMAT_VERSION || ref.bake.formatVersion !== BAKE_FORMAT_VERSION) {
+    fail('AUDIT_BAKE_FORMAT', file, `format ${r.format}@${r.formatVersion} (manifest ${ref.bake.formatVersion}); expected ${BAKE_FORMAT}@${BAKE_FORMAT_VERSION}`);
+  }
+  if (r.engine?.package !== RAPIER_PACKAGE || r.engine?.version !== RAPIER_VERSION) fail('AUDIT_BAKE_ENGINE', `${file}.engine`, `${r.engine?.package}@${r.engine?.version} != pinned ${RAPIER_PACKAGE}@${RAPIER_VERSION}`);
+  const cfg = firstDifference(currentConfig(film), r.config, '$.config');
+  if (cfg) fail('AUDIT_BAKE_CONFIG', `${file} ${cfg.path}`, `bake ${JSON.stringify(cfg.got)} != current ${JSON.stringify(cfg.expected)}`);
+  const inp = firstDifference(filmInputs(film), r.inputs, '$.inputs');
+  if (inp) fail('AUDIT_BAKE_STALE', `${file} ${inp.path}`, `bake was made from other inputs: ${JSON.stringify(inp.got)} != verified film/assets ${JSON.stringify(inp.expected)}`);
+  // Mô phỏng lại: film + asset của chính process này (đã kiểm hash ở bước 1) ⇒ bản ghi mới, so từng trường.
+  const fresh = physicsBakeRecord(film)!;
+  const diff = firstDifference(fresh, disk);
+  if (diff) fail('AUDIT_BAKE_MISMATCH', `${file} ${diff.path}`, `re-simulation gives ${JSON.stringify(diff.expected)}, bake has ${JSON.stringify(diff.got)}`);
+  return sha;
+}
 
 const AuditConfig = z.object({ schemaVersion: z.literal(1), sampleFrames: z.number().int().min(2).max(64), minPsnrDb: z.number().positive() }).strict();
 
@@ -44,6 +95,8 @@ export interface AuditReport {
   frames: number[];
   psnrDb: Record<number, number>;
   minPsnrDb: number;
+  /** SHA bake vật lý đã xác minh bằng mô phỏng lại (null: film không có physics). */
+  bakeSha256: string | null;
 }
 
 export async function auditRender(manifestPath: string, assetsRoot = 'assets', configPath = 'config/audit.json', seed = randomBytes(4).toString('hex')): Promise<AuditReport> {
@@ -63,6 +116,9 @@ export async function auditRender(manifestPath: string, assetsRoot = 'assets', c
   if (o.width !== m.output.width || o.height !== m.output.height || o.fps !== m.output.fps || o.durationFrames !== N) {
     fail('AUDIT_MANIFEST', manifestPath, 'output section does not match film');
   }
+
+  // 1b. Bake vật lý: SHA + nguồn + mô phỏng lại.
+  const bakeSha = verifyPhysicsBake(manifestPath, m, film);
 
   // 2. SceneFrame.
   const frames = sampleAll(film);
@@ -104,5 +160,5 @@ export async function auditRender(manifestPath: string, assetsRoot = 'assets', c
     psnrDb[i] = Math.round(v * 100) / 100;
     if (!(v >= cfg.minPsnrDb)) fail('AUDIT_PSNR', `frame ${i}`, `${v.toFixed(2)} dB < ${cfg.minPsnrDb} dB`);
   }
-  return { status: 'PASS_TECHNICAL', manifest: manifestPath, seed, frames: pick, psnrDb, minPsnrDb: cfg.minPsnrDb };
+  return { status: 'PASS_TECHNICAL', manifest: manifestPath, seed, frames: pick, psnrDb, minPsnrDb: cfg.minPsnrDb, bakeSha256: bakeSha };
 }

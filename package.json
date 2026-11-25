@@ -14,7 +14,8 @@
     "render": "node src/cli/render.ts",
     "audit": "node src/cli/audit.ts",
     "check:renderer": "node src/cli/check-renderer.ts",
-    "sheet": "node src/cli/sheet.ts"
+    "sheet": "node src/cli/sheet.ts",
+    "check:bake": "node src/cli/check-bake.ts"
   },
   "dependencies": {
     "@dimforge/rapier2d-deterministic-compat": "0.21.0",

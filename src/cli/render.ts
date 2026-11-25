@@ -17,6 +17,7 @@ try {
   const m = await renderFilm(film, 'assets', out);
   console.log(`OK ${out}/film.mp4 ${m.output.frames} frames sha256=${m.mp4.sha256}`);
   console.log(`sceneFrames sha256=${canonicalSha256(m.sceneFrameSha256)}`);
+  console.log(`physicsBake sha256=${m.physics?.bake.sha256 ?? 'none'}`);
 } catch (e) {
   console.error(e instanceof StudioError ? e.message : e);
   process.exit(1);
