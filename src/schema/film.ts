@@ -13,6 +13,7 @@ import { usesActive } from '../motion/timeline.ts';
 import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
 import { dropBake, disposeWorld } from '../physics/drop.ts';
+import { checkFallingProps } from '../physics/hits.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
 import { Finite, Id, Semver, Sha256, firstDuplicate } from './common.ts';
@@ -444,6 +445,8 @@ function checkFilm(film: Film, f: Film['data'], N: number): Film {
   checkProps(film, (ci, contact, fr) => contactWorld(film, ci, fr, contact));
   // Thả tự do: bake ngay khi dựng film (fail closed: PHYSICS_NOT_AT_REST, PHYSICS_NO_LANDING, PHYSICS_RELEASE_TOO_EARLY…).
   for (const d of f.physics) dropBake(film, d.id);
+  // Vật đang rơi trúng nhân vật (M3 việc 5) — theo collider + quỹ đạo bake và vùng cơ thể theo pose rig.
+  checkFallingProps(film);
   return film;
 }
 
