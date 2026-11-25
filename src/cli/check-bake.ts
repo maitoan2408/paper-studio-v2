@@ -7,6 +7,7 @@
  * Log mọi ca ra stdout (CI lưu vào out/check-bake.log).
  */
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+/* ca motion: bản sao assets với rig/action sửa — audit chạy với --assets <bản sao> */
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -23,12 +24,12 @@ if (physicsDirs.length === 0) {
 }
 
 let failures = 0;
-const audit = (manifest: string) => {
-  const r = spawnSync(process.execPath, ['src/cli/audit.ts', manifest], { encoding: 'utf8' });
+const audit = (manifest: string, assets?: string) => {
+  const r = spawnSync(process.execPath, ['src/cli/audit.ts', manifest, ...(assets ? ['--assets', assets] : [])], { encoding: 'utf8' });
   return { status: r.status, out: `${r.stdout}${r.stderr}`.trim().split('\n').filter((l) => /^AUDIT /.test(l)).join(' ') };
 };
-const expectFail = (label: string, manifest: string, re: RegExp) => {
-  const r = audit(manifest);
+const expectFail = (label: string, manifest: string, re: RegExp, assets?: string) => {
+  const r = audit(manifest, assets);
   const ok = r.status === 1 && re.test(r.out);
   if (!ok) failures++;
   console.log(`${ok ? 'PASS' : 'FAIL'} ${label}: exit ${r.status} | ${r.out}`);
@@ -36,7 +37,17 @@ const expectFail = (label: string, manifest: string, re: RegExp) => {
 const copy = (dir: string) => {
   const t = mkdtempSync(join(tmpdir(), 'ps-check-bake-'));
   cpSync(dir, t, { recursive: true });
-  return { dir: t, manifest: join(t, 'render-manifest.json'), bake: join(t, BAKE_FILE) };
+  return { dir: t, manifest: join(t, 'render-manifest.json'), bake: join(t, BAKE_FILE), assets: undefined as string | undefined };
+};
+/** Bản sao assets trong thư mục ca, sửa một file JSON motion của pack (rig.json / actions/<id>.json). */
+const motionEdit = (c: ReturnType<typeof copy>, pack: string, rel: string, edit: (j: any) => void) => {
+  const a = join(c.dir, 'assets-copy');
+  cpSync('assets', a, { recursive: true });
+  const p = join(a, pack, rel);
+  const j = readJson(p);
+  edit(j);
+  writeJson(p, j);
+  c.assets = a;
 };
 const readJson = (p: string) => JSON.parse(readFileSync(p, 'utf8'));
 const writeJson = (p: string, v: unknown) => writeFileSync(p, JSON.stringify(v, null, 1) + '\n');
@@ -71,6 +82,11 @@ for (const src of physicsDirs) {
       const m = readJson(c.manifest); m.physics.bake.sha256 = bakeSha256(b); writeJson(c.manifest, m);
       console.log(`   new bake sha256=${m.physics.bake.sha256}`);
     }, /AUDIT FAIL AUDIT_BAKE_MISMATCH: .*\$\.drops\[[\w-]+\]\.poses\[frame \d+\]\.x — re-simulation gives /],
+    ['bake is JSON null, SHA updated', (c) => { writeFileSync(c.bake, 'null\n'); const m = readJson(c.manifest); m.physics.bake.sha256 = bakeSha256(null); writeJson(c.manifest, m); }, /AUDIT FAIL AUDIT_BAKE_FORMAT: .*physics-bake\.json \$ — bake root must be a JSON object, got null/],
+    ['bake is a JSON number, SHA updated', (c) => { writeFileSync(c.bake, '42\n'); const m = readJson(c.manifest); m.physics.bake.sha256 = bakeSha256(42); writeJson(c.manifest, m); }, /AUDIT FAIL AUDIT_BAKE_FORMAT: .*\$ — bake root must be a JSON object, got number/],
+    ['bake is a JSON array, SHA updated', (c) => { const b = [readJson(c.bake)]; writeJson(c.bake, b); const m = readJson(c.manifest); m.physics.bake.sha256 = bakeSha256(b); writeJson(c.manifest, m); }, /AUDIT FAIL AUDIT_BAKE_FORMAT: .*\$ — bake root must be a JSON object, got an array/],
+    ['action drop.events[0].t 0.3 → 0.301 (same trajectory), old bake', (c) => motionEdit(c, 'demo-cast', 'actions/drop.json', (j) => (j.events[0].t = 0.301)), /AUDIT FAIL AUDIT_BAKE_STALE: .*\$\.inputs\.motion\[demo-cast\]\.clips\[drop\]\.sha256/],
+    ['rig pelvis.maxDegPerFrame 12 → 13, old bake', (c) => motionEdit(c, 'demo-cast', 'rig.json', (j) => (j.bones.find((b: any) => b.id === 'pelvis').maxDegPerFrame = 13)), /AUDIT FAIL AUDIT_BAKE_STALE: .*\$\.inputs\.motion\[demo-cast\]\.rig\.sha256/],
   ];
   if (film.data.physics.length > 1) {
     cases.push(['prop–prop wake removed AND re-hashed', (c) => {
@@ -86,7 +102,7 @@ for (const src of physicsDirs) {
     const c = copy(src);
     try {
       mutate(c);
-      expectFail(label, c.manifest, re);
+      expectFail(label, c.manifest, re, c.assets);
     } finally {
       rmSync(c.dir, { recursive: true, force: true });
     }

@@ -7,7 +7,13 @@
  *  - config: lịch bước (fps, SUBSTEPS, SOLVER_ITERATIONS), trọng lực + px/m của thế giới chung, mọi ngưỡng quyết định
  *    trạng thái (REST_*, LAND_GAP_PX, SUPPORT_MIN_NY, SLAB_PX);
  *  - inputs: SHA film chuẩn hóa (mọi dữ liệu quyết định mô phỏng: đạo cụ, mặt đỡ, timeline/walks/turns → tay lúc buông,
- *    physics), danh sách pack + SHA manifest (art: khung, pivot, anchor → hình va chạm) và SHA riêng khối physics;
+ *    physics), danh sách pack + SHA manifest (art: khung, pivot, anchor → hình va chạm), SHA riêng khối physics, và
+ *    NGUỒN MOTION (formatVersion 2): manifest art KHÔNG gồm rig.json/actions/*.json, nên mỗi pack mà film nạp motion có
+ *    { id: pack, rig: { id, sha256 } | null, clips: [{ id, sha256 }] } — SHA = canonicalSha256 của dữ liệu ĐÃ VALIDATE
+ *    (đầu ra schema: khoảng trắng/thứ tự khóa JSON không đổi SHA), sắp theo pack id rồi clip id.
+ *    Phạm vi = MỌI rig + action mà film nạp (film.rigs / film.clips — toàn bộ actions/ của pack được tham chiếu), không chỉ
+ *    clip timeline dùng: bảo thủ có chủ ý (fail closed) — sửa bất kỳ action nào của pack đó, hay bất kỳ trường rig nào
+ *    (giới hạn/tốc độ xương, IK, gait…), đều làm bake cũ thành AUDIT_BAKE_STALE kể cả khi quỹ đạo không đổi;
  *  - drops (sắp theo id): trạng thái lúc buông, quỹ đạo dùng khi phát phim (pivot, góc, vận tốc, trạng thái, điểm tựa theo
  *    frame) và sự kiện (lần chạm đầu theo cặp, đánh thức, frame nghỉ). Quan hệ giữa các đạo cụ của thế giới chung nằm
  *    trong contacts/wakes/supportedBy (khóa `prop:<id>` / `surface:<id>`).
@@ -20,7 +26,8 @@ import { dropBake, LAND_GAP_PX, REST_FRAMES, REST_SPEED_PX, REST_SPIN_DEG, SLAB_
 import { RAPIER_VERSION } from './rapier.ts';
 
 export const BAKE_FORMAT = 'paper-studio-physics-bake';
-export const BAKE_FORMAT_VERSION = 1;
+/** 1: bản đầu (M3 việc 4). 2: thêm inputs.motion. Bake v1 bị audit từ chối (AUDIT_BAKE_FORMAT) — cần render lại. */
+export const BAKE_FORMAT_VERSION = 2;
 export const BAKE_FILE = 'physics-bake.json';
 export const RAPIER_PACKAGE = '@dimforge/rapier2d-deterministic-compat';
 
@@ -43,7 +50,12 @@ export interface PhysicsBakeRecord {
     supportMinNy: number;
     slabPx: number;
   };
-  inputs: { filmSha256: string; packs: { id: string; version: string; manifestSha256: string }[]; physicsSha256: string };
+  inputs: {
+    filmSha256: string;
+    packs: { id: string; version: string; manifestSha256: string }[];
+    physicsSha256: string;
+    motion: { id: string; rig: { id: string; sha256: string } | null; clips: { id: string; sha256: string }[] }[];
+  };
   drops: {
     id: string;
     prop: string;
@@ -72,6 +84,11 @@ export function filmInputs(film: Film): PhysicsBakeRecord['inputs'] {
     filmSha256: canonicalSha256(film.data),
     packs: film.data.packs.map((p) => ({ id: p.id, version: p.version, manifestSha256: p.manifestSha256 })),
     physicsSha256: canonicalSha256(film.data.physics),
+    motion: [...new Set([...film.rigs.keys(), ...film.clips.keys()])].sort().map((id) => {
+      const rig = film.rigs.get(id);
+      const clips = [...(film.clips.get(id) ?? new Map()).entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+      return { id, rig: rig ? { id: rig.data.id, sha256: canonicalSha256(rig.data) } : null, clips: clips.map(([cid, c]) => ({ id: cid, sha256: canonicalSha256(c) })) };
+    }),
   };
 }
 

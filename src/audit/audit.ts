@@ -70,9 +70,15 @@ export function verifyPhysicsBake(manifestPath: string, m: Manifest, film: Film)
   }
   const sha = bakeSha256(disk);
   if (sha !== ref.bake.sha256) fail('AUDIT_BAKE_HASH', file, `sha256 ${sha} != manifest ${ref.bake.sha256}`);
+  // JSON hợp lệ, SHA đúng nhưng gốc không phải object (null, số, chuỗi, mảng) ⇒ sai định dạng, không phải TypeError.
+  if (disk === null || typeof disk !== 'object' || Array.isArray(disk)) {
+    fail('AUDIT_BAKE_FORMAT', `${file} $`, `bake root must be a JSON object, got ${disk === null ? 'null' : Array.isArray(disk) ? 'an array' : typeof disk}`);
+  }
   const r = disk as Record<string, any>;
-  if (r.format !== BAKE_FORMAT || r.formatVersion !== BAKE_FORMAT_VERSION || ref.bake.formatVersion !== BAKE_FORMAT_VERSION) {
-    fail('AUDIT_BAKE_FORMAT', file, `format ${r.format}@${r.formatVersion} (manifest ${ref.bake.formatVersion}); expected ${BAKE_FORMAT}@${BAKE_FORMAT_VERSION}`);
+  if (r.format !== BAKE_FORMAT) fail('AUDIT_BAKE_FORMAT', `${file} $.format`, `${JSON.stringify(r.format)} != ${BAKE_FORMAT}`);
+  if (r.formatVersion !== BAKE_FORMAT_VERSION || ref.bake.formatVersion !== BAKE_FORMAT_VERSION) {
+    // v1 (trước inputs.motion) không chứng minh được nguồn rig/action ⇒ không chấp nhận; render lại để có bake v2.
+    fail('AUDIT_BAKE_FORMAT', `${file} $.formatVersion`, `bake v${r.formatVersion} (manifest v${ref.bake.formatVersion}); expected v${BAKE_FORMAT_VERSION}${r.formatVersion === 1 ? ' — v1 has no motion inputs (rig/action SHA); re-render the film' : ''}`);
   }
   if (r.engine?.package !== RAPIER_PACKAGE || r.engine?.version !== RAPIER_VERSION) fail('AUDIT_BAKE_ENGINE', `${file}.engine`, `${r.engine?.package}@${r.engine?.version} != pinned ${RAPIER_PACKAGE}@${RAPIER_VERSION}`);
   const cfg = firstDifference(currentConfig(film), r.config, '$.config');

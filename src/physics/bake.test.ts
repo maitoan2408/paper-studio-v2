@@ -116,3 +116,69 @@ test('compatibility: physics films need a v2 manifest with physics.bake; films w
   const c = renderDir(still, rec);
   assert.throws(() => verifyPhysicsBake(c.manifestPath, c.m, still), code('AUDIT_MANIFEST'));
 });
+
+// ─── Hậu kiểm Codex @3ce544e: nguồn motion (rig + action đã nạp) thuộc inputs; lỗi định dạng gốc JSON ─────────────────
+import { cpSync } from 'node:fs';
+
+/** Bản sao assets với một thay đổi trên file JSON của pack demo-cast (rig.json hoặc actions/<id>.json). */
+function assetsWith(rel: string, edit: (j: any) => void, rewrite?: (j: any) => string): string {
+  const dir = tmp();
+  cpSync('assets', dir, { recursive: true });
+  const p = join(dir, 'demo-cast', rel);
+  const j = JSON.parse(readFileSync(p, 'utf8'));
+  edit(j);
+  writeFileSync(p, rewrite ? rewrite(j) : JSON.stringify(j, null, 2) + '\n');
+  return dir;
+}
+const pelvis = (j: any) => (j.bones.find((b: any) => b.id === 'pelvis').maxDegPerFrame = 13);
+
+test('motion inputs: a bake made before a rig/action change is STALE and names the rig/action — even when the trajectory is unchanged', () => {
+  const orig = load('m3-drop');
+  const bake = physicsBakeRecord(orig)!; // bake gốc (assets thật)
+  const cases: [string, string, (j: any) => void, RegExp][] = [
+    ['drop.events[0].t 0.3 → 0.301 (same frames, same trajectory)', 'actions/drop.json', (j) => (j.events[0].t = 0.301), /\$\.inputs\.motion\[demo-cast\]\.clips\[drop\]\.sha256/],
+    ['drop.events[0].t 0.3 → 0.34 (contact frame changes)', 'actions/drop.json', (j) => (j.events[0].t = 0.34), /\$\.inputs\.motion\[demo-cast\]\.clips\[drop\]\.sha256/],
+    ['rig pelvis.maxDegPerFrame 12 → 13', 'rig.json', pelvis, /\$\.inputs\.motion\[demo-cast\]\.rig\.sha256/],
+  ];
+  const same: boolean[] = [];
+  for (const [label, rel, edit, where] of cases) {
+    const f = loadFilm('examples/films/m3-drop.json', assetsWith(rel, edit));
+    const fresh = physicsBakeRecord(f)!;
+    same.push(firstDifference(fresh.drops, bake.drops) === null);
+    const { manifestPath, m } = renderDir(f, bake);
+    assert.throws(() => verifyPhysicsBake(manifestPath, m, f), (e: Error) => e.message.startsWith('AUDIT_BAKE_STALE: ') && where.test(e.message), label);
+  }
+  // 0.301 và pelvis 13: quỹ đạo/sự kiện y hệt — chỉ định danh nguồn mới phân biệt được; 0.34: quỹ đạo khác
+  assert.deepEqual(same, [true, false, true]);
+});
+
+test('motion inputs: whitespace and JSON key order do not change the canonical SHA', () => {
+  const base = physicsBakeRecord(load('m3-drop'))!;
+  const reorder = (v: any): any => (Array.isArray(v) ? v.map(reorder) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).reverse().map((k) => [k, reorder(v[k])])) : v);
+  for (const rel of ['actions/drop.json', 'rig.json']) {
+    const f = loadFilm('examples/films/m3-drop.json', assetsWith(rel, () => {}, (j) => JSON.stringify(reorder(j), null, 7).replace(/\n/g, '\r\n\n')));
+    const rec = physicsBakeRecord(f)!;
+    assert.equal(bakeSha256(rec), bakeSha256(base), rel);
+  }
+  const m = base.inputs.motion.find((x) => x.id === 'demo-cast')!;
+  assert.equal(m.rig!.id, 'biped-demo');
+  assert.deepEqual(m.clips.map((c) => c.id), [...m.clips.map((c) => c.id)].sort());
+  assert.ok(m.clips.some((c) => c.id === 'drop'));
+});
+
+test('bake root must be an object: JSON null / scalar / array with the right SHA ⇒ AUDIT_BAKE_FORMAT at $, not a TypeError', () => {
+  const f = load('m3-drop');
+  for (const v of [null, 3, 'bake', [], [physicsBakeRecord(f)]]) {
+    const { dir, manifestPath, m } = renderDir(f, physicsBakeRecord(f)!);
+    writeFileSync(join(dir, BAKE_FILE), JSON.stringify(v));
+    m.physics.bake.sha256 = bakeSha256(v);
+    assert.throws(() => verifyPhysicsBake(manifestPath, m, f), (e: Error) => /^AUDIT_BAKE_FORMAT: .*physics-bake\.json \$ — /.test(e.message), JSON.stringify(v)?.slice(0, 20));
+  }
+  // bake định dạng cũ (v1, chưa có SHA motion) ⇒ AUDIT_BAKE_FORMAT, yêu cầu render lại
+  const old: any = structuredClone(physicsBakeRecord(f)!);
+  old.formatVersion = 1;
+  delete old.inputs.motion;
+  const r = renderDir(f, old);
+  r.m.physics.bake.formatVersion = 1;
+  assert.throws(() => verifyPhysicsBake(r.manifestPath, r.m, f), (e: Error) => /^AUDIT_BAKE_FORMAT: /.test(e.message) && /re-render/.test(e.message));
+});
