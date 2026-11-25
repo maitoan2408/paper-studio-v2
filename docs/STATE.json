@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "c656f25676b04a469470c06feda3ab7684ee0160",
+      "head": "dfd1fd32b768612a811c0d36656eca712d0e5ce0",
       "updated": "2026-11-26",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -108,7 +108,9 @@
         "bakeReplayAudit": "PASS_TECHNICAL",
         "bakeCrossEnvironment": "PASS_TECHNICAL",
         "bakeMotionInputs": "PASS_TECHNICAL",
-        "bakeFormatErrors": "PASS_TECHNICAL"
+        "bakeFormatErrors": "PASS_TECHNICAL",
+        "characterHitFixtures": "PASS_TECHNICAL",
+        "characterHitValidation": "BLOCKED"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -145,7 +147,13 @@
         "bakeFormatErrors: CLI audit với JSON null và SHA đúng trả TypeError khi đọc format. Cần xác nhận đối tượng gốc trước khi truy cập và trả AUDIT_BAKE_FORMAT. Giữ tương thích manifest v1 cho phim không vật lý, manifest v2 khai physics tường minh. Chưa nghiệm thu thị giác.",
         "Hậu kiểm c656f25. Bake v2 băm rig và mọi action đã nạp của mỗi pack trên dữ liệu sau validate. Đổi thứ tự khóa và khoảng trắng giữ SHA. Với m3-drop, đổi thời điểm buông từ 0.3 sang 0.301 hoặc 0.34 đều báo AUDIT_BAKE_STALE tại $.inputs.motion[demo-cast].clips[drop].sha256. Đổi giới hạn pelvis từ 12 lên 13 báo STALE tại .rig.sha256. Ca 0.301 và ca pelvis giữ nguyên SceneFrame. Chấp nhận phải render lại khi sửa cả clip đã nạp mà timeline không dùng.",
         "CLI audit đọc bản sao pack qua --assets <dir>. Bake null có SHA đúng trả AUDIT_BAKE_FORMAT ở gốc $. Bake vật lý v1 cần render lại, manifest v1 của phim không vật lý vẫn audit được. Sửa x ở f170 thêm 0,25 px rồi băm lại với đúng nguồn vẫn báo AUDIT_BAKE_MISMATCH tại $.drops[drop-plant].poses[frame 170].x. Cờ --assets đặt cuối lệnh mà thiếu thư mục hiện dùng assets mặc định.",
-        "Bộ test bake mới đạt 6/9 trên 3ce544e và 9/9 trên c656f25. Codex chạy verify 364/364, đủ 8 golden. Bốn SHA bake v2 tại chỗ khớp toàn bộ SHA trong log CI, theo thứ tự m3-drop 65cb9b8b…, m3-drop-table 59ca7f70…, m3-collide b56f0071…, m3-collide-miss f9f34767…. CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45658528211 trên merge ref b23b607 đạt check:renderer 8/8, audit 8 phim và check:bake 26/26. Việc 4 đạt kỹ thuật. Giao việc 5 kiểm vật rơi trúng nhân vật trước render. Chủ dự án duyệt thị giác riêng."
+        "Bộ test bake mới đạt 6/9 trên 3ce544e và 9/9 trên c656f25. Codex chạy verify 364/364, đủ 8 golden. Bốn SHA bake v2 tại chỗ khớp toàn bộ SHA trong log CI, theo thứ tự m3-drop 65cb9b8b…, m3-drop-table 59ca7f70…, m3-collide b56f0071…, m3-collide-miss f9f34767…. CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45658528211 trên merge ref b23b607 đạt check:renderer 8/8, audit 8 phim và check:bake 26/26. Việc 4 đạt kỹ thuật. Giao việc 5 kiểm vật rơi trúng nhân vật trước render. Chủ dự án duyệt thị giác riêng.",
+        "Hậu kiểm việc 5 tại dfd1fd3. Codex chạy verify 369/369, 8 golden. Cùng 5 test hits, thay riêng film.ts bằng bản c656f25 còn 2/5 đạt. Khoảng hở nhỏ nhất ở hai đối chứng là 0,391 px (Lan x=-34, f165) và 1,940 px (Tam x=420, f241). CI render trên merge ref b02595c đạt check:renderer, audit 8 phim (minPSNR 41,13 dB) và check:bake. Log https://github.com/maitoan2408/paper-studio-v2/actions/runs/45672692571.",
+        "Bỏ sót va chạm trước khi đáp: m3-drop bỏ walk của Lan, đặt Lan x=-35 như fixture trúng, chỉnh restitution chậu thành 0. loadFilm cho qua. Codex đọc pose ngay sau từng world.step và so với khung tay nội suy như validator. Ở f165 bước 3/8, collider giao hand.l khi đáy chậu còn cao 10,60 px. Chạm sàn lần đầu bước 6/8. hits.ts bỏ cả khoảng vì cuối f165 là supported. Cần kiểm phần còn bay trong frame chuyển trạng thái.",
+        "Hull phụ thuộc thứ tự điểm: từ m3-drop-table thêm surface test-stand (x0=-1300, x1=1300, y=-80), cho Tam đứng trên đó tại x=166. Danh sách điểm ban đầu qua loadFilm. Chỉ hoán vị 10 điểm theo chỉ số từ 0 là [0,3,6,9,2,5,8,1,4,7] thì báo trúng torso của Tam tại f242. Đối chiếu quỹ đạo với Tam ngoài đường rơi cho sai khác lớn nhất ở x/y/góc bằng 0. Rapier dựng bao lồi, còn phép SAT trong hits.ts dùng cạnh theo thứ tự điểm nhập. Dùng cùng đường bao lồi cho hai phép kiểm.",
+        "Nội suy góc qua vòng: m3-drop-table gốc nạp được với lantern-1.rotation=0. Chỉ đổi rotation thành 360 hoặc -360 đều báo trúng upper-arm.l của Lan ở f237 sau khi vừa rời người. Nội suy trực tiếp từ góc art tới góc Rapier tạo một vòng quay giả. Cần kiểm cả góc tương đương tại frame thả và chuyển tiếp qua biên ±180° trong khi bay.",
+        "Quyết định phạm vi: giữ khung art làm vùng kiểm bảo thủ, phân biệt giao khung với chạm nét vẽ. Chỉ đề xuất viền riêng cho asset khi có cảnh hợp lệ bị cản sau khi sửa hình học. Trượt/nghỉ đã được đỡ liên tục nằm ngoài việc 5. Quy tắc miễn toàn người tới khi tách hết có thể che tiếp xúc mới: ở m3-drop gốc foot.r của Tam chưa giao tại f160 nhưng bắt đầu giao ở f164 trong thời gian miễn. Giữ tiếp xúc hợp lệ lúc buông; phân biệt tiếp xúc ban đầu kéo dài và tiếp xúc mới theo vùng. Nếu cần thông tin trước/sau của lớp 2,5D để xử lý cảnh mẫu, báo frame và hình cho chủ dự án trước khi đổi dữ liệu.",
+        "Độ nảy của chậu trong m3-collide: 0.12 và 0.2 lần lượt làm validator báo đèn giao thigh.l của Lan ở f314 và f315; 0.3 qua loadFilm. Giữ các ca cố định để theo dõi. Trong check:bake chỉ thử vật liệu khác khi bị từ chối vì va nhân vật dự kiến; lỗi ngoài dự kiến phải được báo. Giao Claude sửa việc 5 và bổ sung đối chứng trước khi hậu kiểm lại. Việc 6 và duyệt thị giác chờ chủ dự án."
       ]
     },
     "M4": {
