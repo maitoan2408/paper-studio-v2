@@ -64,11 +64,24 @@ for (const src of physicsDirs) {
     ['manifest physics set to null', (c) => { const m = readJson(c.manifest); m.physics = null; writeJson(c.manifest, m); }, /AUDIT FAIL AUDIT_BAKE_MISSING: /],
     ['manifest downgraded to v1 without physics', (c) => { const m = readJson(c.manifest); delete m.physics; m.schemaVersion = 1; writeJson(c.manifest, m); }, /AUDIT FAIL AUDIT_BAKE_MISSING: .*manifest v1/],
     ['stale bake (restitution changed) re-hashed into manifest', (c) => {
-      const raw = readJson(m0.film.path);
-      raw.physics[0].body.restitution = raw.physics[0].body.restitution === 0.2 ? 0.3 : 0.2;
-      const p = join(c.dir, 'variant.json');
-      writeJson(p, raw);
-      const stale = physicsBakeRecord(loadFilm(p, 'assets'))!;
+      // Biến thể phải là phim HỢP LỆ (validator đầy đủ, gồm PHYSICS_HITS_CHARACTER): thử các restitution cố định theo thứ
+      // tự, lấy giá trị đầu tiên nạp được (m3-collide với 0.12–0.2 làm đèn nảy trúng Lan — xem báo cáo việc 5).
+      let stale: ReturnType<typeof physicsBakeRecord> = null;
+      for (const r of [0.2, 0.3, 0.05]) {
+        const raw = readJson(m0.film.path);
+        if (raw.physics[0].body.restitution === r) continue;
+        raw.physics[0].body.restitution = r;
+        const p = join(c.dir, 'variant.json');
+        writeJson(p, raw);
+        try {
+          stale = physicsBakeRecord(loadFilm(p, 'assets'));
+          console.log(`   variant: physics[0].body.restitution = ${r}`);
+          break;
+        } catch (e) {
+          console.log(`   variant restitution ${r} rejected by the validator: ${(e as Error).message.slice(0, 120)}`);
+        }
+      }
+      if (!stale) throw new Error('no valid restitution variant');
       writeJson(c.bake, stale);
       const m = readJson(c.manifest); m.physics.bake.sha256 = bakeSha256(stale); writeJson(c.manifest, m);
     }, /AUDIT FAIL AUDIT_BAKE_STALE: .*\$\.inputs\.filmSha256/],
