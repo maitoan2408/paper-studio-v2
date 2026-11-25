@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "0cad0a0b4d476bdfac14a4775436b2fc094c6eef",
+      "head": "806b85e09e6bb2fe3dc0fe3af712cbafb47a0225",
       "updated": "2026-11-25",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -104,7 +104,7 @@
         "sharedSeekOrder": "PASS_TECHNICAL",
         "sharedPoseDependency": "PASS_TECHNICAL",
         "landingTarget": "PASS_TECHNICAL",
-        "partialWorldCleanup": "BLOCKED"
+        "partialWorldCleanup": "PASS_TECHNICAL"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -133,7 +133,9 @@
         "Thêm surface ledge x0=-215,x1=-205,y=16, đổi physics[0].onto thành ledge trong m3-collide. loadFilm vẫn đạt: chậu chạm ledge f165 bước 2/8, nghỉ f187 trên floor, pivot y=-0,025 px, cuối phim chỉ sàn đẩy. Phải phân biệt mặt đích với một lần từng chạm. Nhánh khóa còn sao chép supported từ pose cũ; cần kiểm mất điểm tựa và xung lực nhỏ lặp lại. Miss xét cuối phim cần tính cả khả năng đổi quỹ đạo do mặt tĩnh khác.",
         "Hậu kiểm 0cad0a0. Cùng test quay, a438f61 lỗi tràn stack cả hai; test world hiện tại trên 53cd5f2 đạt 9/13, trên 0cad0a0 đạt 13/13. Codex chạy verify 352/352 gồm 8 golden. Đích phải trực tiếp đỡ trong cửa sổ nghỉ cuối và tới hết phim. Cận năng lượng ở ca nhiều collider cho phép xét va sàn f312 trước kết luận hụt f313. CI render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45500006856 đạt; thị giác chờ chủ dự án.",
         "Đối chứng ba vật qua loadFilm: từ m3-collide, 480 frame, đặt meet.x/walk.toX của Lan là −200/−330, nhân bản Lan (third), đèn (lamp3), walk và bốn timeline gốc của Lan trễ 70 frame cho nhân vật mới; meet.x/walk.toX mới −265/−395, release index 11, density 8. Đèn thứ nhất nghỉ f333, f376 đỡ bởi plant-1, f377 airborne và wake lost-support, f378 có điểm tựa trở lại. Có xung lực cùng frame thức; ca này không cô lập mất tựa thụ động.",
-        "Chặn vòng đời WorldSim: m3-collide thêm Lan quay f250 face.prop=plant-1 và đổi timeline[7].bind.points.meet.y=900. loadFilm từ chối ACTION_SPEED_EXCEEDED f283. Bọc World.prototype.createRigidBody và free, đếm các instance khác nhau: 13 tạo thân / 0 gọi free khi trả lỗi (gồm film tạm trong hint). Bản y=430 hợp lệ: 1/1; bản y=900 face=right: 0/0. Kiểm thêm API: sau lỗi dựng hull thứ hai trong simulateWorld, dropPose(drop-plant,180) vẫn trả rest do bỏ qua lỗi đã lưu. Cần cleanup rõ ràng cả đường validate/hint và quy ước đọc sau lỗi trước việc 4."
+        "Chặn vòng đời WorldSim: m3-collide thêm Lan quay f250 face.prop=plant-1 và đổi timeline[7].bind.points.meet.y=900. loadFilm từ chối ACTION_SPEED_EXCEEDED f283. Bọc World.prototype.createRigidBody và free, đếm các instance khác nhau: 13 tạo thân / 0 gọi free khi trả lỗi (gồm film tạm trong hint). Bản y=430 hợp lệ: 1/1; bản y=900 face=right: 0/0. Kiểm thêm API: sau lỗi dựng hull thứ hai trong simulateWorld, dropPose(drop-plant,180) vẫn trả rest do bỏ qua lỗi đã lưu. Cần cleanup rõ ràng cả đường validate/hint và quy ước đọc sau lỗi trước việc 4.",
+        "Hậu kiểm 806b85e. Cùng 16 test world: 0cad0a0 đạt 14, bản sửa đạt 16. Qua loadFilm, lỗi gợi ý thời lượng ở f283 giữ nguyên; 13/13 world được free đúng một lần, đối chứng hợp lệ 1/1 và face:right 0/0. Sau lỗi dựng hull, đọc pose đã cache hoặc frame sau và gọi bake/trace trên cùng film đều ném lại cùng đối tượng lỗi engine. Kiểm dispose hai lần và đọc lại trên film chưa lỗi cho cùng pose. Verify 355/355, 8 golden. CI render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45508257516 đạt.",
+        "Đối chiếu hai cảnh ba vật trên cùng code: bản Codex giữ idle-breath 384 frame × 3 lần lặp, nhân vật third bắt đầu clip f70; lần khóa đầu f333, nghỉ cuối f459, loadFilm đạt. Trong fixture hồi quy, idle-breath dài 480 frame với repeat=4 và cả ba clip bắt đầu f0: khóa đầu f329, nghỉ cuối f397 trên chậu, WRONG_SUPPORT đúng. Đổi riêng các clip idle-breath tái hiện khác biệt; đổi riêng camera và ID drop vẫn ra f333. Cả hai mất tựa ở f377 kèm xung lực. Chưa cô lập mất tựa thụ động. Cho triển khai việc 4 theo PLAN; duyệt thị giác ghi riêng."
       ]
     },
     "M4": {
