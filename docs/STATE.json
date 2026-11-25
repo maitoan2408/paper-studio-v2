@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "806b85e09e6bb2fe3dc0fe3af712cbafb47a0225",
+      "head": "3ce544ed5df346cb0557ce46b31fdd011b0f5976",
       "updated": "2026-11-25",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -104,7 +104,11 @@
         "sharedSeekOrder": "PASS_TECHNICAL",
         "sharedPoseDependency": "PASS_TECHNICAL",
         "landingTarget": "PASS_TECHNICAL",
-        "partialWorldCleanup": "PASS_TECHNICAL"
+        "partialWorldCleanup": "PASS_TECHNICAL",
+        "bakeReplayAudit": "PASS_TECHNICAL",
+        "bakeCrossEnvironment": "PASS_TECHNICAL",
+        "bakeMotionInputs": "BLOCKED",
+        "bakeFormatErrors": "BLOCKED"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -135,7 +139,10 @@
         "Đối chứng ba vật qua loadFilm: từ m3-collide, 480 frame, đặt meet.x/walk.toX của Lan là −200/−330, nhân bản Lan (third), đèn (lamp3), walk và bốn timeline gốc của Lan trễ 70 frame cho nhân vật mới; meet.x/walk.toX mới −265/−395, release index 11, density 8. Đèn thứ nhất nghỉ f333, f376 đỡ bởi plant-1, f377 airborne và wake lost-support, f378 có điểm tựa trở lại. Có xung lực cùng frame thức; ca này không cô lập mất tựa thụ động.",
         "Chặn vòng đời WorldSim: m3-collide thêm Lan quay f250 face.prop=plant-1 và đổi timeline[7].bind.points.meet.y=900. loadFilm từ chối ACTION_SPEED_EXCEEDED f283. Bọc World.prototype.createRigidBody và free, đếm các instance khác nhau: 13 tạo thân / 0 gọi free khi trả lỗi (gồm film tạm trong hint). Bản y=430 hợp lệ: 1/1; bản y=900 face=right: 0/0. Kiểm thêm API: sau lỗi dựng hull thứ hai trong simulateWorld, dropPose(drop-plant,180) vẫn trả rest do bỏ qua lỗi đã lưu. Cần cleanup rõ ràng cả đường validate/hint và quy ước đọc sau lỗi trước việc 4.",
         "Hậu kiểm 806b85e. Cùng 16 test world: 0cad0a0 đạt 14, bản sửa đạt 16. Qua loadFilm, lỗi gợi ý thời lượng ở f283 giữ nguyên; 13/13 world được free đúng một lần, đối chứng hợp lệ 1/1 và face:right 0/0. Sau lỗi dựng hull, đọc pose đã cache hoặc frame sau và gọi bake/trace trên cùng film đều ném lại cùng đối tượng lỗi engine. Kiểm dispose hai lần và đọc lại trên film chưa lỗi cho cùng pose. Verify 355/355, 8 golden. CI render/audit https://github.com/maitoan2408/paper-studio-v2/actions/runs/45508257516 đạt.",
-        "Đối chiếu hai cảnh ba vật trên cùng code: bản Codex giữ idle-breath 384 frame × 3 lần lặp, nhân vật third bắt đầu clip f70; lần khóa đầu f333, nghỉ cuối f459, loadFilm đạt. Trong fixture hồi quy, idle-breath dài 480 frame với repeat=4 và cả ba clip bắt đầu f0: khóa đầu f329, nghỉ cuối f397 trên chậu, WRONG_SUPPORT đúng. Đổi riêng các clip idle-breath tái hiện khác biệt; đổi riêng camera và ID drop vẫn ra f333. Cả hai mất tựa ở f377 kèm xung lực. Chưa cô lập mất tựa thụ động. Cho triển khai việc 4 theo PLAN; duyệt thị giác ghi riêng."
+        "Đối chiếu hai cảnh ba vật trên cùng code: bản Codex giữ idle-breath 384 frame × 3 lần lặp, nhân vật third bắt đầu clip f70; lần khóa đầu f333, nghỉ cuối f459, loadFilm đạt. Trong fixture hồi quy, idle-breath dài 480 frame với repeat=4 và cả ba clip bắt đầu f0: khóa đầu f329, nghỉ cuối f397 trên chậu, WRONG_SUPPORT đúng. Đổi riêng các clip idle-breath tái hiện khác biệt; đổi riêng camera và ID drop vẫn ra f333. Cả hai mất tựa ở f377 kèm xung lực. Chưa cô lập mất tựa thụ động. Cho triển khai việc 4 theo PLAN; duyệt thị giác ghi riêng.",
+        "Việc 4 @3ce544e. Codex verify 361/361, 8 golden. SHA chuẩn hóa bake cục bộ trùng đủ 64 ký tự trong log CI cho m3-drop c5a2917b…, m3-drop-table d28d5f25…, m3-collide 517895bb…, m3-collide-miss 825a3289…. CI render/audit và check:bake đạt https://github.com/maitoan2408/paper-studio-v2/actions/runs/45549505762. CLI audit từ process mới bắt đúng pose đã băm lại ở drop-plant f170.x (+0,25 px).",
+        "bakeMotionInputs: manifest art không bao gồm rig.json và actions/*.json. Codex thử trên bản sao assets với m3-drop: drop.events[0].t 0.3 → 0.301 giữ frame, SceneFrame và SHA bake; verifyPhysicsBake chấp nhận bake gốc. Đổi thành 0.34 làm đổi quỹ đạo nhưng báo MISMATCH tại contacts[0].frame (166 so với 165) thay vì STALE. Đổi riêng giới hạn tốc độ xương pelvis từ 12 lên 13 cũng giữ nguyên SHA. Cần định danh dữ liệu motion thực tế đã nạp.",
+        "bakeFormatErrors: CLI audit với JSON null và SHA đúng trả TypeError khi đọc format. Cần xác nhận đối tượng gốc trước khi truy cập và trả AUDIT_BAKE_FORMAT. Giữ tương thích manifest v1 cho phim không vật lý, manifest v2 khai physics tường minh. Chưa nghiệm thu thị giác."
       ]
     },
     "M4": {
