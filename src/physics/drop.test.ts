@@ -142,8 +142,8 @@ const errs: [string, (d: any) => void][] = [
   }],
   // mặt đỡ không nằm dưới chỗ thả
   ['PHYSICS_NO_LANDING', (d) => (d.physics[0].onto = 'table-top')],
-  // nhặt lại sau khi rơi: chưa hỗ trợ ở đợt 1
-  ['PHYSICS_REGRIP', (d) => d.timeline.push({ character: 'tam', clip: 'pick-up', start: 200, durationFrames: 30, bind: { active: 'l', roles: { item: 'plant-1' } }, layer: 2 })],
+  // nhặt lại sau khi rơi (M3 việc 6): chậu nằm yên trên sàn ngoài tầm tay trái của Tam — pickup.test.ts
+  ['IK_UNREACHABLE', (d) => d.timeline.push({ character: 'tam', clip: 'pick-up', start: 200, durationFrames: 30, bind: { active: 'l', roles: { item: 'plant-1' } }, layer: 2 })],
   // trỏ vào mục timeline không có sự kiện buông
   ['PHYSICS_NO_RELEASE', (d) => (d.physics[0].release = d.timeline.findIndex((t: any) => t.clip === 'carry'))],
   ['FILM_UNKNOWN_REF', (d) => (d.physics[0].prop = 'cup')],

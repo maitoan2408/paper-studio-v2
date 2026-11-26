@@ -194,8 +194,11 @@ test('npm run validate shows the releaser warnings (film, drop, releaser, bone, 
   const r = spawnSync(process.execPath, ['src/cli/validate.ts'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   const warn = r.stdout.split('\n').filter((l) => l.startsWith('WARN '));
-  const expect = ['m3-collide-miss', 'm3-collide', 'm3-drop'].flatMap((film) => [['foot.l', 3, '163.375'], ['foot.r', 4, '163.500']].map(([bone, k, t]) =>
-    `WARN PHYSICS_RELEASER_NEW_CONTACT: ${film} film.physics(drop-plant) — "plant-1" overlaps a new region of its releaser tam: ${bone} at frame 164 substep ${k}/8 (t ${t}), before leaving tam's body; not blocked — review the 2.5D layering in the video (draw order only explains the picture)`));
+  const line = (film: string, bone: string, f: number, k: number, t: string) =>
+    `WARN PHYSICS_RELEASER_NEW_CONTACT: ${film} film.physics(drop-plant) — "plant-1" overlaps a new region of its releaser tam: ${bone} at frame ${f} substep ${k}/8 (t ${t}), before leaving tam's body; not blocked — review the 2.5D layering in the video (draw order only explains the picture)`;
+  const expect = ['m3-collide-miss', 'm3-collide', 'm3-drop'].flatMap((film) => [line(film, 'foot.l', 164, 3, '163.375'), line(film, 'foot.r', 164, 4, '163.500')]);
+  // M3 việc 6: cảnh nhặt chậu — Tam thả chậu xuống bàn ngay trước người, chậu đi ngang thân trước khi rời hẳn
+  expect.push(line('m3-pickup-pot', 'torso', 230, 2, '229.167'));
   assert.deepEqual(warn, expect);
   // mỗi cảnh báo nằm ngay sau dòng OK của phim đó
   for (const film of ['m3-collide-miss', 'm3-collide', 'm3-drop']) {

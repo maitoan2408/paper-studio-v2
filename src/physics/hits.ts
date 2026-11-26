@@ -158,7 +158,7 @@ function scan(film: Film): FallingHitReport[] {
     for (const q of b.poses) {
       const f = q.frame;
       const before = f === b.releaseFrame ? null : pose(f - 1)!;
-      const prev = before ?? { x: b.init.pivot[0], y: b.init.pivot[1], angle: prop.rotation };
+      const prev = before ?? { x: b.init.pivot[0], y: b.init.pivot[1], angle: b.init.angle }; // góc trong tay ở R−1
       // đường đi trong frame: pose đầu khoảng + pose sau từng bước con (frame khóa nghỉ không có sub ⇒ chỉ pose frame)
       const path: [number, number, number][] = [[prev.x, prev.y, prev.angle], ...(q.sub.length ? q.sub : [[q.x, q.y, q.angle] as [number, number, number]])];
       const steps = path.length - 1;

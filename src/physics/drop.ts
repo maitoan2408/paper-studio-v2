@@ -32,7 +32,7 @@ import { fail } from '../core/errors.ts';
 import { artToLocal, rotate, type V2 } from '../core/space.ts';
 import type { DropSpec, Film } from '../schema/film.ts';
 import { contactWorld } from '../motion/character.ts';
-import { propPivot, propTimeline } from '../motion/props.ts';
+import { propAngle, propPivot, propTimeline } from '../motion/props.ts';
 import { RAPIER, RAPIER_VERSION } from './rapier.ts';
 
 export const SUBSTEPS = 8;
@@ -207,10 +207,13 @@ interface Actor {
   path: string;
   where: string;
   R: number;
-  /** Trạng thái lúc buông (pivot R−1, vận tốc tay) — tính khi DỰNG vật ở frame R (có thể đọc pose đạo cụ khác < R). */
+  /** Frame thân Rapier RỜI thế giới: frame grip nhặt lại (đoạn rơi kết thúc ở end − 1), hoặc hết phim. */
+  end: number;
+  /** Trạng thái lúc buông (pivot R−1, vận tốc tay, góc trong tay) — tính khi DỰNG vật ở frame R (có thể đọc pose đạo cụ
+   *  khác < R, kể cả góc nằm yên của lần rơi trước nếu vật đã được nhặt lại). */
   p1?: V2;
   v0?: V2;
-  angle0: number;
+  angle0?: number;
   c0: V2;
   verts: V2[];
   collider: { type: 'box' } | { type: 'hull'; points: [number, number][] };
@@ -303,8 +306,8 @@ class WorldSim {
       }
       this.advanceTo(frame);
     }
-    const p = a.poses[frame - a.R];
-    if (!p) return fail('PHYSICS_FRAME', `drop ${id}`, `frame ${frame} outside [${a.R}, ${a.R + a.poses.length - 1}]`);
+    const p = frame < a.end ? a.poses[frame - a.R] : undefined;
+    if (!p) return fail('PHYSICS_FRAME', `drop ${id}`, `frame ${frame} outside [${a.R}, ${a.R + a.poses.length - 1}]${a.end < this.N ? ` (picked up at frame ${a.end})` : ''}`);
     return p;
   }
 
@@ -375,6 +378,16 @@ class WorldSim {
 
   private stepFrame(fr: number): void {
     const world = this.world!, ppm = this.ppm;
+    // Nhặt lại (grip ở fr): thân rời thế giới TRƯỚC bước của frame fr — từ đây đạo cụ theo tay, không còn đỡ/va vật khác.
+    for (let i = this.active.length - 1; i >= 0; i--) {
+      const a = this.active[i]!;
+      if (a.end !== fr) continue;
+      this.owner.delete(a.shape!.handle);
+      world.removeRigidBody(a.body!);
+      a.body = undefined;
+      a.shape = undefined;
+      this.active.splice(i, 1);
+    }
     for (const a of this.actors) {
       if (a.R !== fr) continue;
       release(this.film, a);
@@ -445,6 +458,7 @@ function actorOf(film: Film, d: DropSpec): Actor {
   if (!seg) return fail('PHYSICS_NO_RELEASE', where, `"${d.prop}" is never let go by timeline[${d.release}]`);
   const R = seg.from;
   const list = propTimeline(film).get(d.prop)!;
+  const end = list[list.indexOf(seg) + 1]?.from ?? film.data.output.durationFrames; // đoạn sau đoạn rơi = grip nhặt lại
   const heldAt = (fr: number) => fr >= 0 && list.filter((s) => s.from <= fr).at(-1)!.holders.length > 0;
   if (!heldAt(R - 1) || !heldAt(R - 2)) fail('PHYSICS_RELEASE_TOO_EARLY', where, `release at frame ${R} needs the prop held at frames ${R - 2} and ${R - 1} (hand velocity)`);
   const prop = film.data.props.find((x) => x.id === d.prop)!;
@@ -462,7 +476,7 @@ function actorOf(film: Film, d: DropSpec): Actor {
     : collider.points.map((a) => { const l = artToLocal(a, asset.pivot); return [l[0] * prop.scale - c0[0], l[1] * prop.scale - c0[1]] as V2; });
   const surface = film.data.stage.surfaces.find((s) => s.id === d.onto)!;
   return {
-    d, key: `prop:${d.prop}`, path, where, R, angle0: prop.rotation, c0, verts, collider, hw, hh, surface, rCom: 0, mass: 0, inertia: 0, energyBound: false,
+    d, key: `prop:${d.prop}`, path, where, R, end, c0, verts, collider, hw, hh, surface, rCom: 0, mass: 0, inertia: 0, energyBound: false,
     poses: [], firstContact: null, firstContactPoints: [], contacts: [], wakes: [], calm: 0, lock: null, restFrame: -1, missCond: [], pushedByPropFrames: [],
   };
 }
@@ -471,12 +485,14 @@ function actorOf(film: Film, d: DropSpec): Actor {
 function release(film: Film, a: Actor): void {
   const held = (fr: number): V2 => propPivot(film, a.d.prop, fr, (ci, c) => contactWorld(film, ci, fr, c));
   const p1 = held(a.R - 1), p2 = held(a.R - 2), fps = film.data.output.fps;
+  a.angle0 = propAngle(film, a.d.prop, a.R - 1); // góc thế giới trong tay (góc dàn cảnh, hoặc góc nằm yên lúc nhặt lại)
   a.p1 = p1;
   a.v0 = [(p1[0] - p2[0]) * fps, (p1[1] - p2[1]) * fps];
 }
 
 function spawn(world: World, a: Actor, ppm: number): void {
-  const { d, c0, angle0, verts, collider, hw, hh } = a;
+  const { d, c0, verts, collider, hw, hh } = a;
+  const angle0 = a.angle0!;
   const p1 = a.p1!, v0 = a.v0!;
   const r = rotate(c0, angle0);
   a.body = world.createRigidBody(
@@ -615,7 +631,7 @@ function traceOf(a: Actor): DropTrace {
   const poses = missFrame >= 0 ? a.poses.filter((q) => q.frame <= missFrame) : a.poses;
   const lastSupported = poses.filter((q) => q.supported).at(-1)?.frame ?? -1;
   return {
-    releaseFrame: a.R, init: { pivot: a.p1!, velocity: a.v0!, angle: a.angle0 }, poses, firstContact: a.firstContact, firstContactPoints: a.firstContactPoints,
+    releaseFrame: a.R, init: { pivot: a.p1!, velocity: a.v0!, angle: a.angle0! }, poses, firstContact: a.firstContact, firstContactPoints: a.firstContactPoints,
     contacts: a.contacts, wakes: a.wakes, lastSupported, restFrame: missFrame >= 0 ? -1 : a.restFrame, missFrame, missCandidates: a.missCond,
   };
 }
@@ -653,4 +669,39 @@ function verdicts(film: Film, traces: Map<string, DropTrace>): Map<string, DropB
     out.set(d.id, { id: d.id, prop: d.prop, engine: `rapier2d-deterministic-compat@${RAPIER_VERSION}`, releaseFrame: tr.releaseFrame, landFrame: fc!.frame, firstContact: fc!, firstContactPoints: tr.firstContactPoints, contacts: tr.contacts, wakes: tr.wakes, restFrame: tr.restFrame, init: tr.init, poses: tr.poses });
   }
   return out;
+}
+
+/**
+ * Nhặt lại sau rơi tự do (M3 việc 6): grip ở frame G trên đạo cụ đang ở đoạn rơi chỉ hợp lệ khi ở G − 1 vật đang NẰM YÊN
+ * (khóa nghỉ, state rest) và còn được đỡ (supportedBy khác rỗng). Chạy ngay sau khi phát lại sự kiện, trước các kiểm tra
+ * chuyển động — để lỗi nêu đúng nguyên nhân (vật chưa nghỉ / đã bị đánh thức) thay vì lỗi tay với không tới vật đang bay.
+ * Chỉ chạy thế giới tới G − 1. Ngoài tầm tay: bộ giải reach của clip nhặt báo (IK_UNREACHABLE … tại mục timeline, frame).
+ */
+export function checkPickups(film: Film): void {
+  for (const [propId, list] of propTimeline(film)) {
+    for (const seg of list) {
+      const pk = seg.picked;
+      if (!pk || seg.from !== pk.frame) continue;
+      const G = pk.frame;
+      const where = `film.timeline[${pk.item}] frame ${G} (${pk.drop})`;
+      const q = dropPose(film, pk.drop, G - 1);
+      if (q.state === 'rest' && q.supportedBy.length > 0) continue;
+      // Lịch sử từ lúc buông tới G − 1: lần nằm yên đầu và lần bị đánh thức sau đó (nếu có).
+      const d = film.data.physics.find((x) => x.id === pk.drop)!;
+      const R = propTimeline(film).get(propId)!.find((x) => x.drop === pk.drop)!.from;
+      let firstRest = -1, woke = -1, by = '';
+      for (let f = R; f < G; f++) {
+        const p = dropPose(film, pk.drop, f);
+        if (p.state === 'rest' && firstRest < 0) firstRest = f;
+        if (firstRest >= 0 && woke < 0 && p.state !== 'rest') {
+          woke = f;
+          const props = p.pushes.filter((x) => x.by.startsWith('prop:')).map((x) => x.by);
+          by = props.length ? `pushed by ${props.join(', ')}` : 'it lost its support';
+        }
+      }
+      const now = `at frame ${G - 1} it is ${q.state} (pivot ${q.x.toFixed(1)}, ${q.y.toFixed(1)}, speed ${Math.hypot(q.vx, q.vy).toFixed(1)} px/s${q.supportedBy.length ? `, on ${q.supportedBy.join(' + ')}` : ', unsupported'})`;
+      const history = woke >= 0 ? `it came to rest at frame ${firstRest} but was woken at frame ${woke} (${by})` : `it has not come to rest since its release at frame ${R}`;
+      fail('PHYSICS_PICKUP_NOT_AT_REST', where, `"${d.prop}" can only be picked up while it rests and is supported: ${now}; ${history}; grip later or move the pickup`);
+    }
+  }
 }

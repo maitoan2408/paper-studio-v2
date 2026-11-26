@@ -12,7 +12,7 @@ import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
 import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
-import { dropBake, disposeWorld } from '../physics/drop.ts';
+import { checkPickups, dropBake, disposeWorld } from '../physics/drop.ts';
 import { checkFallingProps } from '../physics/hits.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
@@ -410,6 +410,7 @@ export function validateFilm(
 /** Các kiểm tra cần film đã dựng (chuyển động, đạo cụ, vật lý) — tách ra để validateFilm thu hồi world khi có lỗi. */
 function checkFilm(film: Film, f: Film['data'], N: number): Film {
   propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
+  checkPickups(film); // nhặt lại sau rơi tự do: vật phải đang nằm yên và được đỡ ở frame trước grip (M3 việc 6)
   // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
   // Lỗi do quá ngắn (WALK_TOO_SHORT, ACTION_SPEED_EXCEEDED) kèm số frame tối thiểu của mục gây lỗi (E3).
   f.characters.forEach((c, ci) => {

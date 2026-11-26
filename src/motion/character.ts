@@ -138,7 +138,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
   const pack = film.packs.get(c.pack)!;
   // Gom theo chuỗi tay: đích = trung bình có trọng số (tay đi THẲNG giữa các đích), trọng số FK→IK = 1 − Π(1 − wᵢ);
   // giải IK MỘT lần cho mỗi chuỗi. Một kênh duy nhất ⇒ đúng như trộn FK↔IK thông thường.
-  const byChain = new Map<string, { flip: boolean; where: string; targets: { local: V2; w: number }[] }>();
+  const byChain = new Map<string, { flip: boolean; where: string; targets: { local: V2; w: number; label?: string }[] }>();
   for (const a of activeItems(film, ci, frame)) {
     for (const ch of a.clip.channels) {
       if (ch.prop !== 'reach') continue;
@@ -161,6 +161,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
       byChain.set(chainName, entry);
       let target: V2 | undefined; // đích thế giới (y-lên)
       let local: V2 | undefined; // hoặc đích local trực tiếp (bám thân — dùng được cả khi đang lật)
+      let label: string | undefined; // đích là anchor đạo cụ: nêu trong lỗi IK (vd. nhặt lại vật nằm ngoài tầm tay)
       const tg = ch.target;
       // offset.x đối xứng gương khi @active = r (như giá trị xoay của xương @active — timeline.ts).
       const ox = (a.side === 'r' ? -1 : 1) * ('offset' in tg ? (tg.offset?.x ?? 0) : 0);
@@ -181,7 +182,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
       } else {
         const propId = a.item.bind.roles?.[tg.role];
         if (!propId) fail('ACTION_PRECONDITION', `${where}.bind.roles.${tg.role}`, 'role is not bound to a prop');
-        const off = anchorOffset(film, propId, tg.anchor);
+        const off = anchorOffset(film, propId, tg.anchor, frame);
         let pivot: V2;
         if (tg.at === 'place') {
           const pl = a.item.bind.place;
@@ -193,20 +194,22 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
           const seg = segmentAt(film, propId, frame);
           const others = seg.holders.filter((h) => !(h.ci === ci && h.contact === contact));
           if (others.length > 0) fail('PROP_TARGET_HELD', where, `reach target "${propId}" is held by someone else; reach a point instead`);
-          // Đang do chính tay này cầm: đích là chỗ đồ nằm TRƯỚC khi cầm (rời tay khỏi chỗ nhặt mượt mà).
+          // Đang do chính tay này cầm: đích là chỗ đồ nằm TRƯỚC khi cầm (rời tay khỏi chỗ nhặt mượt mà) — gồm pose bake
+          // ở frame trước grip nếu nhặt lại sau rơi tự do.
           const mine = seg.holders.find((h) => h.ci === ci && h.contact === contact);
-          pivot = mine ? segmentAt(film, propId, mine.since - 1).rest : restPivot(film, propId, frame);
+          pivot = restPivot(film, propId, mine ? mine.since - 1 : frame);
         }
         // clear = dời VỀ PHÍA NGƯỜI một phần bề ngang của chính đạo cụ (px thế giới, suy ra từ art × scale; gương khi r).
         const pr = film.data.props.find((x) => x.id === propId)!;
         const clearX = (a.side === 'r' ? 1 : -1) * (tg.clear ?? 0) * film.assets.get(pr.asset)!.width * pr.scale;
         target = [pivot[0] + off[0] + fx * (scale * ox + clearX), pivot[1] + off[1] + scale * oy];
+        label = `"${propId}" anchor "${tg.anchor}" at (${(pivot[0] + off[0]).toFixed(1)}, ${(pivot[1] + off[1]).toFixed(1)})`;
       }
       if (!local) {
         if (Math.abs(fx) < 1) fail('ACTION_PRECONDITION', where, `${c.id} reaches a world target while turning`);
         local = [(target![0] - root[0]) / (fx * scale), (target![1] - root[1]) / scale];
       }
-      entry.targets.push({ local, w: weight });
+      entry.targets.push({ local, w: weight, ...(label ? { label } : {}) });
     }
   }
   for (const [chainName, e] of byChain) {
@@ -218,7 +221,8 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
     try {
       solved = solveChain(rig, pack, c.character, pose, chainName, target, W, e.flip);
     } catch (err) {
-      if (err instanceof StudioError) fail(err.code, e.where, `${err.path}: ${err.detail}`);
+      const labels = [...new Set(e.targets.flatMap((t) => (t.label ? [t.label] : [])))];
+      if (err instanceof StudioError) fail(err.code, e.where, `${err.path}: ${err.detail}${labels.length ? `; reaching ${labels.join(', ')}` : ''}`);
       throw err;
     }
     for (const [b, v] of solved) angles.set(b, v);
