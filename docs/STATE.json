@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "a401f62ca512fccaf75dda23984aea860a145761",
+      "head": "46d0218351774e96b03c0b76ed0120f4e86dc44a",
       "updated": "2026-11-26",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -120,7 +120,8 @@
         "pickupGripAndSeek": "PASS_TECHNICAL",
         "pickupPreconditions": "PASS_TECHNICAL",
         "pickupBodyRemoval": "PASS_TECHNICAL",
-        "pickupRotatedPlacement": "BLOCKED"
+        "pickupRotatedPlacement": "PASS_TECHNICAL",
+        "pickupPlacementSurfaceExtent": "BLOCKED"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -182,7 +183,10 @@
         "Hậu kiểm việc 6 tại a401f62, cha 5b3d86c. Codex chạy cùng 10 test pickup trên hai worktree (chép test và hai phim sang cha): cha 0/10, bản sửa 10/10. Verify 390/390. Validate exit 0, 10 phim, 6 WARN chân Tam như trước và 1 WARN torso f230 bước 2/8 trong m3-pickup-pot.",
         "Tam nhặt chậu tay trái sau khi nghỉ f258, grip f324 ở −89,99994°. Sai số tay–anchor và lệch pivot khoảng 1,29e−9 px, lệch góc 0°; lấy góc dàn cảnh thì sai 81,74 px. Lan nhặt đèn tay trái sau khi nghỉ f263, grip f394, góc xấp xỉ 0°, sai số tay–anchor và lệch pivot khoảng 1,09e−9 px, lệch góc 0°. Các ca tua thẳng và tuần tự khớp. Qua loadFilm, vật đang bay f230 và đã thức lại f315 bị chặn bằng PHYSICS_PICKUP_NOT_AT_REST; ca ngoài tầm báo IK_UNREACHABLE f208, thiếu 110,7 px. Đối chứng bỏ thân ở G=259 dùng simulateWorld trực tiếp vì tay không tới chậu trên sàn. Thử thêm một lần thả chậu sau nhặt bằng clip give thứ hai từ f464, release f517 giữ góc −89,99994°, nghỉ lại f553.",
         "Codex so 10 SHA SceneFrame và 6 SHA bake cục bộ với log CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45764768501 trên merge ref a6b307589bd86b2d829822d82daca73943f65211. Toàn bộ khớp 64 ký tự. 8 SceneFrame và 4 bake cũ cũng khớp run 45744531458. Renderer 8/8, audit 10 phim minPSNR 41,15 dB, check:bake 26/26. Tổng 34 dòng PASS gồm cả renderer.",
-        "pickupRotatedPlacement BLOCKED. Từ m3-pickup-pot chỉ đổi output.durationFrames thành 744 và thêm timeline[8] = {character:\"tam\", clip:\"place\", start:464, durationFrames:280, layer:1, bind:{active:\"l\", roles:{item:\"plant-1\"}, place:{surface:\"table-top\", x:-577.8}}}. loadFilm cho qua. Ở f675 khi còn cầm và f676 khi đặt, đáy hộp art ở y=256,5, thấp hơn mặt bàn y=307,5 đúng 51 px. Đáy vẫn ở đó tại f743. Chậu nằm gọn trong khoảng x của bàn. Với góc nghỉ hiện tại, pivot đặt phải ở y≈358,5 để đáy chạm bàn trong dung sai 0,5 px. Hình render đối chứng tại f323/f676 xác nhận vị trí đặt sai. Đích reach at:place, pose sau release và phép kiểm tiếp cận/độ liên tục phải dùng cùng hình học đặt theo góc. Giao Claude bổ sung test qua loadFilm cho chậu nghiêng và đèn thẳng, giữ fail closed khi ngoài tầm; nếu cần dời nơi đặt để tới được, giữ fixture cũ làm ca âm. Chủ dự án duyệt hình ảnh việc 6 sau lượt sửa."
+        "pickupRotatedPlacement BLOCKED. Từ m3-pickup-pot chỉ đổi output.durationFrames thành 744 và thêm timeline[8] = {character:\"tam\", clip:\"place\", start:464, durationFrames:280, layer:1, bind:{active:\"l\", roles:{item:\"plant-1\"}, place:{surface:\"table-top\", x:-577.8}}}. loadFilm cho qua. Ở f675 khi còn cầm và f676 khi đặt, đáy hộp art ở y=256,5, thấp hơn mặt bàn y=307,5 đúng 51 px. Đáy vẫn ở đó tại f743. Chậu nằm gọn trong khoảng x của bàn. Với góc nghỉ hiện tại, pivot đặt phải ở y≈358,5 để đáy chạm bàn trong dung sai 0,5 px. Hình render đối chứng tại f323/f676 xác nhận vị trí đặt sai. Đích reach at:place, pose sau release và phép kiểm tiếp cận/độ liên tục phải dùng cùng hình học đặt theo góc. Giao Claude bổ sung test qua loadFilm cho chậu nghiêng và đèn thẳng, giữ fail closed khi ngoài tầm; nếu cần dời nơi đặt để tới được, giữ fixture cũ làm ca âm. Chủ dự án duyệt hình ảnh việc 6 sau lượt sửa.",
+        "Hậu kiểm 46d0218 trên hai worktree. Fixture gốc của Codex và m3-pickup-place trùng dữ liệu ngoại trừ id. Cùng fixture, tại f675, f676 và f743 đáy khung art chuyển từ y=256,5 trên 0086d19 sang y=307,5 trên bản sửa. Khi buông f676, pivot (−577,8; 358,5), góc −89,99994°, sai số tay–anchor <1e−8 px, bước nhảy pivot <1e−8 px và góc 0°. Đèn thẳng đặt tại x=300 có đáy y=246. Đặt chậu tại x=−350 với clip dài 500 frame báo IK_UNREACHABLE ở f642, thiếu 0,7 px, đích (−292,2; 358,5).",
+        "Codex chạy cùng 13 test pickup trên bản cha và bản sửa: 11/13 rồi 13/13. Verify 394/394, 11 golden. Validate exit 0 trên 11 phim, 8 WARN (thêm torso f230 bước 2/8 của m3-pickup-place). 11 SHA SceneFrame và 7 SHA bake khớp đủ với CI. 10 SceneFrame và 6 bake cũ khớp run 45764768501. CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45792990988 trên merge ref adde4af2f50cd8c0d665b52cb3db1c08c5be026d đạt renderer 8/8, audit 11 phim (minPSNR 41,20 dB), check:bake 26/26. Codex render riêng đoạn f590–743 của fixture gốc để duyệt hình ảnh.",
+        "pickupPlacementSurfaceExtent BLOCKED. Fixture qua loadFilm từ m3-pickup-place, cho physics[0].body.collider = {type:\"hull\",points:[[0,0],[114,0],[120,190],[0,190]]}; thêm mặt shelf có x0=−670, y=327,5; đặt timeline[8].bind.place.surface=\"shelf\", giữ x=−577,8. Chỉ đổi x1 của shelf giữa hai ca. Cả hai đều nạp được, góc chậu −91,808896°. Với x1=−400, đáy tiếp xúc tại x=−417,990343. Với x1=−550, điểm đó ngoài kệ. Cắt đa giác khung art theo chiều ngang kệ và đo điểm thấp nhất còn lại: x=−550, y=331,669088 ở f675, f676 và f743, cao hơn kệ 4,169088 px (dung sai 0,5 px). Pivot nằm trong kệ. placePivot lấy đáy toàn khung tại mọi x, chưa xét giới hạn ngang của mặt đặt. Yêu cầu khi loadFilm cho phép đặt thì phải có tiếp xúc với đoạn mặt đỡ thật; nếu tư thế cố định không đặt được, trả lỗi rõ tại lần đặt. Không yêu cầu mô phỏng vật lật sau đặt. Giữ ca kệ rộng và đối chứng 0°/−90°, kiểm đích tay và pose sau release thống nhất. Chủ dự án chưa nghiệm thu M3."
       ]
     },
     "M4": {
