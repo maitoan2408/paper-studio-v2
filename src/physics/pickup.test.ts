@@ -202,3 +202,63 @@ test('rotated placement out of reach fails closed: IK_UNREACHABLE at the place i
   });
   assert.throws(v.load, code('IK_UNREACHABLE', /film\.timeline\[8\] frame \d+ \(place\) — tam\.arm\.l: target is [\d.]+ px too far .*reaching "plant-1" anchor "grip" at \(-292\.2, 358\.5\)/));
 });
+
+// ─── Hậu kiểm Codex @46d0218: mặt đỡ hữu hạn khi đặt (pickupPlacementSurfaceExtent) ─────────────────────────────────
+/** Điểm thấp nhất của khung art đã xoay CHỈ TRONG dải x ∈ [x0, x1] của mặt đỡ (cắt đa giác theo hai đường dọc) — tính
+ *  độc lập với props.ts. null nếu khung không giao dải. */
+function lowestOver(f: Film, prop: string, fr: number, x0: number, x1: number): { x: number; y: number } | null {
+  const p = f.data.props.find((x) => x.id === prop)!;
+  const a = f.assets.get(p.asset)!;
+  const pv = propPivot(f, prop, fr, hand(f, fr));
+  const r = (propAngle(f, prop, fr) * Math.PI) / 180;
+  let poly: V2[] = ([[0, 0], [a.width, 0], [a.width, a.height], [0, a.height]] as V2[]).map((c) => {
+    const l = artToLocal(c, a.pivot);
+    return [pv[0] + l[0] * p.scale * Math.cos(r) - l[1] * p.scale * Math.sin(r), pv[1] + l[0] * p.scale * Math.sin(r) + l[1] * p.scale * Math.cos(r)] as V2;
+  });
+  for (const [keep, xc] of [[(x: number) => x >= x0, x0], [(x: number) => x <= x1, x1]] as const) {
+    const out: V2[] = [];
+    poly.forEach((P, i) => {
+      const Q = poly[(i + 1) % poly.length]!;
+      if (keep(P[0])) out.push(P);
+      if (keep(P[0]) !== keep(Q[0])) { const t = (xc - P[0]) / (Q[0] - P[0]); out.push([xc, P[1] + t * (Q[1] - P[1])]); }
+    });
+    poly = out;
+  }
+  if (poly.length === 0) return null;
+  const low = poly.reduce((m, q) => (q[1] < m[1] ? q : m));
+  return { x: low[0], y: low[1] };
+}
+/** Fixture trong STATE: m3-pickup-place, chậu collider hull (nghỉ ở −91,808896°), kệ "shelf" y 327,5 từ x0 −670 tới x1. */
+const shelfPot = (x1: number, edit?: (d: any) => void) => variant('m3-pickup-place', (d) => {
+  d.physics[0].body.collider = { type: 'hull', points: [[0, 0], [114, 0], [120, 190], [0, 190]] };
+  d.stage.surfaces.push({ id: 'shelf', x0: -670, x1, y: 327.5 });
+  d.timeline[8].bind.place.surface = 'shelf';
+  edit?.(d);
+});
+const SHELF_Y = 327.5;
+
+for (const [x1, name] of [[-550, 'short shelf (x1 −550): the lowest corner overhangs the edge'], [-400, 'wide shelf (x1 −400)']] as const) {
+  test(`placement on a finite surface, ${name} — the part of the pot over [x0, x1] touches the shelf at f675, f676, f743`, () => {
+    const f = shelfPot(x1).load();
+    assert.ok(Math.abs(propAngle(f, 'plant-1', 676) - -91.808896) < 1e-5, `${propAngle(f, 'plant-1', 676)}`);
+    for (const fr of [675, 676, 743]) {
+      const low = lowestOver(f, 'plant-1', fr, -670, x1)!;
+      assert.ok(Math.abs(low.y - SHELF_Y) <= ALIGN_TOLERANCE_PX, `f${fr}: lowest point over the shelf (${low.x.toFixed(3)}, ${low.y.toFixed(6)}) vs ${SHELF_Y}`);
+    }
+    // tay trùng anchor khi buông, pivot/góc liên tục 675 → 676, nằm yên tới hết phim
+    const owner = segmentAt(f, 'plant-1', 675).holders.at(-1)!;
+    const a = propPivot(f, 'plant-1', 675, hand(f, 675)), b = propPivot(f, 'plant-1', 676, hand(f, 676)), c = propPivot(f, 'plant-1', 743, hand(f, 743));
+    assert.ok(Math.hypot(b[0] - a[0], b[1] - a[1]) <= ALIGN_TOLERANCE_PX && Math.hypot(c[0] - b[0], c[1] - b[1]) === 0);
+    const off = anchorOffset(f, 'plant-1', owner.anchor, 676), got = contactWorld(f, owner.ci, 676, owner.contact);
+    assert.ok(Math.hypot(got[0] - b[0] - off[0], got[1] - b[1] - off[1]) <= ALIGN_TOLERANCE_PX);
+  });
+}
+
+test('placement that cannot rest on the surface in its fixed pose fails at the place action (PROP_PLACE_OFF_SURFACE)', () => {
+  // kệ kết thúc đúng tại x đặt: chậu nằm −90° chìa toàn thân sang phải, phần nằm trên kệ rộng chưa tới 0,5 px
+  const v = variant('m3-pickup-place', (d) => {
+    d.stage.surfaces.push({ id: 'shelf', x0: -670, x1: -577.8, y: 327.5 });
+    d.timeline[8].bind.place.surface = 'shelf';
+  });
+  assert.throws(v.load, code('PROP_PLACE_OFF_SURFACE', /film\.timeline\[8\]\.bind\.place frame 676 — "plant-1" at angle -90\.000° placed at x=-577\.8 overlaps "shelf" \(x∈\[-670, -577\.8\]\) by 0\.000 px/));
+});

@@ -10,7 +10,7 @@ import { fail, parseWith, readJsonFile, StudioError } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
 import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
-import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
+import { checkHeldAboveSurface, checkPlacements, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
 import { checkPickups, dropBake, disposeWorld } from '../physics/drop.ts';
 import { checkFallingProps } from '../physics/hits.ts';
@@ -411,6 +411,7 @@ export function validateFilm(
 function checkFilm(film: Film, f: Film['data'], N: number): Film {
   propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
   checkPickups(film); // nhặt lại sau rơi tự do: vật phải đang nằm yên và được đỡ ở frame trước grip (M3 việc 6)
+  checkPlacements(film); // đặt có kiểm soát: khung đã xoay phải có phần nằm trên mặt đỡ (PROP_PLACE_OFF_SURFACE)
   // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
   // Lỗi do quá ngắn (WALK_TOO_SHORT, ACTION_SPEED_EXCEEDED) kèm số frame tối thiểu của mục gây lỗi (E3).
   f.characters.forEach((c, ci) => {

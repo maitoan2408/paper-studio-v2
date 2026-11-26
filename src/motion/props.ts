@@ -33,7 +33,7 @@ export interface Segment {
    *  đặt có kiểm soát (`placed`): pivot thật phụ thuộc góc của vật ⇒ đọc qua segRest/restPivot, không đọc thẳng. */
   rest: V2;
   /** Chỗ đặt có kiểm soát mà `rest` thuộc về (bind.place của lần thả) — kế thừa cùng `rest` cho tới lần đặt/rơi kế tiếp. */
-  placed?: { surface: string; x: number };
+  placed?: { surface: string; x: number; item: number; frame: number };
   /** id drop (film.physics) nếu đoạn này là rơi tự do bắt đầu ở `from`. */
   drop?: string;
   /** Tay vừa buông khi bắt đầu rơi — để giữ lớp vẽ liên tục (sample.ts). */
@@ -125,7 +125,7 @@ export function propTimeline(film: Film): Map<string, Segment[]> {
         if (!s) fail('FILM_UNKNOWN_REF', `${where}.bind.place`, `surface "${e.place.surface}" does not exist`);
         if (e.place.x < s.x0 || e.place.x > s.x1) fail('FILM_NOT_ON_SURFACE', `${where}.bind.place`, `x=${e.place.x} outside "${s.id}"`);
         rest = [e.place.x, s.y];
-        placed = e.place;
+        placed = { ...e.place, item: e.item, frame: e.frame };
       }
     }
     if (drop) picked = undefined;
@@ -188,17 +188,46 @@ export function propBottom(film: Film, propId: string, frame: number): number {
   return Math.min(...frameCorners(film, propId, frame).map((c) => c[1]));
 }
 
-/** Pivot của đạo cụ khi ĐẶT lên `place` với góc thế giới của nó ở frame: đáy (khung art đã xoay) chạm mặt đỡ tại x. Dùng
- *  chung cho đích tay `at: place`, pose nằm yên sau lần thả và các phép kiểm khoảng hở/liên tục. */
-export function placePivot(film: Film, propId: string, place: { surface: string; x: number }, frame: number): V2 {
+/**
+ * Pivot của đạo cụ khi ĐẶT lên `place` với góc thế giới của nó ở frame (góc giữ cố định — không mô phỏng lật sau khi
+ * đặt): hạ vật theo phương đứng tới khi phần khung art đã xoay NẰM TRÊN mặt đỡ chạm mặt đỡ — điểm thấp nhất của khung
+ * sau khi cắt theo dải x ∈ [x0, x1] của mặt đỡ ở đúng y của mặt. Phần chìa ra ngoài mép được phép thấp hơn mặt (ở trong
+ * không khí cạnh mép). Mặt vô hạn hoặc vật nằm gọn trong dải: bằng đáy toàn khung (propBottom) như trước.
+ * Phần khung phủ lên dải hẹp hơn hoặc bằng dung sai ALIGN_TOLERANCE_PX (gần như chỉ chạm mép) ⇒ PROP_PLACE_OFF_SURFACE tại `where` (lần đặt) — không đặt được
+ * với tư thế cố định. Dùng chung cho đích tay `at: place`, pose ở frame buông và sau đó, kiểm khoảng hở/liên tục.
+ */
+export function placePivot(film: Film, propId: string, place: { surface: string; x: number }, frame: number, where = `prop ${propId} place`): V2 {
   const s = film.data.stage.surfaces.find((x) => x.id === place.surface);
-  if (!s) return fail('FILM_UNKNOWN_REF', `prop ${propId} place`, `surface "${place.surface}" does not exist`);
-  return [place.x, s.y - propBottom(film, propId, frame)];
+  if (!s) return fail('FILM_UNKNOWN_REF', where, `surface "${place.surface}" does not exist`);
+  // dải mặt đỡ trong hệ quanh pivot; cắt đa giác lồi (khung đã xoay) bởi hai nửa mặt phẳng x ≥ lo, x ≤ hi
+  const lo = s.x0 - place.x, hi = s.x1 - place.x;
+  let poly = frameCorners(film, propId, frame);
+  for (const [inside, xc] of [[(x: number) => x >= lo, lo], [(x: number) => x <= hi, hi]] as const) {
+    const out: V2[] = [];
+    poly.forEach((P, i) => {
+      const Q = poly[(i + 1) % poly.length]!;
+      if (inside(P[0])) out.push(P);
+      if (inside(P[0]) !== inside(Q[0])) out.push([xc, P[1] + ((xc - P[0]) / (Q[0] - P[0])) * (Q[1] - P[1])]);
+    });
+    poly = out;
+  }
+  const xs = poly.map((p) => p[0]);
+  const overlap = poly.length === 0 ? 0 : Math.max(...xs) - Math.min(...xs);
+  if (overlap <= ALIGN_TOLERANCE_PX) {
+    fail('PROP_PLACE_OFF_SURFACE', where, `"${propId}" at angle ${propAngle(film, propId, frame).toFixed(3)}° placed at x=${place.x} overlaps "${s.id}" (x∈[${s.x0}, ${s.x1}]) by ${overlap.toFixed(3)} px ≤ ${ALIGN_TOLERANCE_PX} px — no support under it in this pose; move the place inward`);
+  }
+  return [place.x, s.y - Math.min(...poly.map((p) => p[1]))];
 }
 
 /** Chỗ nằm yên của một đoạn không rơi: chỗ đặt có kiểm soát theo góc của vật (placePivot), hoặc `rest` (vị trí ban đầu). */
 function segRest(film: Film, propId: string, seg: Segment): V2 {
-  return seg.placed ? placePivot(film, propId, seg.placed, seg.from) : seg.rest;
+  const pl = seg.placed;
+  return pl ? placePivot(film, propId, pl, pl.frame, `film.timeline[${pl.item}].bind.place frame ${pl.frame}`) : seg.rest;
+}
+
+/** Kiểm mọi lần đặt có kiểm soát ngay khi dựng film (trước các kiểm tra chuyển động): đặt được với góc của vật lúc đó. */
+export function checkPlacements(film: Film): void {
+  for (const [propId, list] of propTimeline(film)) for (const seg of list) if (seg.placed && seg.from === seg.placed.frame) segRest(film, propId, seg);
 }
 
 /**

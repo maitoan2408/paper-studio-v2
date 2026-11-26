@@ -189,7 +189,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
           if (!pl) fail('ACTION_PRECONDITION', `${where}.bind.place`, 'reach "at: place" needs bind.place');
           const s = film.data.stage.surfaces.find((x) => x.id === pl.surface);
           if (!s) fail('FILM_UNKNOWN_REF', `${where}.bind.place`, `surface "${pl.surface}" does not exist`);
-          pivot = placePivot(film, propId, pl, frame); // đáy đã xoay chạm mặt đỡ — cùng hình học với chỗ nằm sau lần thả
+          pivot = placePivot(film, propId, pl, frame, `${where}.bind.place`); // cùng hình học với chỗ nằm sau lần thả
         } else {
           const seg = segmentAt(film, propId, frame);
           const others = seg.holders.filter((h) => !(h.ci === ci && h.contact === contact));
