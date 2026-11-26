@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "e442d59416aff7c543347b4e7feb9b06d1f15d98",
+      "head": "d14d491333efef9e5d20a5c3409479b93acf5f8f",
       "updated": "2026-11-26",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -110,11 +110,11 @@
         "bakeMotionInputs": "PASS_TECHNICAL",
         "bakeFormatErrors": "PASS_TECHNICAL",
         "characterHitFixtures": "PASS_TECHNICAL",
-        "characterHitValidation": "BLOCKED",
+        "characterHitValidation": "PASS_TECHNICAL",
         "characterHitLandingApproach": "PASS_TECHNICAL",
         "characterHitHullOrder": "PASS_TECHNICAL",
         "characterHitAngleWrap": "PASS_TECHNICAL",
-        "characterHitFlightWindow": "BLOCKED"
+        "characterHitFlightWindow": "PASS_TECHNICAL"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -162,7 +162,12 @@
         "characterHitFlightWindow BLOCKED. Phép lọc hits.ts dùng trạng thái hai đầu frame để quyết định quét cả 8 bước. Đối chứng qua loadFilm: từ m3-drop thêm hai surface rộng x0=-1300, x1=1300, ledge.y=20 và stand.y=-254. Cho chậu rơi lên ledge, restitution=0. Đặt Lan trên stand, x=20.9, đổi walk của Lan thành start=121, durationFrames=96, toX=-134.1. f165 bước 1 chưa chạm, từ bước 2 đến hết bước 8 đều có surface:ledge trong supporters của contactsOf. Validator vẫn báo falling plant-1 hits lan (upper-arm.l) ở bước 8. Đối chiếu 128 mẫu mỗi bước với cùng phép nội suy khung tay: lần giao đầu ở bước 8. Đối chứng x=20/toX=-135 trúng thật ở f164 bước 8, x=21/toX=-134 nạp được. Cần xác định khoảng còn bay bằng thông tin từng bước, giữ cả va trước khi đáp và các lần nảy/rời tựa.",
         "Quyết định kỹ thuật về releaserNewContacts: trước khi vật rời hẳn người buông, vùng mới chồng hình được đưa ra làm cảnh báo để duyệt. Khung 2D và thứ tự vẽ không đủ xác định hai vật cùng độ sâu. Tiếp xúc ban đầu kéo dài hợp lệ; va khi còn bay với người khác hoặc quay lại người buông sau khi đã tách vẫn chặn. Hiện checkFallingProps chỉ lấy r.hit; CLI validate chỉ in OK, người dựng phim chưa thấy cảnh báo. Cần đưa cảnh báo qua lệnh validate với tên phim, drop, người, xương, frame và bước con, dùng lại kết quả đã tính. Không cần đổi art hay dàn cảnh để xử lý việc 5.",
         "Codex render và xem các frame 160, 163, 164, 165 của m3-drop tại e442d59: chậu che một phần giày của Tam ở f164–165. Ba lần thả chậu trong m3-drop, m3-collide và m3-collide-miss đều ghi foot.l ở f164 bước 3 và foot.r ở bước 4. Đây là bằng chứng về chồng hình. Chủ dự án duyệt chuyển động trên video riêng.",
-        "Codex chạy npm run verify 374/374, gồm 10 test hits và 8 golden. Đối chiếu đủ 64 ký tự cho 4 SHA bake với log CI. Verify push/PR thành công. Render run https://github.com/maitoan2408/paper-studio-v2/actions/runs/45722161991 trên merge ref 3710511 đạt check:renderer, check:bake và audit 8 phim, minPSNR 41,17 dB. Việc 6 và nghiệm thu M3 chờ quyết định riêng."
+        "Codex chạy npm run verify 374/374, gồm 10 test hits và 8 golden. Đối chiếu đủ 64 ký tự cho 4 SHA bake với log CI. Verify push/PR thành công. Render run https://github.com/maitoan2408/paper-studio-v2/actions/runs/45722161991 trên merge ref 3710511 đạt check:renderer, check:bake và audit 8 phim, minPSNR 41,17 dB. Việc 6 và nghiệm thu M3 chờ quyết định riêng.",
+        "Hậu kiểm việc 5 tại d14d491333efef9e5d20a5c3409479b93acf5f8f, HEAD của PR #8 trước commit tài liệu. Qua cùng fixture và loadFilm trên e442d59 và d14d491, Lan x=20 bị chặn ở f164 bước 8/8, x=21 hợp lệ. Với x=20,9, baseline chặn upper-arm.l ở f165 bước 8/8, bản sửa nạp được. Đọc pose Rapier từng bước và quét độc lập 128 khoảng mẫu mỗi bước xác nhận giao khung đầu ở bước 8, trong khi surface:ledge đỡ liên tục từ bước 2 đến 8. Fixture Lan x=-35 vẫn chặn hand.l ở f165 bước 3/8, trước khi chạm sàn bước 6/8.",
+        "Đối chứng rời mặt đỡ từ m3-collide: meet.x=-125, Lan đi tới -255 trong 100 frame, Tam đi tiếp từ f212 trong 120 frame. Đèn được chậu đỡ qua f319 và ở f323 bước 1–4. Từ bước 5 mất đỡ, loadFilm chặn upper-arm.r của Tam ngay f323 bước 5/8 khi Tam đi tới x=100, còn x=200 hợp lệ. Hoán vị điểm hull, góc 0°/±360° và qua biên ±180° đều đạt. Đèn rời Lan ở f308 rồi quay lại foot.l vẫn bị chặn ở f311 bước 8/8.",
+        "Codex chạy npm run validate, exit 0 trên 8 phim. m3-drop, m3-collide và m3-collide-miss mỗi phim có đúng hai WARN PHYSICS_RELEASER_NEW_CONTACT cho Tam, foot.l f164 bước 3/8 và foot.r f164 bước 4/8. m3-drop-table không có WARN. Codex trực tiếp xem ảnh Chromium render cục bộ: m3-drop ở f160, f163–165 và m3-collide, m3-collide-miss ở f163–164. Ở f164 cả ba cảnh cho thấy chậu che một phần giày Tam. Cảnh báo thể hiện giao khung art trong phép chiếu 2,5D. Hình 2D và thứ tự vẽ không đủ dữ liệu để kết luận va chạm vật lý với chân.",
+        "Codex chạy test hits 14/14 và npm run verify 378/378. Tám golden SceneFrame khớp baseline và CI verify https://github.com/maitoan2408/paper-studio-v2/actions/runs/45744531503. Bốn SHA bake bản sửa khớp đủ 64 ký tự với e442d59 và log CI, m3-drop 65cb9b8b…, m3-drop-table 59ca7f70…, m3-collide b56f0071…, m3-collide-miss f9f34767…. CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45744531458 checkout merge ref 81fe15274482556b67dc2527d0d5bb21cf15cf5e, đạt check:renderer 8/8, audit 8 phim (minPSNR 41,16 dB) và check:bake 26/26.",
+        "Việc 5 PASS_TECHNICAL. Việc 6 chờ chủ dự án chốt phạm vi nhặt lại. Chủ dự án duyệt video, nghiệm thu M3 và quyết định merge. PR #8 ở draft."
       ]
     },
     "M4": {
