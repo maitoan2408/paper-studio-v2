@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "drop",
+  "rig": "biped-demo",
+  "channels": [
+    {
+      "prop": "reach",
+      "contact": "grip.@active",
+      "target": {
+        "bone": "pelvis",
+        "anchor": "carry.@active"
+      },
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": 1,
+          "ease": "linear"
+        },
+        {
+          "t": 0.3,
+          "v": 1,
+          "ease": "inOutSine"
+        },
+        {
+          "t": 0.8,
+          "v": 0
+        }
+      ],
+      "bend": "flip"
+    },
+    {
+      "bone": "hand.@active",
+      "prop": "variant",
+      "mode": "absolute",
+      "keys": [
+        {
+          "t": 0,
+          "v": "default"
+        },
+        {
+          "t": 0.8,
+          "v": "open",
+          "ease": "step"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "t": 0.3,
+      "type": "release",
+      "contact": "grip.@active"
+    }
+  ],
+  "requires": {
+    "hands": [
+      "hand.@active"
+    ]
+  }
+}

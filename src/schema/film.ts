@@ -1,6 +1,7 @@
 /**
  * Film — tọa độ thế giới: px tại 1080p, y hướng LÊN, gốc ở giữa sàn; góc độ, dương = ngược chiều kim đồng hồ.
- * Chưa bật: physics (phải rỗng → FILM_FEATURE_NOT_ENABLED).
+ * physics (M3 đợt 1): chỉ THẢ TỰ DO (drop) — xem src/physics/drop.ts. Đặt có kiểm soát (bind.place) và trao tay không
+ * dùng physics; mọi kết hợp mơ hồ bị từ chối (PHYSICS_CONFLICT, PHYSICS_NOT_FREE…).
  */
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,11 +10,14 @@ import { fail, parseWith, readJsonFile, StudioError } from '../core/errors.ts';
 import { EASING_NAMES } from '../motion/easing.ts';
 import { characterState, contactWorld } from '../motion/character.ts';
 import { usesActive } from '../motion/timeline.ts';
-import { checkHeldAboveSurface, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
+import { checkHeldAboveSurface, checkPlacements, checkLiftClearance, checkProps, propTimeline } from '../motion/props.ts';
 import { validateAction, type ActionClip } from './action.ts';
+import { checkPickups, dropBake, disposeWorld } from '../physics/drop.ts';
+import { checkFallingProps } from '../physics/hits.ts';
 import { AnchorName, loadArtPack, type ArtPack, type Asset } from './art-pack.ts';
 import { BoneId, validateRig, type Rig } from './rig.ts';
 import { Finite, Id, Semver, Sha256, firstDuplicate } from './common.ts';
+import { convexHull, polygonArea } from '../core/hull.ts';
 
 export const MAX_FRAMES = 24 * 600;
 const Frame = z.number().int().min(0);
@@ -34,6 +38,43 @@ const Prop = z
     on: Id.optional(), shadow: Shadow.optional(),
   })
   .strict();
+/**
+ * Thả tự do (M3): mục timeline `release` phải chứa sự kiện release của NGƯỜI CẦM CUỐI CÙNG và không có bind.place.
+ * Đơn vị: gravity m/s², pxPerMeter = px thế giới mỗi mét (tỷ lệ của cảnh), density kg/m² (2D), friction/restitution
+ * không thứ nguyên (Rapier). Va chạm đợt 1: chỉ mặt đỡ `onto` (khối tĩnh trên [x0, x1], mặt trên tại y của mặt đỡ).
+ */
+/**
+ * Hình va chạm của đạo cụ khi rơi (M3). Mặc định (bỏ trống) = `box`: khung art × scale — giống mọi phim trước đó.
+ * `hull`: bao lồi của các điểm trong TỌA ĐỘ ART (px, gốc trên-trái, y xuống — như anchors), × scale của đạo cụ; dùng khi
+ * khung art lệch xa hình thật (vd. đèn lồng: đáy hẹp, dây treo phía trên). Rapier tính khối tâm/mô-men từ chính hình này.
+ */
+const Collider = z.union([
+  z.object({ type: z.literal('box') }).strict(),
+  z.object({ type: z.literal('hull'), points: z.array(z.tuple([Finite, Finite])).min(3).max(64) }).strict(),
+]);
+export type ColliderSpec = z.output<typeof Collider>;
+/** Diện tích bao lồi của các điểm 2D (bao lồi dùng chung với phép kiểm va chạm — src/core/hull.ts). */
+export function convexHullArea(points: readonly (readonly [number, number])[]): number {
+  return polygonArea(convexHull(points));
+}
+const Drop = z
+  .object({
+    id: Id,
+    prop: Id,
+    release: z.number().int().min(0),
+    onto: Id,
+    world: z.object({ gravity: z.number().finite().positive().max(100), pxPerMeter: z.number().finite().positive().max(10000) }).strict(),
+    body: z
+      .object({
+        density: z.number().finite().positive(),
+        friction: z.number().finite().min(0).max(2),
+        restitution: z.number().finite().min(0).max(1),
+        collider: Collider.optional(),
+      })
+      .strict(),
+  })
+  .strict();
+export type DropSpec = z.output<typeof Drop>;
 const Character = z
   .object({ id: Id, pack: Id, rig: Id, character: Id, x: Finite, scale: z.number().finite().positive().max(10), depth: Depth, facing: z.enum(['left', 'right']), on: Id })
   .strict();
@@ -103,7 +144,7 @@ const FilmSchema = z
     walks: z.array(Walk),
     turns: z.array(Turn).optional(),
     points: z.record(Id, PointSpec).optional(),
-    physics: z.array(z.unknown()),
+    physics: z.array(Drop),
   })
   .strict();
 
@@ -321,10 +362,56 @@ export function validateFilm(
     }
   }
 
-  if (f.physics.length > 0) fail('FILM_FEATURE_NOT_ENABLED', 'film.physics', 'physics is not enabled yet');
+  // Thả tự do: tham chiếu hợp lệ, không trùng, không lẫn với đặt có kiểm soát (phần "người cầm cuối" kiểm trong propTimeline).
+  const dropIds = firstDuplicate(f.physics.map((d) => d.id));
+  if (dropIds) fail('FILM_DUP_ID', 'film.physics', `drop id "${dropIds}" is used more than once`);
+  const dropItems = firstDuplicate(f.physics.map((d) => String(d.release)));
+  if (dropItems) fail('PHYSICS_CONFLICT', 'film.physics', `timeline[${dropItems}] is referenced by two drops`);
+  // Mọi drop chung MỘT thế giới Rapier (src/physics/drop.ts simulateWorld) ⇒ chung trọng lực và tỷ lệ px/m.
+  f.physics.forEach((d, i) => {
+    const w0 = f.physics[0]!.world;
+    if (d.world.gravity !== w0.gravity || d.world.pxPerMeter !== w0.pxPerMeter) {
+      fail('PHYSICS_CONFLICT', `film.physics[${i}].world`, `all drops share one world: gravity ${d.world.gravity} / pxPerMeter ${d.world.pxPerMeter} differ from film.physics[0] (${w0.gravity} / ${w0.pxPerMeter})`);
+    }
+  });
+  f.physics.forEach((d, i) => {
+    const where = `film.physics[${i}]`;
+    if (!props.has(d.prop)) fail('FILM_UNKNOWN_REF', `${where}.prop`, `prop "${d.prop}" does not exist`);
+    if (!surfaces.has(d.onto)) fail('FILM_UNKNOWN_REF', `${where}.onto`, `surface "${d.onto}" does not exist`);
+    const it = f.timeline[d.release];
+    if (!it) fail('FILM_UNKNOWN_REF', `${where}.release`, `timeline[${d.release}] does not exist`);
+    const c = f.characters.find((x) => x.id === it.character)!;
+    const clip = clips.get(c.pack)?.get(it.clip);
+    if (!clip || !clip.events.some((e) => e.type === 'release')) fail('PHYSICS_NO_RELEASE', `${where}.release`, `timeline[${d.release}] (${it.clip}) has no release event`);
+    if (it.bind.place) fail('PHYSICS_CONFLICT', `${where}.release`, `timeline[${d.release}] (${it.clip}) is a controlled place (bind.place); a drop must not set it`);
+    const col = d.body.collider;
+    if (col?.type === 'hull') {
+      const a = assets.get(f.props.find((x) => x.id === d.prop)!.asset)!;
+      col.points.forEach(([x, y], k) => {
+        if (x < 0 || x > a.width || y < 0 || y > a.height) fail('PHYSICS_COLLIDER', `${where}.body.collider.points[${k}]`, `(${x}, ${y}) is outside the art frame ${a.width}×${a.height} of "${a.id}"`);
+      });
+      // Bao suy biến (thẳng hàng/trùng điểm) phải bị chặn TẠI ĐÂY: Rapier 0.21 không trả null như tài liệu mà panic trong
+      // WASM ("unreachable"). Diện tích bao lồi (chuỗi đơn điệu Andrew) phải ≥ 1 px² art.
+      const area = convexHullArea(col.points);
+      if (area < 1) fail('PHYSICS_COLLIDER', `${where}.body.collider`, `hull of ${col.points.length} points has area ${area.toFixed(3)} px² (collinear or repeated points)`);
+    }
+  });
 
   const film: Film = { data: f, assets, packs, rigs, clips };
+  try {
+    return checkFilm(film, f, N);
+  } catch (e) {
+    // Film bị từ chối: thu hồi world vật lý đang mô phỏng dở (nếu có) trước khi ném lỗi.
+    disposeWorld(film);
+    throw e;
+  }
+}
+
+/** Các kiểm tra cần film đã dựng (chuyển động, đạo cụ, vật lý) — tách ra để validateFilm thu hồi world khi có lỗi. */
+function checkFilm(film: Film, f: Film['data'], N: number): Film {
   propTimeline(film); // phát lại grip/release: HAND_BUSY, PROP_FLOATING, ACTION_EVENT_ORDER… báo sớm
+  checkPickups(film); // nhặt lại sau rơi tự do: vật phải đang nằm yên và được đỡ ở frame trước grip (M3 việc 6)
+  checkPlacements(film); // đặt có kiểm soát: khung đã xoay phải có phần nằm trên mặt đỡ (PROP_PLACE_OFF_SURFACE)
   // Giới hạn khớp + tốc độ xoay (ngưỡng riêng từng xương trong rig): lấy mẫu mọi frame của mọi nhân vật.
   // Lỗi do quá ngắn (WALK_TOO_SHORT, ACTION_SPEED_EXCEEDED) kèm số frame tối thiểu của mục gây lỗi (E3).
   f.characters.forEach((c, ci) => {
@@ -346,6 +433,10 @@ export function validateFilm(
   for (let fr = 0; fr < N; fr++) checkHeldAboveSurface(film, fr, (ci, contact) => contactWorld(film, ci, fr, contact));
   checkLiftClearance(film, (ci, contact, f) => contactWorld(film, ci, f, contact));
   checkProps(film, (ci, contact, fr) => contactWorld(film, ci, fr, contact));
+  // Thả tự do: bake ngay khi dựng film (fail closed: PHYSICS_NOT_AT_REST, PHYSICS_NO_LANDING, PHYSICS_RELEASE_TOO_EARLY…).
+  for (const d of f.physics) dropBake(film, d.id);
+  // Vật đang rơi trúng nhân vật (M3 việc 5) — theo collider + quỹ đạo bake và vùng cơ thể theo pose rig.
+  checkFallingProps(film);
   return film;
 }
 
@@ -392,7 +483,12 @@ function hint(film: Film, ci: number, kind: 'walks' | 'timeline', index: number)
       output: { ...film.data.output, durationFrames: Math.max(film.data.output.durationFrames, item.start + D + 2) },
       [kind]: film.data[kind].map((x, i) => (i === index ? { ...x, durationFrames: D } : x)),
     };
-    return !motionFault({ ...film, data }, ci, item.start - 1, item.start + D + 2);
+    const tmp: Film = { ...film, data };
+    try {
+      return !motionFault(tmp, ci, item.start - 1, item.start + D + 2);
+    } finally {
+      disposeWorld(tmp); // film tạm: world (nếu kiểm chuyển động cần pose đạo cụ đã thả) không sống quá phép thử
+    }
   };
   let lo = cur;
   let hi = cur;

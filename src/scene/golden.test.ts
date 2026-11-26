@@ -13,6 +13,18 @@ const GOLDEN: Record<string, string> = {
   'm0-static': '3b7409d39b98b66755065448cadb7c929378b97b003beaff0da12fdc5c8edeb9',
   'm2-handover': '8fcb912a95b0e74b51c5f78a900a53caa594d242e518d2f314a83ae4441d4c1e',
   'm2-plant': '791a18777d51cf915723609d38072d170ae41d5a5940a6a6869ad1bf76e98c70',
+  // M3 đợt 1: quỹ đạo rơi do Rapier 2D tất định @0.21.0 (đổi phiên bản/bước mô phỏng → đổi golden có chủ ý).
+  'm3-drop': 'e773000116dc5df4616dab74307ef64e59f3828e357f189de96cbb96e8016bfe',
+  // M3 việc 2: Lan tay trái thả đèn lồng (collider hull) lên mặt bàn — phim mới, không đổi golden cũ.
+  'm3-drop-table': 'afb62ed98f49fe8c6465425f2db0f55389f83cfdb273e31820a12d2dc0da8fe2',
+  // M3 việc 3: thế giới chung hai đạo cụ — B va A đang nằm yên / đối chứng B rơi lệch.
+  'm3-collide': 'f0727be6945ceac212d6fcce3708f138069cffc85049b209215f33a4804b0046',
+  'm3-collide-miss': '5d7cc28b2db7144047aac73f4f5c9813ff407aa7b5e4a44a517e5243ba168050',
+  // M3 việc 6: nhặt lại sau khi rơi tự do và nằm yên — phim mới, không đổi golden cũ.
+  'm3-pickup-pot': '10b6fac6728adebfe97f9cbe645acd7ff219a0b4f3f625fcc999a485a3a1d5ff',
+  'm3-pickup-lantern': 'f0d83ceddfd60935b00768b334b046cb7e07f6549f665992803f0fd50d261d48',
+  // Hậu kiểm @a401f62: đặt lại chậu đang nằm −90° lên bàn — đáy khung đã xoay chạm mặt bàn (phim mới).
+  'm3-pickup-place': '35d7d65a0e3fcad6e1926f005472bc4bd8f1072f7faec41d5fba899db0746e02',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {

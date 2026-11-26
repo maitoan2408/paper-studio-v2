@@ -18,7 +18,7 @@ import type { Film } from '../schema/film.ts';
 import { forwardKinematics, contactPoint } from '../rig/pose.ts';
 import { solveChain } from './ik.ts';
 import { characterState, type CharacterState } from './character.ts';
-import { anchorOffset, propPivot } from './props.ts';
+import { anchorOffset, propBottom, propPivot } from './props.ts';
 import { activeItems, clipFor, keyValue } from './timeline.ts';
 
 const cache = new WeakMap<Film, Map<string, V2>>();
@@ -139,7 +139,7 @@ function context(film: Film, id: string) {
     } else {
       if (!film.data.props.some((p) => p.id === a.prop)) fail('FILM_UNKNOWN_REF', `film.points.${id}`, `prop "${a.prop}" does not exist`);
       const pv = propPivot(film, a.prop, f, hand);
-      const off = anchorOffset(film, a.prop, a.anchor);
+      const off = anchorOffset(film, a.prop, a.anchor, f);
       pt = [pv[0] + off[0], pv[1] + off[1]];
     }
     sx += w * pt[0];
@@ -189,7 +189,7 @@ function context(film: Film, id: string) {
     for (const cl of s.clearance ?? []) {
       const holder = film.data.characters[ciOf(s.reach[0]!.character)]!;
       const surface = film.data.stage.surfaces.find((x) => x.id === holder.on)!;
-      const bottom = P[1] - anchorOffset(film, cl.prop, cl.anchor)[1];
+      const bottom = P[1] - anchorOffset(film, cl.prop, cl.anchor, f)[1] + propBottom(film, cl.prop, f); // đáy khung đã xoay
       if (bottom < surface.y) return `${cl.prop} would hang ${(surface.y - bottom).toFixed(1)} px below "${surface.id}"`;
     }
     return undefined;

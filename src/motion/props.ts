@@ -5,13 +5,20 @@
  *  - Frame sự kiện = start + round(t·(duration−1)). Thứ tự: frame, rồi thứ tự timeline, rồi thứ tự trong clip.
  *  - Đạo cụ đi theo tay NẮM GẦN NHẤT (grip muộn nhất còn đang nắm). Khi trao đồ có vài frame cả hai cùng
  *    nắm: đồ đi theo NGƯỜI NHẬN (grip muộn hơn). Tay đó thả → đi theo người còn nắm kế tiếp.
- *  - Không còn ai nắm sau một release → đạo cụ nằm tại bind.place của mục timeline chứa release đó.
- *    Thiếu place → PROP_FLOATING. Đạo cụ giữ góc xoay thế giới của nó (không xoay theo bàn tay).
+ *  - Không còn ai nắm sau một release → đạo cụ nằm tại bind.place của mục timeline chứa release đó (ĐẶT CÓ KIỂM SOÁT),
+ *    hoặc RƠI TỰ DO nếu film.physics có drop trỏ đúng mục timeline đó (src/physics/drop.ts). Không có cả hai →
+ *    PROP_FLOATING. Drop trỏ vào lần buông mà người khác vẫn còn cầm (trao tay) → PHYSICS_NOT_FREE.
+ *    Đạo cụ giữ góc xoay thế giới của nó (không xoay theo bàn tay); khi rơi, góc do mô phỏng quyết định.
+ *  - NHẶT LẠI sau rơi tự do (M3 việc 6): grip trên đạo cụ đang ở đoạn rơi bắt đầu một lần cầm mới tại frame G. Pivot và góc
+ *    thế giới lấy từ pose bake ở G−1 (`picked`), giữ nguyên trong tay và cả khi đặt/trao sau đó, tới lần rơi kế tiếp. Hợp lệ
+ *    chỉ khi ở G−1 vật đang NẰM YÊN và còn được đỡ (src/physics/drop.ts checkPickups — cần bake nên kiểm sau phát lại sự
+ *    kiện); thân Rapier của lần rơi đó rời thế giới từ frame G.
  */
 import { fail } from '../core/errors.ts';
 import { artToLocal, rotate, type V2 } from '../core/space.ts';
 import type { Film } from '../schema/film.ts';
 import { clipFor } from './timeline.ts';
+import { dropPose } from '../physics/drop.ts';
 
 export interface Holder {
   ci: number;
@@ -19,10 +26,21 @@ export interface Holder {
   anchor: string;
   since: number;
 }
-interface Segment {
+export interface Segment {
   from: number;
   holders: Holder[];
+  /** Chỗ nằm yên khi không ai cầm (vị trí ban đầu / đặt có kiểm soát). Với đoạn rơi: dùng restPivot/dropPose. Với chỗ
+   *  đặt có kiểm soát (`placed`): pivot thật phụ thuộc góc của vật ⇒ đọc qua segRest/restPivot, không đọc thẳng. */
   rest: V2;
+  /** Chỗ đặt có kiểm soát mà `rest` thuộc về (bind.place của lần thả) — kế thừa cùng `rest` cho tới lần đặt/rơi kế tiếp. */
+  placed?: { surface: string; x: number; item: number; frame: number };
+  /** id drop (film.physics) nếu đoạn này là rơi tự do bắt đầu ở `from`. */
+  drop?: string;
+  /** Tay vừa buông khi bắt đầu rơi — để giữ lớp vẽ liên tục (sample.ts). */
+  releasedBy?: Holder;
+  /** Đạo cụ được nhặt lại sau lần rơi `drop` ở frame grip `frame`: pivot/góc nằm yên = pose bake ở frame − 1. Kế thừa qua
+   *  các đoạn sau (cầm, trao, đặt) tới lần rơi kế tiếp — góc thế giới của đạo cụ trong suốt khoảng đó. */
+  picked?: { drop: string; frame: number; item: number };
 }
 interface PropEvent {
   frame: number;
@@ -80,6 +98,10 @@ export function propTimeline(film: Film): Map<string, Segment[]> {
     const last = list[list.length - 1]!;
     let holders = last.holders;
     let rest = last.rest;
+    let placed = last.placed;
+    let drop: string | undefined;
+    // Nhặt lại vật đang ở đoạn rơi tự do: góc/pivot lấy từ bake ở e.frame − 1 (kiểm nằm yên: checkPickups sau khi bake).
+    let picked = last.drop ? (e.kind === 'grip' ? { drop: last.drop, frame: e.frame, item: e.item } : undefined) : last.picked;
     if (e.kind === 'grip') {
       if (holding.has(key)) fail('HAND_BUSY', where, `${film.data.characters[e.ci]!.id}.${e.contact} already holds "${holding.get(key)}"`);
       if (holders.length >= 2) fail('HAND_BUSY', where, `prop "${prop}" already held by two hands`);
@@ -90,16 +112,27 @@ export function propTimeline(film: Film): Map<string, Segment[]> {
     } else {
       holding.delete(key);
       holders = holders.filter((h) => !(h.ci === e.ci && h.contact === e.contact));
-      if (holders.length === 0) {
+      const free = film.data.physics.find((d) => d.release === e.item);
+      if (free && free.prop !== prop) fail('PHYSICS_CONFLICT', `${where} (${free.id})`, `drop is for "${free.prop}" but this release lets go of "${prop}"`);
+      if (free && holders.length > 0) {
+        fail('PHYSICS_NOT_FREE', `${where} (${free.id})`, `"${prop}" is still held by ${holders.map((h) => `${film.data.characters[h.ci]!.id}.${h.contact}`).join(', ')}; a handover release cannot start a fall`);
+      }
+      if (holders.length === 0 && free) {
+        drop = free.id;
+      } else if (holders.length === 0) {
         if (!e.place) fail('PROP_FLOATING', where, `"${prop}" released by its last holder but bind.place is not set`);
         const s = surfaces.get(e.place.surface);
         if (!s) fail('FILM_UNKNOWN_REF', `${where}.bind.place`, `surface "${e.place.surface}" does not exist`);
         if (e.place.x < s.x0 || e.place.x > s.x1) fail('FILM_NOT_ON_SURFACE', `${where}.bind.place`, `x=${e.place.x} outside "${s.id}"`);
         rest = [e.place.x, s.y];
+        placed = { ...e.place, item: e.item, frame: e.frame };
       }
     }
-    if (last.from === e.frame) list[list.length - 1] = { from: e.frame, holders, rest };
-    else list.push({ from: e.frame, holders, rest });
+    if (drop) picked = undefined;
+    if (drop) placed = undefined;
+    const seg: Segment = { from: e.frame, holders, rest, ...(placed ? { placed } : {}), ...(drop ? { drop, releasedBy: last.holders[last.holders.length - 1]! } : {}), ...(picked ? { picked } : {}) };
+    if (last.from === e.frame) list[list.length - 1] = seg;
+    else list.push(seg);
   }
   cache.set(film, segs);
   return segs;
@@ -113,12 +146,88 @@ export function segmentAt(film: Film, propId: string, frame: number): Segment {
   return s;
 }
 
-/** Vector pivot → anchor của đạo cụ trong thế giới (y-lên), theo scale và góc của đạo cụ. */
-export function anchorOffset(film: Film, propId: string, anchor: string): V2 {
+/** Pivot khi không ai cầm: chỗ nằm yên, hoặc vị trí mô phỏng nếu đang/đã rơi tự do. */
+export function restPivot(film: Film, propId: string, frame: number): V2 {
+  const s = segmentAt(film, propId, frame);
+  if (!s.drop) return segRest(film, propId, s);
+  const p = dropPose(film, s.drop, frame);
+  return [p.x, p.y];
+}
+
+/** Góc thế giới của đạo cụ ở frame (độ, ngược chiều kim đồng hồ): góc dàn cảnh, góc mô phỏng khi rơi, hoặc góc nằm yên
+ *  lúc được nhặt lại (giữ nguyên trong tay và sau khi đặt/trao, tới lần rơi kế tiếp). */
+export function propAngle(film: Film, propId: string, frame: number): number {
+  const s = segmentAt(film, propId, frame);
+  if (s.drop) return dropPose(film, s.drop, frame).angle;
+  if (s.picked) return dropPose(film, s.picked.drop, s.picked.frame - 1).angle;
+  return film.data.props.find((x) => x.id === propId)!.rotation;
+}
+
+/** Vector pivot → anchor của đạo cụ trong thế giới (y-lên), theo scale và GÓC THẾ GIỚI của đạo cụ ở frame (propAngle). */
+export function anchorOffset(film: Film, propId: string, anchor: string, frame: number): V2 {
   const p = film.data.props.find((x) => x.id === propId)!;
   const a = film.assets.get(p.asset)!;
   const v = artToLocal(a.anchors[anchor]!, a.pivot);
-  return rotate([v[0] * p.scale, v[1] * p.scale], p.rotation);
+  return rotate([v[0] * p.scale, v[1] * p.scale], propAngle(film, propId, frame));
+}
+
+/** Đỉnh khung art của đạo cụ quanh pivot (thế giới, y-lên) theo scale và góc ở frame — đáy/bề ngang cho các kiểm tra mặt đỡ. */
+function frameCorners(film: Film, propId: string, frame: number): V2[] {
+  const p = film.data.props.find((x) => x.id === propId)!;
+  const a = film.assets.get(p.asset)!;
+  const ang = propAngle(film, propId, frame);
+  return ([[0, 0], [a.width, 0], [a.width, a.height], [0, a.height]] as V2[]).map((c) => {
+    const l = artToLocal(c, a.pivot);
+    return rotate([l[0] * p.scale, l[1] * p.scale], ang);
+  });
+}
+
+/** Độ cao đáy so với pivot (px thế giới, ≤ 0 khi pivot ở trên đáy): điểm thấp nhất của khung art theo góc ở frame.
+ *  Góc 0 với pivot ở cạnh đáy (mọi đạo cụ mẫu): đúng 0. */
+export function propBottom(film: Film, propId: string, frame: number): number {
+  return Math.min(...frameCorners(film, propId, frame).map((c) => c[1]));
+}
+
+/**
+ * Pivot của đạo cụ khi ĐẶT lên `place` với góc thế giới của nó ở frame (góc giữ cố định — không mô phỏng lật sau khi
+ * đặt): hạ vật theo phương đứng tới khi phần khung art đã xoay NẰM TRÊN mặt đỡ chạm mặt đỡ — điểm thấp nhất của khung
+ * sau khi cắt theo dải x ∈ [x0, x1] của mặt đỡ ở đúng y của mặt. Phần chìa ra ngoài mép được phép thấp hơn mặt (ở trong
+ * không khí cạnh mép). Mặt vô hạn hoặc vật nằm gọn trong dải: bằng đáy toàn khung (propBottom) như trước.
+ * Phần khung phủ lên dải hẹp hơn hoặc bằng dung sai ALIGN_TOLERANCE_PX (gần như chỉ chạm mép) ⇒ PROP_PLACE_OFF_SURFACE tại `where` (lần đặt) — không đặt được
+ * với tư thế cố định. Dùng chung cho đích tay `at: place`, pose ở frame buông và sau đó, kiểm khoảng hở/liên tục.
+ */
+export function placePivot(film: Film, propId: string, place: { surface: string; x: number }, frame: number, where = `prop ${propId} place`): V2 {
+  const s = film.data.stage.surfaces.find((x) => x.id === place.surface);
+  if (!s) return fail('FILM_UNKNOWN_REF', where, `surface "${place.surface}" does not exist`);
+  // dải mặt đỡ trong hệ quanh pivot; cắt đa giác lồi (khung đã xoay) bởi hai nửa mặt phẳng x ≥ lo, x ≤ hi
+  const lo = s.x0 - place.x, hi = s.x1 - place.x;
+  let poly = frameCorners(film, propId, frame);
+  for (const [inside, xc] of [[(x: number) => x >= lo, lo], [(x: number) => x <= hi, hi]] as const) {
+    const out: V2[] = [];
+    poly.forEach((P, i) => {
+      const Q = poly[(i + 1) % poly.length]!;
+      if (inside(P[0])) out.push(P);
+      if (inside(P[0]) !== inside(Q[0])) out.push([xc, P[1] + ((xc - P[0]) / (Q[0] - P[0])) * (Q[1] - P[1])]);
+    });
+    poly = out;
+  }
+  const xs = poly.map((p) => p[0]);
+  const overlap = poly.length === 0 ? 0 : Math.max(...xs) - Math.min(...xs);
+  if (overlap <= ALIGN_TOLERANCE_PX) {
+    fail('PROP_PLACE_OFF_SURFACE', where, `"${propId}" at angle ${propAngle(film, propId, frame).toFixed(3)}° placed at x=${place.x} overlaps "${s.id}" (x∈[${s.x0}, ${s.x1}]) by ${overlap.toFixed(3)} px ≤ ${ALIGN_TOLERANCE_PX} px — no support under it in this pose; move the place inward`);
+  }
+  return [place.x, s.y - Math.min(...poly.map((p) => p[1]))];
+}
+
+/** Chỗ nằm yên của một đoạn không rơi: chỗ đặt có kiểm soát theo góc của vật (placePivot), hoặc `rest` (vị trí ban đầu). */
+function segRest(film: Film, propId: string, seg: Segment): V2 {
+  const pl = seg.placed;
+  return pl ? placePivot(film, propId, pl, pl.frame, `film.timeline[${pl.item}].bind.place frame ${pl.frame}`) : seg.rest;
+}
+
+/** Kiểm mọi lần đặt có kiểm soát ngay khi dựng film (trước các kiểm tra chuyển động): đặt được với góc của vật lúc đó. */
+export function checkPlacements(film: Film): void {
+  for (const [propId, list] of propTimeline(film)) for (const seg of list) if (seg.placed && seg.from === seg.placed.frame) segRest(film, propId, seg);
 }
 
 /**
@@ -127,23 +236,25 @@ export function anchorOffset(film: Film, propId: string, anchor: string): V2 {
  */
 export function propPivot(film: Film, propId: string, frame: number, hand: (ci: number, contact: string) => V2): V2 {
   const s = segmentAt(film, propId, frame);
-  if (s.holders.length === 0) return s.rest;
+  if (s.drop) return restPivot(film, propId, frame);
+  if (s.holders.length === 0) return segRest(film, propId, s);
   const owner = s.holders[s.holders.length - 1]!;
   const h = hand(owner.ci, owner.contact);
-  const off = anchorOffset(film, propId, owner.anchor);
+  const off = anchorOffset(film, propId, owner.anchor, frame);
   return [h[0] - off[0], h[1] - off[1]];
 }
 
 export const ALIGN_TOLERANCE_PX = 0.5;
 
-/** Đồ đang cầm không được xuyên xuống dưới mặt đỡ của người cầm (pivot đạo cụ = đáy của nó). */
+/** Đồ đang cầm không được xuyên xuống dưới mặt đỡ của người cầm. Đáy = điểm thấp nhất của khung art theo góc thế giới
+ *  (góc 0, pivot ở cạnh đáy: đúng pivot — như trước; vật nhặt lại khi đang nằm nghiêng: góc thấp nhất của khung đã xoay). */
 export function checkHeldAboveSurface(film: Film, frame: number, hand: (ci: number, contact: string) => V2): void {
   for (const p of film.data.props) {
     const s = segmentAt(film, p.id, frame);
     if (s.holders.length === 0) continue;
     const owner = s.holders[s.holders.length - 1]!;
     const surface = film.data.stage.surfaces.find((x) => x.id === film.data.characters[owner.ci]!.on)!;
-    const y = propPivot(film, p.id, frame, hand)[1];
+    const y = propPivot(film, p.id, frame, hand)[1] + propBottom(film, p.id, frame);
     if (y < surface.y - ALIGN_TOLERANCE_PX) {
       fail('PROP_BELOW_SURFACE', `prop ${p.id} frame ${frame}`, `held ${(surface.y - y).toFixed(1)} px below "${surface.id}"; raise the hand (carry pose)`);
     }
@@ -154,20 +265,21 @@ export function checkHeldAboveSurface(film: Film, frame: number, hand: (ci: numb
  * Nhấc lên trước khi rời chỗ, đặt xuống từ phía trên (không "lún" qua mặt đỡ). Trong một lần cầm:
  *  - từ frame nắm cho tới khi TÂM (pivot x) của đạo cụ lần đầu ra khỏi bề ngang chỗ nó vừa nằm, đáy không được thấp hơn chỗ đó;
  *  - từ lần cuối tâm đi vào bề ngang chỗ sẽ đặt cho tới frame thả, đáy không được thấp hơn chỗ đặt.
- * Bề ngang = bbox art × scale quanh pivot. Mặt đỡ chưa có chiều sâu (2.5D): ở giữa hai đoạn đó, đồ có thể đi phía trước mặt
+ * Bề ngang = khung art × scale quanh pivot, theo góc thế giới khi cầm (góc 0: bbox art). Chỗ nhặt sau rơi tự do = pivot bake
+ * ở frame trước grip. Mặt đỡ chưa có chiều sâu (2.5D): ở giữa hai đoạn đó, đồ có thể đi phía trước mặt
  * bàn (thấp hơn mặt bàn). Va chạm đầy đủ theo hình khối thuộc M3 (vật lý thống nhất).
  */
 export function checkLiftClearance(film: Film, hand: (ci: number, contact: string, frame: number) => V2): void {
   const N = film.data.output.durationFrames;
   for (const [propId, list] of propTimeline(film)) {
-    const p = film.data.props.find((x) => x.id === propId)!;
-    const a = film.assets.get(p.asset)!;
-    const inside = (x: number, spot: V2) => x > spot[0] - a.pivot[0] * p.scale && x < spot[0] + (a.width - a.pivot[0]) * p.scale;
     // Các lần cầm: từ một đoạn đang nằm yên tới đoạn nằm yên kế tiếp (có thể qua nhiều người cầm, vd. trao tay).
     for (let k = 0; k < list.length; k++) {
       if (list[k]!.holders.length === 0 || (k > 0 && list[k - 1]!.holders.length > 0)) continue;
       const from = list[k]!.from;
-      const origin = list[k]!.rest;
+      const xs = frameCorners(film, propId, from).map((c) => c[0]);
+      const lo = Math.min(...xs), hi = Math.max(...xs);
+      const inside = (x: number, spot: V2) => x > spot[0] + lo && x < spot[0] + hi;
+      const origin = k > 0 && list[k - 1]!.drop ? restPivot(film, propId, from - 1) : segRest(film, propId, list[k]!);
       const endIdx = list.findIndex((x, j) => j > k && x.holders.length === 0);
       const to = endIdx < 0 ? N : list[endIdx]!.from;
       const at = (fr: number) => propPivot(film, propId, fr, (ci, c) => hand(ci, c, fr));
@@ -178,8 +290,8 @@ export function checkLiftClearance(film: Film, hand: (ci: number, contact: strin
         if (!inside(pv[0], origin)) break;
         if (pv[1] < origin[1] - ALIGN_TOLERANCE_PX) bad(fr, origin, 'where it was picked up');
       }
-      if (endIdx >= 0) {
-        const dest = list[endIdx]!.rest;
+      if (endIdx >= 0 && !list[endIdx]!.drop) {
+        const dest = segRest(film, propId, list[endIdx]!);
         for (let fr = to - 1; fr >= from; fr--) {
           const pv = at(fr);
           if (!inside(pv[0], dest)) break;
@@ -206,11 +318,11 @@ export function checkProps(film: Film, hand: (ci: number, contact: string, frame
       const end = k + 1 < list.length ? list[k + 1]!.from : N;
       for (let fr = seg.from; fr < end; fr++) {
         const o = hand(owner.ci, owner.contact, fr);
-        const oOff = anchorOffset(film, propId, owner.anchor);
+        const oOff = anchorOffset(film, propId, owner.anchor, fr);
         const pivot: V2 = [o[0] - oOff[0], o[1] - oOff[1]];
         for (const h of seg.holders) {
           if (h === owner) continue;
-          const off = anchorOffset(film, propId, h.anchor);
+          const off = anchorOffset(film, propId, h.anchor, fr);
           const got = hand(h.ci, h.contact, fr);
           const d = Math.hypot(got[0] - pivot[0] - off[0], got[1] - pivot[1] - off[1]);
           if (d > ALIGN_TOLERANCE_PX) {
@@ -224,26 +336,28 @@ export function checkProps(film: Film, hand: (ci: number, contact: string, frame
       const cur = list[k]!;
       const f = cur.from;
       const at = (ci: number, contact: string) => hand(ci, contact, f);
-      // Nắm mới: so tay người nắm với anchor đạo cụ theo trạng thái ngay trước sự kiện.
+      // Nắm mới: so tay người nắm với anchor đạo cụ theo trạng thái ngay trước sự kiện (đang nằm yên / theo người cầm
+      // trước / pose bake ở f − 1 nếu nhặt lại sau rơi tự do — pivot và GÓC của chính frame đó).
       for (const h of cur.holders.filter((x) => x.since === f)) {
-        const pivot = prev.holders.length === 0 ? prev.rest : (() => {
+        const pivot = prev.holders.length === 0 ? restPivot(film, propId, f - 1) : (() => {
           const o = prev.holders[prev.holders.length - 1]!;
           const p = at(o.ci, o.contact);
-          const off = anchorOffset(film, propId, o.anchor);
+          const off = anchorOffset(film, propId, o.anchor, f - 1);
           return [p[0] - off[0], p[1] - off[1]] as V2;
         })();
-        const off = anchorOffset(film, propId, h.anchor);
+        const off = anchorOffset(film, propId, h.anchor, f - 1);
         const want: V2 = [pivot[0] + off[0], pivot[1] + off[1]];
         const got = at(h.ci, h.contact);
         const d = Math.hypot(got[0] - want[0], got[1] - want[1]);
         if (d > ALIGN_TOLERANCE_PX) fail('PROP_DISCONTINUITY', `prop ${propId} frame ${f}`, `${film.data.characters[h.ci]!.id}.${h.contact} grips ${d.toFixed(2)} px away from anchor "${h.anchor}"`);
       }
       // Thả về chỗ đặt: tay người thả cuối phải ở đúng anchor tại vị trí đặt.
-      if (cur.holders.length === 0 && prev.holders.length > 0) {
+      if (cur.holders.length === 0 && prev.holders.length > 0 && !cur.drop) {
         const o = prev.holders[prev.holders.length - 1]!;
-        const off = anchorOffset(film, propId, o.anchor);
+        const off = anchorOffset(film, propId, o.anchor, f);
         const got = at(o.ci, o.contact);
-        const d = Math.hypot(got[0] - (cur.rest[0] + off[0]), got[1] - (cur.rest[1] + off[1]));
+        const spot = segRest(film, propId, cur);
+        const d = Math.hypot(got[0] - (spot[0] + off[0]), got[1] - (spot[1] + off[1]));
         if (d > ALIGN_TOLERANCE_PX) fail('PROP_DISCONTINUITY', `prop ${propId} frame ${f}`, `released ${d.toFixed(2)} px away from its place`);
       }
     }

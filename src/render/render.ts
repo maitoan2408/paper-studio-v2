@@ -11,12 +11,17 @@ import { checkProbe, decodeAll, reviewCopies, startEncoder, toolVersion } from '
 import { startServer, type RunningServer } from './server.ts';
 import { compareState, expectedState } from './state.ts';
 import type { DrawnFrame } from './types.ts';
+import { BAKE_FILE, BAKE_FORMAT_VERSION, bakeSha256, physicsBakeRecord } from '../physics/bake.ts';
 
 export const RENDERER_VERSION = 'paper-studio-renderer/0.1.0';
 export const READY_TIMEOUT_MS = 120_000;
 
+/**
+ * schemaVersion 2 (M3 việc 4): thêm `physics` BẮT BUỘC — null khi film không có physics, ngược lại tham chiếu bản ghi
+ * bake (src/physics/bake.ts) cạnh MP4 kèm SHA-256. Audit đọc v1 (không có trường này) chỉ cho film KHÔNG có physics.
+ */
 export interface RenderManifest {
-  schemaVersion: 1;
+  schemaVersion: 2;
   renderer: string;
   film: { id: string; path: string; sha256: string };
   packs: { id: string; version: string; manifestSha256: string }[];
@@ -28,6 +33,7 @@ export interface RenderManifest {
   mp4: { file: string; sha256: string };
   rechecks: { sameSession: number[]; newSession: number[] };
   review: { halfSpeed: string; contactSheet: string; audited: false };
+  physics: { bake: { file: string; formatVersion: number; sha256: string } } | null;
 }
 
 /**
@@ -147,9 +153,12 @@ export async function renderFilm(filmPath: string, assetsRoot: string, outDir: s
   }
 
   reviewCopies(mp4, N, join(outDir, 'film-0.5x.mp4'), join(outDir, 'contact.png'));
+  // Bake vật lý: chính bảng mà SceneFrame đã dùng (dropBake ghi nhớ theo film) — ghi kèm SHA để audit mô phỏng lại.
+  const bake = physicsBakeRecord(film);
+  if (bake) writeFileSync(join(outDir, BAKE_FILE), JSON.stringify(bake, null, 1) + '\n');
   const packs = film.data.packs.map((p) => ({ id: p.id, version: p.version, manifestSha256: p.manifestSha256 }));
   const manifest: RenderManifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     renderer: RENDERER_VERSION,
     film: { id: film.data.id, path: filmPath, sha256: filmSha },
     packs,
@@ -161,6 +170,7 @@ export async function renderFilm(filmPath: string, assetsRoot: string, outDir: s
     mp4: { file: 'film.mp4', sha256: sha256Hex(readFileSync(mp4)) },
     rechecks: { sameSession: sameOrder, newSession: newOrder },
     review: { halfSpeed: 'film-0.5x.mp4', contactSheet: 'contact.png', audited: false },
+    physics: bake ? { bake: { file: BAKE_FILE, formatVersion: BAKE_FORMAT_VERSION, sha256: bakeSha256(bake) } } : null,
   };
   writeFileSync(join(outDir, 'render-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   return manifest;

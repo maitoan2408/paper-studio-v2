@@ -27,7 +27,7 @@ for (const [name, f] of Object.entries(films)) {
         held++;
         const owner = s.holders[s.holders.length - 1]!;
         const pivot = propPivot(f, p.id, fr, hand(f, fr));
-        const off = anchorOffset(f, p.id, owner.anchor);
+        const off = anchorOffset(f, p.id, owner.anchor, fr);
         const h = contactWorld(f, owner.ci, fr, owner.contact);
         assert.ok(Math.hypot(pivot[0] + off[0] - h[0], pivot[1] + off[1] - h[1]) < 1e-6, `${p.id} frame ${fr}`);
       }
@@ -145,7 +145,7 @@ test('handover: while both hold, the prop follows the receiver (most recent grip
     both++;
     assert.equal(f.data.characters[s.holders[1]!.ci]!.id, 'tam');
     const pivot = propPivot(f, 'lantern-1', fr, hand(f, fr));
-    const off = anchorOffset(f, 'lantern-1', 'grip');
+    const off = anchorOffset(f, 'lantern-1', 'grip', fr);
     const h = contactWorld(f, s.holders[1]!.ci, fr, s.holders[1]!.contact);
     assert.ok(Math.hypot(pivot[0] + off[0] - h[0], pivot[1] + off[1] - h[1]) < 1e-6);
   }
@@ -161,7 +161,7 @@ function coHold(f: Film, propId: string): { fr: number; who: string; d: number }
     if (s.holders.length < 2) continue;
     const pivot = propPivot(f, propId, fr, hand(f, fr));
     for (const h of s.holders) {
-      const off = anchorOffset(f, propId, h.anchor);
+      const off = anchorOffset(f, propId, h.anchor, fr);
       const p = contactWorld(f, h.ci, fr, h.contact);
       out.push({ fr, who: `${f.data.characters[h.ci]!.id}.${h.contact}`, d: Math.hypot(p[0] - pivot[0] - off[0], p[1] - pivot[1] - off[1]) });
     }

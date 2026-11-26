@@ -80,7 +80,9 @@ const cases: [string, (f: any, s: ReturnType<typeof setup>) => void][] = [
   ['FILM_FRAME_RANGE', (f) => (f.camera.keys[0].frame = 1)],
   ['FILM_FRAME_RANGE', (f) => (f.camera.keys[1].frame = 48)],
   ['FILM_FRAME_RANGE', (f) => (f.camera.keys[1].frame = 0)],
-  ['FILM_FEATURE_NOT_ENABLED', (f) => f.physics.push({})],
+  // physics bật từ M3 đợt 1: mục rỗng/thiếu trường vẫn bị chặn ở schema (fail closed).
+  ['FILM_SCHEMA', (f) => f.physics.push({})],
+  ['FILM_SCHEMA', (f) => f.physics.push({ id: 'd', prop: 'p', release: 0, onto: 'floor', world: { gravity: 9.81, pxPerMeter: 400 }, body: { density: 1, friction: 0.5, restitution: 0 }, extra: 1 })],
 ];
 
 for (const [c, mutate] of cases) {

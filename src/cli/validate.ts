@@ -4,13 +4,14 @@ import { readJsonFile, StudioError } from '../core/errors.ts';
 import { loadArtPack } from '../schema/art-pack.ts';
 import { loadFilm, loadPackMotion } from '../schema/film.ts';
 import { validateState } from '../schema/state.ts';
+import { releaserContactWarnings } from '../physics/hits.ts';
 
 const ASSETS = 'assets';
 const FILMS = 'examples/films';
 
 const jsonFiles = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => join(dir, f)) : []);
 
-/** Validate toàn bộ dữ liệu trong repo. Dừng ở lỗi đầu tiên, exit 1. */
+/** Validate toàn bộ dữ liệu trong repo. Dừng ở lỗi đầu tiên, exit 1. Cảnh báo (WARN) không đổi mã thoát. */
 function main(): void {
   validateState(readJsonFile('docs/STATE.json'));
   console.log('OK docs/STATE.json');
@@ -30,6 +31,8 @@ function main(): void {
     const film = loadFilm(f, ASSETS);
     if (`${film.data.id}.json` !== f.split('/').pop()) throw new StudioError('FILM_SCHEMA', f, `film id "${film.data.id}" must equal file name`);
     console.log(`OK ${f}`);
+    // Cảnh báo duyệt thị giác (không chặn) — lấy từ kết quả validator vừa tính trong loadFilm.
+    for (const w of releaserContactWarnings(film)) console.log(`WARN ${w}`);
   }
 }
 
