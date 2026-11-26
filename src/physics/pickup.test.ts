@@ -141,3 +141,64 @@ test('anchorOffset follows propAngle on a resting dropped prop (m3-drop-bounce: 
   const r = (ang * Math.PI) / 180;
   assert.ok(Math.hypot(off[0] - -57.8 * Math.sin(r), off[1] - 57.8 * Math.cos(r)) < 1e-6 && off[0] > 57.79, `${off}`);
 });
+
+// ─── Hậu kiểm Codex @a401f62: đặt có kiểm soát (bind.place) vật đã nhặt lại ở góc khác 0 (pickupRotatedPlacement) ──
+/** Đáy thật của đạo cụ = điểm thấp nhất của khung art theo scale và góc thế giới ở frame (tính độc lập với props.ts). */
+function bottomY(f: Film, prop: string, fr: number): number {
+  const p = f.data.props.find((x) => x.id === prop)!;
+  const a = f.assets.get(p.asset)!;
+  const pv = propPivot(f, prop, fr, hand(f, fr));
+  const r = (propAngle(f, prop, fr) * Math.PI) / 180;
+  return pv[1] + Math.min(...([[0, 0], [a.width, 0], [a.width, a.height], [0, a.height]] as V2[]).map((c) => {
+    const l = artToLocal(c, a.pivot);
+    return l[0] * p.scale * Math.sin(r) + l[1] * p.scale * Math.cos(r);
+  }));
+}
+/** Fixture trong STATE: m3-pickup-pot, N = 744, Tam đặt chậu (đang nằm −90°) lại lên bàn bằng clip place, x tùy chọn. */
+const placePot = (x: number) => variant('m3-pickup-pot', (d) => {
+  d.output.durationFrames = 744;
+  d.timeline.push({ character: 'tam', clip: 'place', start: 464, durationFrames: 280, layer: 1, bind: { active: 'l', roles: { item: 'plant-1' }, place: { surface: 'table-top', x } } });
+});
+const TABLE_Y = 246 * 1.25;
+
+test('rotated placement (fixture x −577.8): the lying pot is set ON the table — bottom at the table top at f675/f676 and after, hand on the anchor, pivot/angle continuous', () => {
+  const v = placePot(-577.8);
+  const f = v.load();
+  const R = 464 + Math.round(0.76 * 279);
+  assert.equal(R, 676);
+  const seg = segmentAt(f, 'plant-1', R);
+  assert.equal(seg.holders.length, 0);
+  for (const fr of [R - 1, R, R + 1, 743]) assert.ok(Math.abs(bottomY(f, 'plant-1', fr) - TABLE_Y) <= ALIGN_TOLERANCE_PX, `bottom at f${fr}: ${bottomY(f, 'plant-1', fr).toFixed(3)} vs table ${TABLE_Y}`);
+  // trong lúc hạ xuống (đang ở trên chỗ đặt) đáy không xuống dưới mặt bàn
+  for (let fr = 600; fr < R; fr++) assert.ok(bottomY(f, 'plant-1', fr) >= TABLE_Y - ALIGN_TOLERANCE_PX || Math.abs(propPivot(f, 'plant-1', fr, hand(f, fr))[0] - -577.8) > 200, `f${fr}`);
+  const owner = segmentAt(f, 'plant-1', R - 1).holders.at(-1)!;
+  const pv0 = propPivot(f, 'plant-1', R - 1, hand(f, R - 1)), pv1 = propPivot(f, 'plant-1', R, hand(f, R));
+  assert.ok(Math.hypot(pv1[0] - pv0[0], pv1[1] - pv0[1]) <= ALIGN_TOLERANCE_PX, `pivot jump ${pv1} ${pv0}`);
+  assert.equal(propAngle(f, 'plant-1', R) - propAngle(f, 'plant-1', R - 1), 0);
+  const off = anchorOffset(f, 'plant-1', owner.anchor, R), got = contactWorld(f, owner.ci, R, owner.contact);
+  assert.ok(Math.hypot(got[0] - pv1[0] - off[0], got[1] - pv1[1] - off[1]) <= ALIGN_TOLERANCE_PX, 'hand on the anchor at the release');
+});
+
+test('upright control: placing the lantern (rest angle ≈ 0) keeps its pivot (= bottom) on the surface as before', () => {
+  const v = variant('m3-pickup-lantern', (d) => {
+    d.output.durationFrames = 760;
+    d.timeline.push({ character: 'lan', clip: 'place', start: 520, durationFrames: 240, layer: 1, bind: { active: 'l', roles: { item: 'lantern-1' }, place: { surface: 'table-top', x: 300 } } });
+  });
+  const f = v.load();
+  const R = 520 + Math.round(0.76 * 239);
+  assert.equal(segmentAt(f, 'lantern-1', R).holders.length, 0);
+  // góc nghỉ của đèn ≈ 0 (sai số float của Rapier) ⇒ pivot = đáy = mặt bàn, sai khác < 0,001 px
+  const pv = propPivot(f, 'lantern-1', R, hand(f, R));
+  assert.ok(Math.abs(pv[0] - 300) < 1e-9 && Math.abs(pv[1] - 246) < 1e-3, `${pv}`);
+  assert.ok(Math.abs(bottomY(f, 'lantern-1', R) - 246) < 1e-3);
+});
+
+test('rotated placement out of reach fails closed: IK_UNREACHABLE at the place item, naming the raised rotated target', () => {
+  // cùng fixture, đặt xa hơn (x −350, clip place 500 frame để không vượt tốc độ khớp trước): đích tay = anchor grip của
+  // chậu nằm −90° khi ĐÁY chạm bàn ⇒ grip cao 358,5 (bản cũ 307,5 — đặt lún 51 px)
+  const v = variant('m3-pickup-pot', (d) => {
+    d.output.durationFrames = 964;
+    d.timeline.push({ character: 'tam', clip: 'place', start: 464, durationFrames: 500, layer: 1, bind: { active: 'l', roles: { item: 'plant-1' }, place: { surface: 'table-top', x: -350 } } });
+  });
+  assert.throws(v.load, code('IK_UNREACHABLE', /film\.timeline\[8\] frame \d+ \(place\) — tam\.arm\.l: target is [\d.]+ px too far .*reaching "plant-1" anchor "grip" at \(-292\.2, 358\.5\)/));
+});

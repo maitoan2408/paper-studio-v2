@@ -14,7 +14,7 @@ import type { ArtPack } from '../schema/art-pack.ts';
 import { contactPoint, forwardKinematics, restPose, standingHeight, type PoseInput } from '../rig/pose.ts';
 import { solveChain } from './ik.ts';
 import { activeItems, characterPose, keyValue } from './timeline.ts';
-import { anchorOffset, restPivot, segmentAt } from './props.ts';
+import { anchorOffset, placePivot, restPivot, segmentAt } from './props.ts';
 import { solvedPoint } from './interaction.ts';
 import { walkState, type WalkState } from './walk.ts';
 
@@ -189,7 +189,7 @@ function applyReach(film: Film, ci: number, frame: number, angles: Map<string, n
           if (!pl) fail('ACTION_PRECONDITION', `${where}.bind.place`, 'reach "at: place" needs bind.place');
           const s = film.data.stage.surfaces.find((x) => x.id === pl.surface);
           if (!s) fail('FILM_UNKNOWN_REF', `${where}.bind.place`, `surface "${pl.surface}" does not exist`);
-          pivot = [pl.x, s.y];
+          pivot = placePivot(film, propId, pl, frame); // đáy đã xoay chạm mặt đỡ — cùng hình học với chỗ nằm sau lần thả
         } else {
           const seg = segmentAt(film, propId, frame);
           const others = seg.holders.filter((h) => !(h.ci === ci && h.contact === contact));

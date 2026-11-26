@@ -18,7 +18,7 @@ import type { Film } from '../schema/film.ts';
 import { forwardKinematics, contactPoint } from '../rig/pose.ts';
 import { solveChain } from './ik.ts';
 import { characterState, type CharacterState } from './character.ts';
-import { anchorOffset, propPivot } from './props.ts';
+import { anchorOffset, propBottom, propPivot } from './props.ts';
 import { activeItems, clipFor, keyValue } from './timeline.ts';
 
 const cache = new WeakMap<Film, Map<string, V2>>();
@@ -189,7 +189,7 @@ function context(film: Film, id: string) {
     for (const cl of s.clearance ?? []) {
       const holder = film.data.characters[ciOf(s.reach[0]!.character)]!;
       const surface = film.data.stage.surfaces.find((x) => x.id === holder.on)!;
-      const bottom = P[1] - anchorOffset(film, cl.prop, cl.anchor, f)[1];
+      const bottom = P[1] - anchorOffset(film, cl.prop, cl.anchor, f)[1] + propBottom(film, cl.prop, f); // đáy khung đã xoay
       if (bottom < surface.y) return `${cl.prop} would hang ${(surface.y - bottom).toFixed(1)} px below "${surface.id}"`;
     }
     return undefined;

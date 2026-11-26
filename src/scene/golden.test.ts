@@ -23,6 +23,8 @@ const GOLDEN: Record<string, string> = {
   // M3 việc 6: nhặt lại sau khi rơi tự do và nằm yên — phim mới, không đổi golden cũ.
   'm3-pickup-pot': '10b6fac6728adebfe97f9cbe645acd7ff219a0b4f3f625fcc999a485a3a1d5ff',
   'm3-pickup-lantern': 'f0d83ceddfd60935b00768b334b046cb7e07f6549f665992803f0fd50d261d48',
+  // Hậu kiểm @a401f62: đặt lại chậu đang nằm −90° lên bàn — đáy khung đã xoay chạm mặt bàn (phim mới).
+  'm3-pickup-place': '35d7d65a0e3fcad6e1926f005472bc4bd8f1072f7faec41d5fba899db0746e02',
 };
 
 for (const [id, want] of Object.entries(GOLDEN)) {
