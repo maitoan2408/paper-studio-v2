@@ -4,12 +4,13 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadFilm, type Film } from '../schema/film.ts';
 import { dropBake } from './drop.ts';
-import { bodyParts, fallingHits, intersects, lerpAngle, propPolygon } from './hits.ts';
+import { bodyParts, fallingHits, intersects, lerpAngle, propPolygon, releaserContactWarnings } from './hits.ts';
 
 const tmp = mkdtempSync(join(tmpdir(), 'ps-hits-'));
 const variant = (id: string, edit: (d: any) => void): { load: () => Film; data: any } => {
@@ -136,4 +137,77 @@ test('releaser contacts: an ongoing release contact is allowed; a NEW contact on
   // đèn rời hẳn Lan (f308) rồi quay lại trúng bàn chân: CHẶN
   const back = variant('m3-collide', (d) => (d.walks.find((w: any) => w.character === 'lan').toX = -350));
   assert.throws(back.load, (e: Error) => hitsError('lantern-1', 'lan', 'foot.l', 311)(e) && /substep 8\/8/.test(e.message) && /it had left lan's body at frame 308 and came back/.test(e.message));
+});
+
+// ─── Hậu kiểm Codex @e442d59: khoảng còn bay theo bước con (characterHitFlightWindow) ─────────────────────────────────
+/**
+ * Fixture trong STATE: từ m3-drop, chậu restitution 0 rơi lên ledge (y 20); Lan đứng trên stand (y −254) tại x, đi từ
+ * f121 trong 96 frame tới x − 155 — tay trái Lan đưa lên ngang đường rơi của chậu. Yếu tố duy nhất khác giữa ba ca: x.
+ */
+const ledgeLan = (x: number) => variant('m3-drop', (d) => {
+  d.stage.surfaces.push({ id: 'ledge', x0: -1300, x1: 1300, y: 20 }, { id: 'stand', x0: -1300, x1: 1300, y: -254 });
+  d.physics[0].onto = 'ledge';
+  d.physics[0].body.restitution = 0;
+  const lan = d.characters.find((c: any) => c.id === 'lan'); lan.on = 'stand'; lan.x = x;
+  Object.assign(d.walks.find((w: any) => w.character === 'lan'), { start: 121, durationFrames: 96, toX: x - 155 });
+});
+
+test('flight window: the ledge holds the pot from f165 substep 2/8; Lan x 20 is hit in flight (f164 8/8), x 20.9 only overlaps after the pot is held (f165 8/8) and is valid, x 21 is valid', () => {
+  assert.throws(ledgeLan(20).load, (e: Error) => hitsError('plant-1', 'lan', 'upper-arm.l', 164)(e) && /substep 8\/8/.test(e.message));
+  const held = ledgeLan(20.9);
+  held.load(); // bản e442d59: PHYSICS_HITS_CHARACTER f165 bước 8/8 (khung tay giao chậu khi ledge đã đỡ từ bước 2/8)
+  const f = { ...loadFilm('examples/films/m3-drop.json', 'assets'), data: held.data } as Film;
+  const q = dropBake(f, 'drop-plant').poses.find((p) => p.frame === 165)!;
+  // điểm tựa sau từng bước con, theo đúng tiêu chí "đỡ" của mô phỏng: bước 1 còn bay, bước 2..8 được ledge đỡ
+  assert.deepEqual(q.subSupportedBy, [[], ...Array(7).fill(['surface:ledge'])]);
+  assert.equal(fallingHits(f)[0]!.hit, null);
+  ledgeLan(21).load();
+});
+
+/**
+ * Bay lại sau khi đã được đỡ: từ m3-collide, Lan đưa đèn tới meet.x −125 (đi tới −255 trong 100 frame) — đèn đáp lên NÓC
+ * chậu ở f310, chậu đỡ nó (f311–f319 đủ 8/8 bước con; vài bước con hở khi đèn lắc ở f320, f322), tới f323 bước 5 lăn khỏi
+ * mép phải chậu và rơi xuống sàn. Sau khi thả chậu, Tam đi tiếp từ
+ * f212 trong 120 frame tới x; yếu tố duy nhất khác giữa cặp: x.
+ */
+const rollOff = (x: number) => variant('m3-collide', (d) => {
+  d.timeline[7].bind.points.meet.x = -125;
+  Object.assign(d.walks.find((w: any) => w.character === 'lan'), { toX: -255, durationFrames: 100 });
+  d.walks.push({ character: 'tam', start: 212, durationFrames: 120, toX: x });
+});
+
+test('flight window: support does not end the check — the lantern rolls off the pot it rested on and is checked again from the first unsupported substep', () => {
+  const hit = rollOff(100);
+  assert.throws(hit.load, (e: Error) => hitsError('lantern-1', 'tam', 'upper-arm.r', 323)(e) && /substep 5\/8/.test(e.message));
+  const f = { ...loadFilm('examples/films/m3-collide.json', 'assets'), data: hit.data } as Film;
+  const poses = dropBake(f, 'drop-lantern').poses;
+  const held = (fr: number) => poses.find((p) => p.frame === fr)!.subSupportedBy.map((s) => s.join('+') || '-');
+  for (const fr of [311, 315, 319]) assert.deepEqual(held(fr), Array(8).fill('prop:plant-1'), `f${fr} on the pot`);
+  // f323: chậu còn đỡ bước 1–4, bước 5 rời nóc chậu — khoảng 4→5 là khoảng bay đầu tiên và tay Tam bị chạm ngay trong đó
+  assert.deepEqual(held(323), [...Array(4).fill('prop:plant-1'), '-', '-', '-', '-']);
+  const r = fallingHits(f).find((x) => x.drop === 'drop-lantern')!;
+  assert.deepEqual([r.hit!.frame, r.hit!.substep, r.hit!.character, r.hit!.bone], [323, 5, 'tam', 'upper-arm.r']);
+  rollOff(200).load(); // Tam đã đi xa hơn: đèn lăn xuống sàn không chạm ai
+});
+
+test('npm run validate shows the releaser warnings (film, drop, releaser, bone, frame, substep) and still exits 0', () => {
+  const r = spawnSync(process.execPath, ['src/cli/validate.ts'], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  const warn = r.stdout.split('\n').filter((l) => l.startsWith('WARN '));
+  const expect = ['m3-collide-miss', 'm3-collide', 'm3-drop'].flatMap((film) => [['foot.l', 3, '163.375'], ['foot.r', 4, '163.500']].map(([bone, k, t]) =>
+    `WARN PHYSICS_RELEASER_NEW_CONTACT: ${film} film.physics(drop-plant) — "plant-1" overlaps a new region of its releaser tam: ${bone} at frame 164 substep ${k}/8 (t ${t}), before leaving tam's body; not blocked — review the 2.5D layering in the video (draw order only explains the picture)`));
+  assert.deepEqual(warn, expect);
+  // mỗi cảnh báo nằm ngay sau dòng OK của phim đó
+  for (const film of ['m3-collide-miss', 'm3-collide', 'm3-drop']) {
+    const lines = r.stdout.split('\n');
+    const at = lines.indexOf(`OK examples/films/${film}.json`);
+    assert.ok(lines[at + 1]!.includes(`: ${film} film.physics(drop-plant)`) && lines[at + 2]!.includes(`: ${film} film.physics(drop-plant)`), film);
+  }
+});
+
+test('the warnings reuse the report computed by the validator (no second sweep)', () => {
+  const f = loadFilm('examples/films/m3-drop.json', 'assets');
+  assert.equal(fallingHits(f), fallingHits(f));
+  assert.deepEqual(releaserContactWarnings(f).map((w) => w.match(/: (\S+) at frame (\d+) substep (\d)\/8/)!.slice(1)), [['foot.l', '164', '3'], ['foot.r', '164', '4']]);
+  assert.deepEqual(releaserContactWarnings(loadFilm('examples/films/m3-drop-table.json', 'assets')), []);
 });

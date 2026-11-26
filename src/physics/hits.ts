@@ -8,8 +8,11 @@
  *    co ngang |fx| (paperX) quanh P. Kết quả: hình bình hành lồi.
  *  - Đạo cụ: đúng collider của drop (hộp = khung art; hull = điểm art khai báo) đặt theo pose bake (pivot, góc).
  *  - Trúng: hai đa giác lồi giao nhau (định lý trục tách, có diện tích chung > 0; chạm cạnh không tính).
- * Thời điểm: xét frame f nếu vật ĐANG BAY trong (f−1, f]: state(f) hoặc state(f−1) là falling/airborne, hoặc f = R —
- * gồm cả phần bay của frame đáp (f165 kết thúc supported nhưng 5 bước con đầu còn bay). Nằm yên/trượt đã được đỡ liên tục
+ * Thời điểm: xét từng BƯỚC CON theo trạng thái đỡ của chính mô phỏng (DropPose.subSupportedBy — cùng tiêu chí "đỡ" với
+ * supportedBy: điểm chịu xung lực, pháp tuyến hướng lên, vₙ ≤ g·h). Bước con k bị BỎ QUA chỉ khi vật được đỡ cả ở đầu lẫn
+ * cuối bước (đầu bước 1 = cuối frame trước; frame khóa nằm yên: supported của frame; khoảng (R−1, R] luôn xét vì vật vừa
+ * rời tay). Vì vậy giữ phần bay ngay trước lần chạm đầu (bước con chạm = đầu chưa đỡ, cuối đỡ), bỏ phần đã được đỡ liên
+ * tục, và xét lại ngay khi vật nảy / lăn / trượt khỏi điểm tựa (đầu đỡ, cuối không). Nằm yên/trượt đã được đỡ liên tục
  * không xét (2,5D không có chiều sâu: vật đặt trước chân nhân vật vẫn chồng hình mà không "trúng").
  * Quét theo BƯỚC CON: đường đi của vật là các pose pivot sau từng bước con (DropPose.sub, mô phỏng thật — không nội suy
  * qua cú đáp/nảy); giữa hai bước con liên tiếp chia đều sao cho mỗi mẫu dịch ≤ SWEEP_STEP_PX (vật và mọi đỉnh vùng cơ thể,
@@ -32,7 +35,7 @@ import type { Film } from '../schema/film.ts';
 import { characterState } from '../motion/character.ts';
 import { propTimeline } from '../motion/props.ts';
 import { forwardKinematics } from '../rig/pose.ts';
-import { dropBake, SUBSTEPS } from './drop.ts';
+import { dropBake, SUBSTEPS, type DropPose } from './drop.ts';
 import { convexHull } from '../core/hull.ts';
 
 /** Bước nội suy tối đa giữa hai mẫu (px thế giới). */
@@ -128,8 +131,17 @@ export interface FallingHitReport {
   nearestByCharacter: Record<string, { frame: number; t: number; bone: string; distance: number }>;
 }
 
-/** Quét mọi drop của film (thứ tự id), trả báo cáo — không ném lỗi (để test/chẩn đoán). */
-export function fallingHits(film: Film): FallingHitReport[] {
+/** Báo cáo đã tính cho từng film (validator tính một lần; CLI validate đọc lại cảnh báo từ đây, không quét lại). */
+const reports = new WeakMap<Film, readonly FallingHitReport[]>();
+
+/** Quét mọi drop của film (thứ tự id), trả báo cáo — không ném lỗi (để test/chẩn đoán). Kết quả được nhớ theo film. */
+export function fallingHits(film: Film): readonly FallingHitReport[] {
+  let out = reports.get(film);
+  if (!out) { out = scan(film); reports.set(film, out); }
+  return out;
+}
+
+function scan(film: Film): FallingHitReport[] {
   const out: FallingHitReport[] = [];
   for (const d of [...film.data.physics].sort((x, y) => (x.id < y.id ? -1 : 1))) {
     const b = dropBake(film, d.id);
@@ -138,17 +150,23 @@ export function fallingHits(film: Film): FallingHitReport[] {
     const releaser = film.data.characters[rci]!.id;
     const prop = film.data.props.find((p) => p.id === d.prop)!;
     const rep: FallingHitReport = { drop: d.id, prop: d.prop, releaser, releaseFrame: b.releaseFrame, graceEnd: null, hit: null, nearest: null, nearestByCharacter: {}, exemptAtRelease: [], releaserNewContacts: [] };
-    const inFlight = (st: string | undefined) => st === 'falling' || st === 'airborne';
     const pose = (fr: number) => b.poses[fr - b.releaseFrame];
+    /** Vật được đỡ sau bước con k của frame q (k = 1..số bước; frame khóa nằm yên không có bước con: supported của frame). */
+    const heldAfter = (q: DropPose, k: number) => (q.subSupportedBy.length ? q.subSupportedBy[k - 1]!.length > 0 : q.supported);
     let exempt: Set<string> | null = null; // tiếp xúc ban đầu của người buông còn kéo dài
     let grace = true; // chưa rời hẳn người buông
     for (const q of b.poses) {
       const f = q.frame;
-      if (!(f === b.releaseFrame || inFlight(q.state) || inFlight(pose(f - 1)?.state))) continue;
-      const prev = f === b.releaseFrame ? { x: b.init.pivot[0], y: b.init.pivot[1], angle: prop.rotation } : pose(f - 1)!;
+      const before = f === b.releaseFrame ? null : pose(f - 1)!;
+      const prev = before ?? { x: b.init.pivot[0], y: b.init.pivot[1], angle: prop.rotation };
       // đường đi trong frame: pose đầu khoảng + pose sau từng bước con (frame khóa nghỉ không có sub ⇒ chỉ pose frame)
       const path: [number, number, number][] = [[prev.x, prev.y, prev.angle], ...(q.sub.length ? q.sub : [[q.x, q.y, q.angle] as [number, number, number]])];
       const steps = path.length - 1;
+      // held[k] = được đỡ ở đầu/cuối khoảng thứ k (held[0] = cuối frame trước; lúc buông: còn trong tay ⇒ chưa được đỡ).
+      const held = [before ? heldAfter(before, before.subSupportedBy.length || 1) : false];
+      for (let k = 1; k <= steps; k++) held.push(heldAfter(q, k));
+      const flying = (k: number) => !(held[k - 1] && held[k]); // đã được đỡ liên tục suốt bước con k ⇒ không xét
+      if (![...Array(steps).keys()].some((i) => flying(i + 1))) continue;
       const bodies0 = film.data.characters.flatMap((_, ci) => bodyParts(film, ci, f - 1));
       const bodies1 = film.data.characters.flatMap((_, ci) => bodyParts(film, ci, f));
       if (!exempt) {
@@ -158,6 +176,7 @@ export function fallingHits(film: Film): FallingHitReport[] {
         if (exempt.size === 0) { grace = false; rep.graceEnd = { frame: f, t: 0 }; }
       }
       for (let k = 1; k <= steps; k++) {
+        if (!flying(k)) continue;
         const [x0, y0, a0] = path[k - 1]!, [x1, y1, a1] = path[k]!;
         const t0 = (k - 1) / steps, t1 = k / steps;
         const P0 = propPolygon(film, d.id, [x0, y0], a0), P1 = propPolygon(film, d.id, [x1, y1], lerpAngle(a0, a1, 1));
@@ -209,4 +228,14 @@ export function checkFallingProps(film: Film): void {
   if (!r) return;
   const h = r.hit!;
   fail('PHYSICS_HITS_CHARACTER', `film.physics(${r.drop}) frame ${h.frame}`, `falling "${r.prop}" hits ${h.character} (${h.bone}) at frame ${h.frame} substep ${h.substep}/${SUBSTEPS} (t ${(h.frame - 1 + h.t).toFixed(3)})${h.character === r.releaser ? ` — it had left ${r.releaser}'s body at frame ${r.graceEnd?.frame} and came back` : ''}`);
+}
+
+/**
+ * Cảnh báo (không chặn) cho người dựng phim: tiếp xúc MỚI của vật với một vùng khác của người buông trước khi vật rời hẳn
+ * người đó (releaserNewContacts). Mỗi dòng nêu phim, drop/đạo cụ, người buông, xương, frame và bước con; thứ tự: drop theo
+ * id, rồi theo thời gian. Dùng báo cáo validator đã tính cho film (fallingHits nhớ theo film).
+ */
+export function releaserContactWarnings(film: Film): string[] {
+  return fallingHits(film).flatMap((r) => r.releaserNewContacts.map((c) =>
+    `PHYSICS_RELEASER_NEW_CONTACT: ${film.data.id} film.physics(${r.drop}) — "${r.prop}" overlaps a new region of its releaser ${r.releaser}: ${c.bone} at frame ${c.frame} substep ${c.substep}/${SUBSTEPS} (t ${(c.frame - 1 + c.t).toFixed(3)}), before leaving ${r.releaser}'s body; not blocked — review the 2.5D layering in the video (draw order only explains the picture)`));
 }
