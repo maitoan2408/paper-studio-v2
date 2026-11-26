@@ -74,7 +74,7 @@ Repo cũ: `maitoan2408/ai-animation-studio-research-content`, nhánh `codex/m6-u
 
 9. **Cách làm việc với chủ dự án:** yêu cầu mơ hồ → hỏi lại và đưa thiết kế ngắn để duyệt **trước** khi code; chia task nhỏ, nêu file sửa và cách kiểm tra; code ít nhất có thể; chỉ nói "xong" sau khi chạy kiểm tra thật; báo cáo sau mỗi bước kèm ảnh/video thật trong chat.
 
-10. **Nghiệm thu hai lớp.** Validator và test chặn lỗi kỹ thuật (ngưỡng an toàn là dữ liệu trong rig, vd. `maxDegPerFrame` theo xương). Chất lượng chuyển động và hình ảnh do chủ dự án duyệt trên video thật (1× và 0.5×). Không dùng một ngưỡng số thay cho đánh giá hình ảnh; không nới ngưỡng an toàn để qua kiểm tra. Chạy được trên dữ liệu mới **không** đồng nghĩa với đạt nếu hình ảnh còn lỗi.
+10. **Nghiệm thu hai lớp.** Validator và test chặn lỗi kỹ thuật (ngưỡng an toàn là dữ liệu trong rig, vd. `maxDegPerFrame` theo xương). Chất lượng chuyển động và hình ảnh do chủ dự án duyệt trên video thật (1× và 0.5×). Mỗi lần xin chủ dự án duyệt, gửi kèm ảnh hoặc video của đúng bản cần duyệt ngay trong báo cáo, ghi rõ cảnh và điểm cần xem. Không dùng một ngưỡng số thay cho đánh giá hình ảnh; không nới ngưỡng an toàn để qua kiểm tra. Chạy được trên dữ liệu mới **không** đồng nghĩa với đạt nếu hình ảnh còn lỗi.
 
 ## 4. Kiến trúc
 
