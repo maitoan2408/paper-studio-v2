@@ -87,7 +87,7 @@
     },
     "M3": {
       "status": "NOT_RUN",
-      "head": "d14d491333efef9e5d20a5c3409479b93acf5f8f",
+      "head": "a401f62ca512fccaf75dda23984aea860a145761",
       "updated": "2026-11-26",
       "checks": {
         "firstImpact": "PASS_TECHNICAL",
@@ -116,7 +116,11 @@
         "characterHitAngleWrap": "PASS_TECHNICAL",
         "characterHitFlightWindow": "PASS_TECHNICAL",
         "tamPotReleaseVisual": "ACCEPTED",
-        "pickupAfterRest": "NOT_RUN"
+        "pickupAfterRest": "BLOCKED",
+        "pickupGripAndSeek": "PASS_TECHNICAL",
+        "pickupPreconditions": "PASS_TECHNICAL",
+        "pickupBodyRemoval": "PASS_TECHNICAL",
+        "pickupRotatedPlacement": "BLOCKED"
       },
       "notes": [
         "M1 mở chính thức. Chủ dự án ưu tiên khảo sát M3 trước. Các checks ghi kết quả của đợt thả tự do, milestone M3 vẫn NOT_RUN theo thứ tự của validator.",
@@ -174,7 +178,11 @@
         "Fixture đèn lăn khỏi chậu: Tam đi tới x=150 thì chặn hand.r f326 bước 2/8, x=175 thì hợp lệ. Cả hai có bước hở 8/8 ở f320 và 1/8, 8/8 ở f322. Giữ PASS_TECHNICAL cho characterHitFlightWindow và characterHitValidation. Các cảnh báo chân Tam vẫn dành cho duyệt thị giác 2,5D. Nếu đổi bước thời gian, chạy lại các ca sát biên.",
         "Chạy lại test đích trên 8c5cd7f với test từ d14d491: 10 đạt, 4 lỗi. Chỉ chuyển cách đọc export cảnh báo sang namespace import để baseline thiếu export vẫn chạy từng test. Bản sửa verify 378/378, validate exit 0 và 6 cảnh báo. So toàn bộ 8 SHA SceneFrame và 4 SHA bake cục bộ với hai log render 45722161991 và 45744531458, khớp đủ 64 ký tự. Trong run 45744531458, 34 dòng PASS gồm 8 từ check:renderer và 26 từ check:bake. Hậu kiểm bổ sung dùng trace và loadFilm.",
         "Chủ dự án duyệt hình ảnh cú thả chậu của Tam tại bản code d14d491, đoạn m3-drop f135–194 và ảnh đối chiếu ba phim ở f160, f163–165. Chấp nhận chậu che một phần giày ở f164 trong cách dàn cảnh này. Hai cảnh báo chân tiếp tục hiện trong validate.",
-        "Theo yêu cầu triển khai bước kế tiếp, Codex giao việc 6 theo phương án nhặt sau khi nghỉ ở PLAN. Phần triển khai và bằng chứng của Claude đang chờ. M1 là mốc mở chính thức."
+        "Theo yêu cầu triển khai bước kế tiếp, Codex giao việc 6 theo phương án nhặt sau khi nghỉ ở PLAN. Phần triển khai và bằng chứng của Claude đang chờ. M1 là mốc mở chính thức.",
+        "Hậu kiểm việc 6 tại a401f62, cha 5b3d86c. Codex chạy cùng 10 test pickup trên hai worktree (chép test và hai phim sang cha): cha 0/10, bản sửa 10/10. Verify 390/390. Validate exit 0, 10 phim, 6 WARN chân Tam như trước và 1 WARN torso f230 bước 2/8 trong m3-pickup-pot.",
+        "Tam nhặt chậu tay trái sau khi nghỉ f258, grip f324 ở −89,99994°. Sai số tay–anchor và lệch pivot khoảng 1,29e−9 px, lệch góc 0°; lấy góc dàn cảnh thì sai 81,74 px. Lan nhặt đèn tay trái sau khi nghỉ f263, grip f394, góc xấp xỉ 0°, sai số tay–anchor và lệch pivot khoảng 1,09e−9 px, lệch góc 0°. Các ca tua thẳng và tuần tự khớp. Qua loadFilm, vật đang bay f230 và đã thức lại f315 bị chặn bằng PHYSICS_PICKUP_NOT_AT_REST; ca ngoài tầm báo IK_UNREACHABLE f208, thiếu 110,7 px. Đối chứng bỏ thân ở G=259 dùng simulateWorld trực tiếp vì tay không tới chậu trên sàn. Thử thêm một lần thả chậu sau nhặt bằng clip give thứ hai từ f464, release f517 giữ góc −89,99994°, nghỉ lại f553.",
+        "Codex so 10 SHA SceneFrame và 6 SHA bake cục bộ với log CI render https://github.com/maitoan2408/paper-studio-v2/actions/runs/45764768501 trên merge ref a6b307589bd86b2d829822d82daca73943f65211. Toàn bộ khớp 64 ký tự. 8 SceneFrame và 4 bake cũ cũng khớp run 45744531458. Renderer 8/8, audit 10 phim minPSNR 41,15 dB, check:bake 26/26. Tổng 34 dòng PASS gồm cả renderer.",
+        "pickupRotatedPlacement BLOCKED. Từ m3-pickup-pot chỉ đổi output.durationFrames thành 744 và thêm timeline[8] = {character:\"tam\", clip:\"place\", start:464, durationFrames:280, layer:1, bind:{active:\"l\", roles:{item:\"plant-1\"}, place:{surface:\"table-top\", x:-577.8}}}. loadFilm cho qua. Ở f675 khi còn cầm và f676 khi đặt, đáy hộp art ở y=256,5, thấp hơn mặt bàn y=307,5 đúng 51 px. Đáy vẫn ở đó tại f743. Chậu nằm gọn trong khoảng x của bàn. Với góc nghỉ hiện tại, pivot đặt phải ở y≈358,5 để đáy chạm bàn trong dung sai 0,5 px. Hình render đối chứng tại f323/f676 xác nhận vị trí đặt sai. Đích reach at:place, pose sau release và phép kiểm tiếp cận/độ liên tục phải dùng cùng hình học đặt theo góc. Giao Claude bổ sung test qua loadFilm cho chậu nghiêng và đèn thẳng, giữ fail closed khi ngoài tầm; nếu cần dời nơi đặt để tới được, giữ fixture cũ làm ca âm. Chủ dự án duyệt hình ảnh việc 6 sau lượt sửa."
       ]
     },
     "M4": {
