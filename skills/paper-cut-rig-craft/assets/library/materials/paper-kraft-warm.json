@@ -1,0 +1,16 @@
+{
+  "id": "paper-kraft-warm",
+  "kind": "pbr-paper",
+  "family": "materials",
+  "gsm": 350,
+  "cardstock": {
+    "thickness": 0.11,
+    "bevel": 0.016,
+    "edgeColor": "#d9b991",
+    "roughness": 0.93,
+    "normalScale": 0.78,
+    "translucency": 0.14
+  },
+  "styles": ["daylight-sculpted", "lightbox-led"],
+  "description": "Heavy unbleached 350gsm natural kraft board with matte fiber tooth and opaque warm-tan paper core."
+}

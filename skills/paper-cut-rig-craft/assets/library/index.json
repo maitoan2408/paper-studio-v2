@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "4.0.0",
+  "version": "5.1.0",
   "count": 34,
   "families": [
     "anatomy",
@@ -749,6 +749,193 @@
       "craftScore": 74,
       "sha256": "288c356eac67d9e54150382cbcf9d76d8e2c792d9355f0729d0c2935af4f6c50",
       "description": "Circular openwork kirigami crest medallion with symmetrical carved petals, corner pinpoints, and gilded rim ring."
+    }
+  ],
+  "materials": [
+    {
+      "id": "paper-cotton-300gsm",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-cotton-300gsm.json",
+      "gsm": 300,
+      "styles": [
+        "shadowbox-moonlit",
+        "daylight-sculpted",
+        "lightbox-led",
+        "winter-tunnel"
+      ],
+      "sha256": "a1b4b5244761411537e2775991934b3a9fc624f4ebe78c5255da84f5965ac4a9",
+      "description": "Archival 300gsm warm-cream cotton rag cardstock with crisp beveled cut rim and subtle backlit pulp glow."
+    },
+    {
+      "id": "paper-indigo-ribbed",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-indigo-ribbed.json",
+      "gsm": 320,
+      "styles": [
+        "shadowbox-moonlit",
+        "winter-tunnel"
+      ],
+      "sha256": "7e7384a165a7893207209f1c22edcfc4de40823ec9b82ddb568e6c28b98f5132",
+      "description": "Deep nocturnal 320gsm ribbed cardstock with cool silver-blue bevel catchlights for moonlit shadow-box strata."
+    },
+    {
+      "id": "paper-kraft-warm",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-kraft-warm.json",
+      "gsm": 350,
+      "styles": [
+        "daylight-sculpted",
+        "lightbox-led"
+      ],
+      "sha256": "5ad7be3cc9b3e57edcfe178cc4f223a674c342c2db9010398cc5d68af214127a",
+      "description": "Heavy unbleached 350gsm natural kraft board with matte fiber tooth and opaque warm-tan paper core."
+    },
+    {
+      "id": "paper-washi-translucent",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-washi-translucent.json",
+      "gsm": 120,
+      "styles": [
+        "lightbox-led",
+        "shadowbox-moonlit",
+        "winter-tunnel"
+      ],
+      "sha256": "727fa38a3fb374201412d5fb689205899388afb2eb0181f12130f8770e0cd841",
+      "description": "Thin 120gsm fibrous mulberry washi paper designed for strongly backlit lanterns, petals, and glowing clouds."
+    }
+  ],
+  "reliefs3d": [
+    {
+      "id": "bonsai-frame-pine",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "bonsai_calligraphy",
+      "file": "reliefs3d/bonsai-frame-pine.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted"
+      ],
+      "sha256": "00f1fabf952269fed0e6d472021e676136e0c4b9b0f272f737320091cdb2056c",
+      "description": "Sinuous calligraphy cubic-Bezier bonsai pine branch with feathered two-layer needle tufts and gentle paperFlex sway."
+    },
+    {
+      "id": "clouds-billowing-canopy",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "billowing_clouds",
+      "file": "reliefs3d/clouds-billowing-canopy.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted",
+        "winter-tunnel"
+      ],
+      "sha256": "c861cd7a4987c677c97e310525ec85a87541ce58b0cfcf77351b5571202d6e6d",
+      "description": "Two-tier scalloped backlit paper cloud canopy with opposing slow harmonic drift."
+    },
+    {
+      "id": "cutout-relief-cardstock",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "cutout_relief",
+      "file": "reliefs3d/cutout-relief-cardstock.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted",
+        "winter-tunnel"
+      ],
+      "sha256": "7b7834c9626a8fca6af6fac9f779bec8563a26f680d076dc71045029e3d5a537",
+      "description": "Standard 300gsm Sobel normal-map relief parameters (flipY=true, cream cardstock core slices) for optional cutout_relief layers."
+    },
+    {
+      "id": "peony-botanical-cluster",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "sculpted_peony",
+      "file": "reliefs3d/peony-botanical-cluster.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted"
+      ],
+      "sha256": "9e63775f25371fb5e5c94a684b8d0b548adefaac467919e935e4d8989a07cfd2",
+      "description": "Multi-ring cupped 3D sculpted peony blooms with recessed gold stamen clusters and swaying botanical fronds."
+    },
+    {
+      "id": "strata-mountain-mist",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "organic_strata",
+      "file": "reliefs3d/strata-mountain-mist.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "daylight-sculpted",
+        "winter-tunnel"
+      ],
+      "sha256": "f79be2b309cdfd24a5c5857fb1bc0fada85debc6819464e5754550caa7002f11",
+      "description": "3-stratum organic rolling mountain ridge with curved topographic erosion flutes and graduated atmospheric paper tones."
+    }
+  ],
+  "cutouts": [],
+  "archetypes": [
+    {
+      "id": "biped-storybook-base",
+      "kind": "rig-archetype",
+      "family": "archetypes",
+      "file": "archetypes/biped-storybook-base.json",
+      "boneCount": 17,
+      "roles": [
+        "pelvis",
+        "spine",
+        "chest",
+        "head",
+        "face",
+        "armUpperL",
+        "armLowerL",
+        "handL",
+        "armUpperR",
+        "armLowerR",
+        "handR",
+        "legUpperL",
+        "legLowerL",
+        "footL",
+        "legUpperR",
+        "legLowerR",
+        "footR"
+      ],
+      "sha256": "f1388e63d398801be19657a8aa3059a7923db64f3234297e1158f9bf8846cb3f",
+      "description": "Modular 17-bone Biped storybook archetype with overlap-cap joints, 3 torso/head angles, 4 hand states (open/grip/point/relaxed), facial expressions, canonical boneMapping for cross-proportion retargeting, IK legs/arms, and cascading followThrough."
+    },
+    {
+      "id": "quadruped-fable-base",
+      "kind": "rig-archetype",
+      "family": "archetypes",
+      "file": "archetypes/quadruped-fable-base.json",
+      "boneCount": 14,
+      "roles": [
+        "pelvis",
+        "chest",
+        "head",
+        "frontLegUpperL",
+        "frontLegLowerL",
+        "frontLegUpperR",
+        "frontLegLowerR",
+        "backLegUpperL",
+        "backLegLowerL",
+        "backLegUpperR",
+        "backLegLowerR",
+        "tailBase",
+        "tailMid",
+        "tailTip"
+      ],
+      "sha256": "829b6194d2ef079998f75cb7ecb89588fd822aa3ca94015d4e5f8bb34250f1b0",
+      "description": "Modular 14-bone Quadruped creature archetype with 2-segment articulated legs, 3-link wave tail, canonical boneMapping for retargeting, IK ground contact, and cascading followThrough."
     }
   ]
 }

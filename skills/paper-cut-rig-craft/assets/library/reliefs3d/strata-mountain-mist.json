@@ -1,0 +1,60 @@
+{
+  "id": "strata-mountain-mist",
+  "kind": "procedural-3d",
+  "family": "reliefs3d",
+  "layerKind": "organic_strata",
+  "styles": ["shadowbox-moonlit", "daylight-sculpted", "winter-tunnel"],
+  "defaults": {
+    "baseY": -4.8,
+    "xMin": -7.4,
+    "xMax": 7.4,
+    "samples": 88,
+    "seed": 5101,
+    "zStep": 0.24,
+    "strata": [
+      {
+        "baseH": -0.35,
+        "fbmAmp": 0.22,
+        "peaks": [[-3.4, 2.3, 1.9, -0.2], [2.8, 2.1, 2.1, 0.25]],
+        "topColor": "#46658c",
+        "midColor": "#233b5e",
+        "bottomColor": "#0c1629",
+        "edgeColor": "#c3d8f0",
+        "flutes": 18,
+        "thickness": 0.14,
+        "bevel": 0.022,
+        "roughness": 0.91,
+        "translucency": 0.22
+      },
+      {
+        "baseH": -1.05,
+        "fbmAmp": 0.18,
+        "peaks": [[-1.6, 1.75, 1.7, 0.15], [3.9, 1.65, 1.8, -0.15]],
+        "topColor": "#355175",
+        "midColor": "#182c4a",
+        "bottomColor": "#08101f",
+        "edgeColor": "#a9c5e3",
+        "flutes": 14,
+        "thickness": 0.15,
+        "bevel": 0.022,
+        "roughness": 0.92,
+        "translucency": 0.18
+      },
+      {
+        "baseH": -1.75,
+        "fbmAmp": 0.14,
+        "peaks": [[-4.4, 1.25, 1.6, 0.1], [0.9, 1.15, 2.0, -0.2]],
+        "topColor": "#263f61",
+        "midColor": "#112038",
+        "bottomColor": "#050b16",
+        "edgeColor": "#90b0d4",
+        "flutes": 12,
+        "thickness": 0.16,
+        "bevel": 0.024,
+        "roughness": 0.93,
+        "translucency": 0.14
+      }
+    ]
+  },
+  "description": "3-stratum organic rolling mountain ridge with curved topographic erosion flutes and graduated atmospheric paper tones."
+}

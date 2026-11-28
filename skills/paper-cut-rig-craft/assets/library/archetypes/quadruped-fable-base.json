@@ -1,0 +1,65 @@
+{
+  "id": "quadruped-fable-base",
+  "kind": "rig-archetype",
+  "family": "archetypes",
+  "sides": ["l", "r"],
+  "variants": {
+    "expression": ["neutral", "happy", "wonder"]
+  },
+  "boneMapping": {
+    "pelvis": "pelvis",
+    "chest": "chest",
+    "head": "head",
+    "frontLegUpperL": "fleg.l.u",
+    "frontLegLowerL": "fleg.l.l",
+    "frontLegUpperR": "fleg.r.u",
+    "frontLegLowerR": "fleg.r.l",
+    "backLegUpperL": "bleg.l.u",
+    "backLegLowerL": "bleg.l.l",
+    "backLegUpperR": "bleg.r.u",
+    "backLegLowerR": "bleg.r.l",
+    "tailBase": "tail1",
+    "tailMid": "tail2",
+    "tailTip": "tail3"
+  },
+  "bones": [
+    { "id": "pelvis", "parent": null, "attach": null, "part": "q_pelvis", "limits": { "min": -22, "max": 22 }, "rest": 0, "z": 0, "maxDegPerFrame": 12 },
+    { "id": "chest", "parent": "pelvis", "attach": "chest", "part": "q_chest", "limits": { "min": -25, "max": 25 }, "rest": 0, "z": 1, "maxDegPerFrame": 12 },
+    { "id": "head", "parent": "chest", "attach": "head", "part": "q_head", "limits": { "min": -40, "max": 35 }, "rest": 0, "z": 3, "maxDegPerFrame": 15 },
+    { "id": "fleg.l.u", "parent": "chest", "attach": "fhipL", "part": "q_leg_u", "limits": { "min": -70, "max": 70 }, "rest": 8, "z": -2, "maxDegPerFrame": 18 },
+    { "id": "fleg.l.l", "parent": "fleg.l.u", "attach": "knee", "part": "q_leg_l", "limits": { "min": -95, "max": 25 }, "rest": -10, "z": -2, "maxDegPerFrame": 20 },
+    { "id": "fleg.r.u", "parent": "chest", "attach": "fhipR", "part": "q_leg_u", "limits": { "min": -70, "max": 70 }, "rest": -6, "z": 2, "maxDegPerFrame": 18 },
+    { "id": "fleg.r.l", "parent": "fleg.r.u", "attach": "knee", "part": "q_leg_l", "limits": { "min": -95, "max": 25 }, "rest": -8, "z": 2, "maxDegPerFrame": 20 },
+    { "id": "bleg.l.u", "parent": "pelvis", "attach": "bhipL", "part": "q_leg_u", "limits": { "min": -70, "max": 70 }, "rest": -8, "z": -2, "maxDegPerFrame": 18 },
+    { "id": "bleg.l.l", "parent": "bleg.l.u", "attach": "knee", "part": "q_leg_l", "limits": { "min": -25, "max": 95 }, "rest": 12, "z": -2, "maxDegPerFrame": 20 },
+    { "id": "bleg.r.u", "parent": "pelvis", "attach": "bhipR", "part": "q_leg_u", "limits": { "min": -70, "max": 70 }, "rest": 6, "z": 2, "maxDegPerFrame": 18 },
+    { "id": "bleg.r.l", "parent": "bleg.r.u", "attach": "knee", "part": "q_leg_l", "limits": { "min": -25, "max": 95 }, "rest": 10, "z": 2, "maxDegPerFrame": 20 },
+    { "id": "tail1", "parent": "pelvis", "attach": "tail", "part": "q_tail1", "limits": { "min": -55, "max": 55 }, "rest": 6, "z": -1, "maxDegPerFrame": 18 },
+    { "id": "tail2", "parent": "tail1", "attach": "tip", "part": "q_tail2", "limits": { "min": -55, "max": 55 }, "rest": 8, "z": -1, "maxDegPerFrame": 20 },
+    { "id": "tail3", "parent": "tail2", "attach": "tip", "part": "q_tail3", "limits": { "min": -55, "max": 55 }, "rest": 6, "z": -1, "maxDegPerFrame": 20 }
+  ],
+  "ik": {
+    "fleg.l": { "upper": "fleg.l.u", "lower": "fleg.l.l", "end": "fleg.l.l", "bend": -1 },
+    "fleg.r": { "upper": "fleg.r.u", "lower": "fleg.r.l", "end": "fleg.r.l", "bend": -1 },
+    "bleg.l": { "upper": "bleg.l.u", "lower": "bleg.l.l", "end": "bleg.l.l", "bend": 1 },
+    "bleg.r": { "upper": "bleg.r.u", "lower": "bleg.r.l", "end": "bleg.r.l", "bend": 1 }
+  },
+  "contacts": {
+    "paw.fl": { "bone": "fleg.l.l", "anchor": "paw" },
+    "paw.fr": { "bone": "fleg.r.l", "anchor": "paw" },
+    "paw.bl": { "bone": "bleg.l.l", "anchor": "paw" },
+    "paw.br": { "bone": "bleg.r.l", "anchor": "paw" }
+  },
+  "followThrough": {
+    "chain": ["pelvis", "chest", "head", "tail1", "tail2", "tail3"],
+    "phaseLag": 0.34,
+    "damping": 0.68
+  },
+  "gait": {
+    "enabled": false,
+    "lockToTravel": true,
+    "strideScaleByLegLength": true,
+    "resetToRest": true
+  },
+  "description": "Modular 14-bone Quadruped creature archetype with 2-segment articulated legs, 3-link wave tail, canonical boneMapping for retargeting, IK ground contact, and cascading followThrough."
+}

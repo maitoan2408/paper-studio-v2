@@ -1,0 +1,78 @@
+{
+  "id": "biped-storybook-base",
+  "kind": "rig-archetype",
+  "family": "archetypes",
+  "sides": ["l", "r"],
+  "variants": {
+    "torsoAngle": ["front", "threeQuarter", "side"],
+    "headAngle": ["front", "threeQuarter", "side"],
+    "hand": ["open", "grip", "point", "relaxed"],
+    "expression": ["neutral", "happy", "wonder"]
+  },
+  "boneMapping": {
+    "pelvis": "pelvis",
+    "spine": "spine",
+    "chest": "torso",
+    "head": "head",
+    "face": "face",
+    "armUpperL": "uarm.l",
+    "armLowerL": "farm.l",
+    "handL": "hand.l",
+    "armUpperR": "uarm.r",
+    "armLowerR": "farm.r",
+    "handR": "hand.r",
+    "legUpperL": "thigh.l",
+    "legLowerL": "shin.l",
+    "footL": "foot.l",
+    "legUpperR": "thigh.r",
+    "legLowerR": "shin.r",
+    "footR": "foot.r"
+  },
+  "bones": [
+    { "id": "pelvis", "parent": null, "attach": null, "part": "pelvis", "limits": { "min": -25, "max": 25 }, "rest": 0, "z": 0, "maxDegPerFrame": 12 },
+    { "id": "spine", "parent": "pelvis", "attach": "spine", "part": "spine", "limits": { "min": -30, "max": 35 }, "rest": 0, "z": 1, "maxDegPerFrame": 12 },
+    { "id": "torso", "parent": "spine", "attach": "torso", "part": "torso_front", "variantGroup": "torsoAngle", "variants": { "threeQuarter": "torso_tq", "side": "torso_side" }, "limits": { "min": -25, "max": 30 }, "rest": 0, "z": 2, "maxDegPerFrame": 12 },
+    { "id": "head", "parent": "torso", "attach": "head", "part": "head_front", "variantGroup": "headAngle", "variants": { "threeQuarter": "head_tq", "side": "head_side" }, "limits": { "min": -35, "max": 35 }, "rest": 0, "z": 4, "maxDegPerFrame": 14 },
+    { "id": "face", "parent": "head", "attach": "face", "part": "face_neutral", "variantGroup": "expression", "variants": { "happy": "face_happy", "wonder": "face_wonder" }, "limits": { "min": -5, "max": 5 }, "rest": 0, "z": 5, "maxDegPerFrame": 8 },
+    { "id": "uarm.l", "parent": "torso", "attach": "shL", "part": "uarm", "limits": { "min": -145, "max": 120 }, "rest": 12, "z": -2, "maxDegPerFrame": 18 },
+    { "id": "farm.l", "parent": "uarm.l", "attach": "elbow", "part": "farm", "limits": { "min": -140, "max": 15 }, "rest": -14, "z": -2, "maxDegPerFrame": 20 },
+    { "id": "hand.l", "parent": "farm.l", "attach": "wrist", "part": "hand_relaxed", "variantGroup": "hand", "variants": { "open": "hand_open", "grip": "hand_grip", "point": "hand_point" }, "limits": { "min": -55, "max": 55 }, "rest": 0, "z": -1, "maxDegPerFrame": 22.5 },
+    { "id": "uarm.r", "parent": "torso", "attach": "shR", "part": "uarm", "limits": { "min": -145, "max": 120 }, "rest": -12, "z": 3, "maxDegPerFrame": 18 },
+    { "id": "farm.r", "parent": "uarm.r", "attach": "elbow", "part": "farm", "limits": { "min": -140, "max": 15 }, "rest": -12, "z": 3, "maxDegPerFrame": 20 },
+    { "id": "hand.r", "parent": "farm.r", "attach": "wrist", "part": "hand_relaxed", "variantGroup": "hand", "variants": { "open": "hand_open", "grip": "hand_grip", "point": "hand_point" }, "limits": { "min": -55, "max": 55 }, "rest": 0, "z": 4, "maxDegPerFrame": 22.5 },
+    { "id": "thigh.l", "parent": "pelvis", "attach": "hipL", "part": "thigh", "limits": { "min": -95, "max": 85 }, "rest": 4, "z": -3, "maxDegPerFrame": 18 },
+    { "id": "shin.l", "parent": "thigh.l", "attach": "knee", "part": "shin", "limits": { "min": -10, "max": 135 }, "rest": 4, "z": -3, "maxDegPerFrame": 20 },
+    { "id": "foot.l", "parent": "shin.l", "attach": "ankle", "part": "foot", "limits": { "min": -45, "max": 55 }, "rest": 0, "z": -2, "maxDegPerFrame": 18 },
+    { "id": "thigh.r", "parent": "pelvis", "attach": "hipR", "part": "thigh", "limits": { "min": -95, "max": 85 }, "rest": -4, "z": 1, "maxDegPerFrame": 18 },
+    { "id": "shin.r", "parent": "thigh.r", "attach": "knee", "part": "shin", "limits": { "min": -10, "max": 135 }, "rest": 4, "z": 1, "maxDegPerFrame": 20 },
+    { "id": "foot.r", "parent": "shin.r", "attach": "ankle", "part": "foot", "limits": { "min": -45, "max": 55 }, "rest": 0, "z": 2, "maxDegPerFrame": 18 }
+  ],
+  "ik": {
+    "leg.l": { "upper": "thigh.l", "lower": "shin.l", "end": "foot.l", "bend": 1 },
+    "leg.r": { "upper": "thigh.r", "lower": "shin.r", "end": "foot.r", "bend": 1 },
+    "arm.l": { "upper": "uarm.l", "lower": "farm.l", "end": "hand.l", "bend": -1 },
+    "arm.r": { "upper": "uarm.r", "lower": "farm.r", "end": "hand.r", "bend": -1 }
+  },
+  "contacts": {
+    "grip.l": { "bone": "hand.l", "anchor": "grip" },
+    "grip.r": { "bone": "hand.r", "anchor": "grip" },
+    "sole.l": { "bone": "foot.l", "anchor": "sole" },
+    "sole.r": { "bone": "foot.r", "anchor": "sole" }
+  },
+  "handTransition": {
+    "sequence": ["open", "grip", "relaxed"],
+    "maxWristDegPerFrame": 22.5
+  },
+  "followThrough": {
+    "chain": ["pelvis", "spine", "torso", "uarm.r", "head"],
+    "phaseLag": 0.28,
+    "damping": 0.72
+  },
+  "gait": {
+    "enabled": false,
+    "lockToTravel": true,
+    "strideScaleByLegLength": true,
+    "resetToRest": true
+  },
+  "description": "Modular 17-bone Biped storybook archetype with overlap-cap joints, 3 torso/head angles, 4 hand states (open/grip/point/relaxed), facial expressions, canonical boneMapping for cross-proportion retargeting, IK legs/arms, and cascading followThrough."
+}

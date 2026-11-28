@@ -1,0 +1,37 @@
+{
+  "id": "peony-botanical-cluster",
+  "kind": "procedural-3d",
+  "family": "reliefs3d",
+  "layerKind": "sculpted_peony",
+  "styles": ["shadowbox-moonlit", "lightbox-led", "daylight-sculpted"],
+  "defaults": {
+    "seed": 7301,
+    "blooms": [
+      {
+        "x": -3.8,
+        "y": -2.45,
+        "z": 0.04,
+        "scale": 0.92,
+        "outerColor": "#e6cc9d",
+        "midColor": "#f5e4c2",
+        "innerColor": "#fdf4e1",
+        "coreColor": "#fffaf0"
+      },
+      {
+        "x": 3.9,
+        "y": -2.55,
+        "z": 0.06,
+        "scale": 0.84,
+        "outerColor": "#dfc090",
+        "midColor": "#f2ddba",
+        "innerColor": "#fbf0da",
+        "coreColor": "#fffaf0"
+      }
+    ],
+    "ferns": [
+      { "x": -4.65, "y": -2.95, "z": -0.06, "rotDeg": 28, "scale": 0.85, "color": "#2f574b", "edgeColor": "#a8d4c2", "swayDeg": 2.4 },
+      { "x": 4.75, "y": -2.95, "z": -0.06, "rotDeg": -30, "scale": 0.82, "color": "#2f574b", "edgeColor": "#a8d4c2", "swayDeg": 2.2 }
+    ]
+  },
+  "description": "Multi-ring cupped 3D sculpted peony blooms with recessed gold stamen clusters and swaying botanical fronds."
+}

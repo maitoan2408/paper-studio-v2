@@ -4,12 +4,14 @@ description: Designs and compiles cinema-grade 3D sculpted & backlit paper-cut s
 compatibility: Requires Node.js 18+ (zero external npm dependencies; bundles locked Three.js WebGL2 vendor runtime; optional Chrome/Chromium for headless WebGL2 Model Sheets, Motion Sheets, 18° Oblique/Exploded 3D proofs, and Bit-Exact Determinism Gate).
 metadata:
   author: paper-studio-v2
-  version: "5.0.0"
+  version: "5.1.0"
 ---
 
-# Paper-Cut & Shadow-Box Rig Craft (v5.0 — Cinema-Grade 3D Sculpted & Backlit Engine)
+# Paper-Cut & Shadow-Box Rig Craft (v5.1 — Cinema-Grade 3D Sculpted & Standardized Craft Library)
 
-Turn any creative brief into a **cinema-grade 3D sculpted & backlit paper-cut diorama** plus a **validated `paper-studio-v2` asset pack** — powered by **Dual-Path 3D Geometry** (multi-layer folded relief + die-cut printed cardstock slabs), **physical 300gsm cotton PBR + backlit subsurface scattering + seeded GTAO**, a **48-component Private Craft Library**, and a **5-Gate Visual & Bit-Exact Determinism Workflow** — with zero external npm dependencies and 100% backward compatibility with `svg2d` blueprints.
+Turn any creative brief into a **cinema-grade 3D sculpted & backlit paper-cut diorama** plus a **validated `paper-studio-v2` asset pack** — powered by **Dual-Path 3D Geometry** (multi-layer folded relief + die-cut printed cardstock slabs), **physical 300gsm cotton PBR + backlit subsurface scattering + seeded GTAO**, a **SHA-256-verified Craft Library** (48 2D SVGs + 4 PBR paper materials + 5 procedural 3D reliefs + 2 modular rig archetypes + optional local PNG/WebP cutouts), and a **5-Gate Visual & Bit-Exact Determinism Workflow** — with zero external npm dependencies and 100% backward compatibility with `svg2d` blueprints.
+
+> **Boundary with `PLAN.md` (`src/` M0–M6):** This skill is the **Authoring, Material Library, Rig Craft & Preview/Audit layer**. It compiles and validates declarative data into `assets/<pack>/` (`manifest.json` + `rig.json` + `scene3d.json` + SHA-256). The film production engine in `src/` consumes validated packs only and has zero runtime dependency on `skills/`.
 
 ## Style Grammar Packs (`styles/<slug>/STYLE.md` + `preset.json`)
 
@@ -24,12 +26,13 @@ Turn any creative brief into a **cinema-grade 3D sculpted & backlit paper-cut di
 
 ## Bundled Resources (Load On Demand)
 
-- **Blueprint JSON v5.0 Contract:** [references/blueprint-schema.md](references/blueprint-schema.md) — **mandatory read** for `style`, `scene.renderMode`, `scene.boxCavity`, `scene.lighting3d`, `scene.layers3d[]`, `part.cardstock`, `rig.hoses[]`, `rig.strands[]`, `gait`, and `kitRef`.
+- **Blueprint JSON v5.1 Contract:** [references/blueprint-schema.md](references/blueprint-schema.md) — **mandatory read** for `style`, `scene.renderMode`, `scene.boxCavity`, `scene.lighting3d`, `scene.layers3d[]`, `part.cardstock` + `paperFlex`, `gait.groundCurve`/`lockToTravel`, direct ID refs (`kitRef`, `materialRef`, `reliefRef`, `archetypeRef`, optional `cutoutRef`), `boneMapping`, `events[]`, and the Viewer-vs-M1–M3 Runtime Scope Matrix.
 - **Aesthetic, 3D Relief & Anti-Stiffness Bible:** [references/aesthetic-and-motion.md](references/aesthetic-and-motion.md) — **mandatory read** for Dual-Path 3D rules (zero Z-fighting, positive determinants, telephoto `24°` lens), value ladders, seamless 3D `hoses[]`/`strands[]`, and IK `gait`.
-- **Universal Rig Archetypes:** [references/rig-archetypes.md](references/rig-archetypes.md) — 2-spine Biped + IK gait + hoses + strands, Quadruped, Winged Spirit/Bird, Kinetic prop, or Wave Creature.
-- **48-Component Private Craft Library (`assets/library/` + `assets/kit/`):** Browse or import artist SVGs fail-closed:
+- **Universal Rig Archetypes:** [references/rig-archetypes.md](references/rig-archetypes.md) — plus ready-to-reference modular archetypes `biped-storybook-base` and `quadruped-fable-base` in `assets/library/archetypes/`.
+- **SHA-256 Verified Craft Library (`assets/library/` + `assets/kit/`):**
   ```bash
-  node scripts/library_cli.mjs list [--family anatomy|garments|botanicals|props|frames] [--json]
+  node scripts/library_cli.mjs verify [--library-dir <DIR>] [--json]
+  node scripts/library_cli.mjs list [--kind svg-2d|pbr-paper|procedural-3d|rig-archetype|cutout-raster|all] [--family <fam>] [--json]
   node scripts/library_cli.mjs contact-sheet --out <dir>
   node scripts/library_cli.mjs import --svg <artist.svg> --id <slug> --family <fam> --out-dir <private-lib>
   ```
@@ -41,8 +44,8 @@ Turn any creative brief into a **cinema-grade 3D sculpted & backlit paper-cut di
 2. Design `6–14` distinct `Z` planes (`z = -3.4 .. +1.4`) with generous `spacerGap` (`0.35–0.85` world units) so raking `keyLight` + `GTAO` cast bold, unmistakable physical shadows across planes.
 
 ### Gate 2 — Dual-Path Craft Assembly (Library Cardstock Slabs + 3D Sculpted Relief)
-1. **Characters & Intricate Props (`parts[]`):** Pull rich components from `assets/library/` (`kitRef` / `{{KIT:...}}`) + add `cardstock: { thickness, bevel, edgeColor, translucency }`. The engine automatically traces their outer silhouette into a **3D beveled cardstock slab** and prints the `4×` supersampled SVG + live `data-eye="1"` blink onto the front cap (**zero Z-fighting**). Use `rig.hoses[]` for seamless limbs, `rig.strands[]` for flowing 3D scarves/tails, and analytic 2-bone IK `gait` for walking.
-2. **Scenery & Architecture (`scene.layers3d[]`):** Build genuine 3D volume using `folded_ridge` (`pleated`, `faceted`, `tiered_cliff_slabs`), `architecture` (`pagoda_roof` with carved rafters, `rect` with `holeArches`, `cone`), `cupped_petals`, `pine_fan_tree`, `botanical_frond`, `tiered_pine_group`, and `extruded_svg`.
+1. **Characters & Intricate Props (`parts[]` + `rigs[]`):** Pull components from `assets/library/` (`kitRef` / `{{KIT:...}}`), attach PBR paper presets via `part.materialRef` (plus optional `cardstock.paperFlex`: `wing_cup`, `cloth_billow`, `tail_wave`, `branch_sway`), and start characters from `rig.archetypeRef` (`biped-storybook-base` / `quadruped-fable-base`). Use `rig.hoses[]` for seamless limbs, `rig.strands[]` for flowing 3D scarves/tails, and analytic 2-bone IK `gait` with `groundCurve` + `lockToTravel`.
+2. **Scenery & Architecture (`scene.layers3d[]`):** Reference reusable presets via `reliefRef` (or author directly) across `folded_ridge`, `architecture`, `cupped_petals`, `pine_fan_tree`, `botanical_frond`, `tiered_pine_group`, `extruded_svg`, **`organic_strata`**, **`bonsai_calligraphy`**, **`billowing_clouds`**, **`sculpted_peony`**, and optional **`cutout_relief`** (via verified local `cutoutRef`; pure vector/procedural scenes work 100% independently).
 
 ### Gate 3 — Fail-Closed Compile & Strict Pack Validation
 ```bash

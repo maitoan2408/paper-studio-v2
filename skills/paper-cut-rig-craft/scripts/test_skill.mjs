@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -2020,6 +2020,557 @@ try {
     const html = readFileSync(htmlPath, 'utf8');
     assert.equal(html.includes('data-render-mode="sculpted3d"'), false, 'legacy blueprint must remain svg2d');
     assert.ok(html.includes('id="sceneSvg"'), 'legacy blueprint must use SVG viewer-shell.html');
+  });
+
+  // =========================================================================
+  // v5.1 Step 2 TDD SUITE — Standardized 2D/3D/PBR/Cutout Library & Direct ID Refs
+  // =========================================================================
+  test('v5.1 Material & Relief Library Catalog: index.json registers >=4 PBR materials and >=5 3D relief presets with valid SHA-256', () => {
+    const libDir = join(SKILL_DIR, 'assets', 'library');
+    const idx = JSON.parse(readFileSync(join(libDir, 'index.json'), 'utf8'));
+    assert.ok(Array.isArray(idx.materials) && idx.materials.length >= 4, 'index.json must declare >= 4 PBR paper materials');
+    assert.ok(Array.isArray(idx.reliefs3d) && idx.reliefs3d.length >= 5, 'index.json must declare >= 5 procedural 3D reliefs');
+    assert.ok(Array.isArray(idx.cutouts), 'index.json must declare optional cutouts[] array');
+    for (const m of idx.materials) {
+      const f = join(libDir, m.file);
+      assert.ok(existsSync(f), `missing material file ${m.file}`);
+      const sha = createHash('sha256').update(readFileSync(f)).digest('hex');
+      assert.equal(sha, m.sha256, `material SHA-256 mismatch for ${m.id}`);
+    }
+    for (const r of idx.reliefs3d) {
+      const f = join(libDir, r.file);
+      assert.ok(existsSync(f), `missing relief3d file ${r.file}`);
+      const sha = createHash('sha256').update(readFileSync(f)).digest('hex');
+      assert.equal(sha, r.sha256, `relief3d SHA-256 mismatch for ${r.id}`);
+    }
+  });
+
+  test('v5.1 library_cli.mjs verify & list --kind: verifies all assets/library, kit, and styles fail-closed', () => {
+    const LIB_CLI = join(__dirname, 'library_cli.mjs');
+    const vPass = runNode(LIB_CLI, ['verify', '--json']);
+    assert.equal(vPass.status, 0, `library_cli verify failed: ${vPass.stdout}\n${vPass.stderr}`);
+    assert.equal(vPass.json?.status, 'PASS');
+
+    const listMat = runNode(LIB_CLI, ['list', '--kind', 'pbr-paper', '--json']);
+    assert.equal(listMat.status, 0, `list --kind pbr-paper failed: ${listMat.stdout}`);
+    assert.ok((listMat.json?.count ?? 0) >= 4, 'must list >= 4 pbr-paper materials');
+
+    const listRel = runNode(LIB_CLI, ['list', '--kind', 'procedural-3d', '--json']);
+    assert.equal(listRel.status, 0, `list --kind procedural-3d failed: ${listRel.stdout}`);
+    assert.ok((listRel.json?.count ?? 0) >= 5, 'must list >= 5 procedural-3d reliefs');
+
+    // Negative: tampered SHA-256 in custom library index.json must fail closed
+    const badLib = join(workDir, 'v51-tampered-lib');
+    mkdirSync(join(badLib, 'materials'), { recursive: true });
+    const matObj = {
+      id: 'custom-paper',
+      kind: 'pbr-paper',
+      family: 'materials',
+      gsm: 300,
+      cardstock: { thickness: 0.08, bevel: 0.015, edgeColor: '#f6ebd4', roughness: 0.88, normalScale: 0.65, translucency: 0.25 },
+      description: 'Test paper',
+    };
+    writeFileSync(join(badLib, 'materials', 'custom-paper.json'), JSON.stringify(matObj, null, 2) + '\n');
+    writeFileSync(join(badLib, 'index.json'), JSON.stringify({
+      schemaVersion: 1,
+      version: '5.1.0',
+      components: [],
+      materials: [{ id: 'custom-paper', kind: 'pbr-paper', family: 'materials', file: 'materials/custom-paper.json', sha256: '0'.repeat(64) }],
+      reliefs3d: [],
+      cutouts: [],
+    }, null, 2));
+    const vFail = runNode(LIB_CLI, ['verify', '--library-dir', badLib, '--json']);
+    assert.equal(vFail.status, 1, 'tampered SHA-256 must fail closed');
+    assert.ok(vFail.json?.errors?.some((e) => e.code === 'LIB_SHA_MISMATCH'), `expected LIB_SHA_MISMATCH, got ${vFail.stdout}`);
+  });
+
+  test('v5.1 Blueprint Direct ID Refs (materialRef + reliefRef): pure vector/procedural multi-rig + multi-variant compiles without cutouts', () => {
+    const bp = makeBlueprintA();
+    bp.style = 'shadowbox-moonlit';
+    bp.meta.packId = 'test-v51-refs';
+    bp.parts[0].materialRef = 'paper-cotton-300gsm';
+    bp.parts[1].materialRef = { id: 'paper-washi-translucent', overrides: { translucency: 0.55 } };
+    bp.parts.push({
+      id: 'headA_v2',
+      category: 'head',
+      materialRef: 'paper-kraft-warm',
+      size: [60, 60],
+      pivot: [20, 30],
+      anchors: {},
+      svg: '<path d="M-12 -10 C-10 -22 12 -22 18 -10 C22 2 12 14 -4 12 Z" fill="#f4a261"/><circle cx="6" cy="-4" r="2.5" fill="#1d3557"/>',
+    });
+    bp.rigs[0].bones[1].variants = { alt: 'headA_v2' };
+    bp.rigs[0].variants = { head: ['default', 'alt'] };
+    bp.scene.layers3d = [
+      { id: 'bg_strata', reliefRef: 'strata-mountain-mist', z: -2.4 },
+      { id: 'mid_clouds', reliefRef: 'clouds-billowing-canopy', z: -1.4 },
+      { id: 'fg_bonsai', reliefRef: 'bonsai-frame-pine', z: 0.6 },
+      { id: 'fg_peony', reliefRef: 'peony-botanical-cluster', z: 0.9 },
+    ];
+
+    const bpPath = join(workDir, 'v51-refs.json');
+    const packDir = join(workDir, 'v51-refs-pack');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir]);
+    assert.equal(c.status, 0, `compile with materialRef + reliefRef failed: ${c.stdout}\n${c.stderr}`);
+
+    const manifest = JSON.parse(readFileSync(join(packDir, 'manifest.json'), 'utf8'));
+    const p0 = manifest.assets.find((a) => a.id === bp.parts[0].id);
+    const p1 = manifest.assets.find((a) => a.id === bp.parts[1].id);
+    assert.equal(p0?.cardstock?.edgeColor, '#f6ebd4', 'materialRef must populate cardstock defaults');
+    assert.equal(p1?.cardstock?.translucency, 0.55, 'materialRef overrides must take precedence');
+
+    const scene3d = JSON.parse(readFileSync(join(packDir, 'scene3d.json'), 'utf8'));
+    assert.deepEqual(
+      scene3d.layers3d.map((l) => l.kind),
+      ['organic_strata', 'billowing_clouds', 'bonsai_calligraphy', 'sculpted_peony'],
+      'reliefRef must expand to exact engine layer3d kinds',
+    );
+    assert.equal(runNode(VALIDATE_SCRIPT, [packDir]).status, 0, 'pack compiled from materialRef + reliefRef must pass validate_pack');
+  });
+
+  test('v5.1 Blueprint Direct ID Refs Negative (fail-closed): missing ID or tampered preset SHA fails closed', () => {
+    const bpBadMat = makeSculpted3dBlueprint();
+    bpBadMat.parts[0].materialRef = 'nonexistent-paper-999';
+    const p1 = join(workDir, 'v51-bad-matref.json');
+    writeFileSync(p1, JSON.stringify(bpBadMat));
+    const r1 = runNode(COMPILE_SCRIPT, ['--spec', p1, '--check']);
+    assert.equal(r1.status, 1);
+    assert.ok(r1.json?.errors?.some((e) => e.code === 'BP_MATERIAL_NOT_FOUND'), `expected BP_MATERIAL_NOT_FOUND, got ${r1.stdout}`);
+
+    const bpBadRel = makeSculpted3dBlueprint();
+    bpBadRel.scene.layers3d = [{ id: 'bad_rel', reliefRef: 'nonexistent-relief-999', z: -1 }];
+    const p2 = join(workDir, 'v51-bad-relref.json');
+    writeFileSync(p2, JSON.stringify(bpBadRel));
+    const r2 = runNode(COMPILE_SCRIPT, ['--spec', p2, '--check']);
+    assert.equal(r2.status, 1);
+    assert.ok(r2.json?.errors?.some((e) => e.code === 'BP_RELIEF_NOT_FOUND'), `expected BP_RELIEF_NOT_FOUND, got ${r2.stdout}`);
+
+    // Tampered SHA in custom library dir must fail closed at compile time
+    const badLib = join(workDir, 'v51-tampered-compile-lib');
+    mkdirSync(join(badLib, 'reliefs3d'), { recursive: true });
+    const relObj = { id: 'custom-strata', kind: 'procedural-3d', family: 'reliefs3d', layerKind: 'organic_strata', defaults: { strata: [] }, description: 'tampered' };
+    writeFileSync(join(badLib, 'reliefs3d', 'custom-strata.json'), JSON.stringify(relObj));
+    writeFileSync(join(badLib, 'index.json'), JSON.stringify({
+      schemaVersion: 1,
+      version: '5.1.0',
+      components: [],
+      materials: [],
+      reliefs3d: [{ id: 'custom-strata', kind: 'procedural-3d', family: 'reliefs3d', file: 'reliefs3d/custom-strata.json', sha256: 'f'.repeat(64) }],
+      cutouts: [],
+    }));
+    const bpTampered = makeSculpted3dBlueprint();
+    bpTampered.scene.layers3d = [{ id: 't_rel', reliefRef: 'custom-strata', z: -1 }];
+    const p3 = join(workDir, 'v51-tampered-rel.json');
+    writeFileSync(p3, JSON.stringify(bpTampered));
+    const r3 = runNode(COMPILE_SCRIPT, ['--spec', p3, '--library-dir', badLib, '--check']);
+    assert.equal(r3.status, 1);
+    assert.ok(r3.json?.errors?.some((e) => e.code === 'LIB_SHA_MISMATCH'), `expected LIB_SHA_MISMATCH, got ${r3.stdout}`);
+  });
+
+  test('v5.1 Optional Cutout-Raster (cutoutRef): verified local PNG compiles to cutout_relief; tampered SHA, path traversal, or bad magic bytes fail closed', () => {
+    // Valid 1x1 transparent PNG
+    const TINY_PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const pngBuf = Buffer.from(TINY_PNG_B64, 'base64');
+    const pngSha = createHash('sha256').update(pngBuf).digest('hex');
+
+    const okLib = join(workDir, 'v51-cutout-ok');
+    mkdirSync(join(okLib, 'cutouts'), { recursive: true });
+    writeFileSync(join(okLib, 'cutouts', 'sample.png'), pngBuf);
+    const cutoutDoc = {
+      id: 'sample-cutout-png',
+      kind: 'cutout-raster',
+      family: 'cutouts',
+      imageFile: 'cutouts/sample.png',
+      imageSha256: pngSha,
+      mimeType: 'image/png',
+      defaults: { width: 12.0, thickness: 0.11, reliefStrength: 2.2, alphaTest: 0.42 },
+      description: 'Tiny verified local PNG cutout fixture',
+    };
+    const cutoutJsonText = JSON.stringify(cutoutDoc, null, 2) + '\n';
+    writeFileSync(join(okLib, 'cutouts', 'sample-cutout-png.json'), cutoutJsonText);
+    writeFileSync(join(okLib, 'index.json'), JSON.stringify({
+      schemaVersion: 1,
+      version: '5.1.0',
+      components: [],
+      materials: [],
+      reliefs3d: [],
+      cutouts: [{
+        id: 'sample-cutout-png',
+        kind: 'cutout-raster',
+        family: 'cutouts',
+        file: 'cutouts/sample-cutout-png.json',
+        sha256: createHash('sha256').update(cutoutJsonText).digest('hex'),
+        imageFile: 'cutouts/sample.png',
+        imageSha256: pngSha,
+      }],
+    }, null, 2));
+
+    const bpOk = makeSculpted3dBlueprint();
+    bpOk.scene.layers3d = [{ id: 'raster_layer', cutoutRef: 'sample-cutout-png', z: -0.6 }];
+    const pOk = join(workDir, 'v51-cutout-ok.json');
+    const packOk = join(workDir, 'v51-cutout-ok-pack');
+    writeFileSync(pOk, JSON.stringify(bpOk));
+    const cOk = runNode(COMPILE_SCRIPT, ['--spec', pOk, '--library-dir', okLib, '--out-pack', packOk]);
+    assert.equal(cOk.status, 0, `valid cutoutRef compile failed: ${cOk.stdout}\n${cOk.stderr}`);
+    const s3d = JSON.parse(readFileSync(join(packOk, 'scene3d.json'), 'utf8'));
+    assert.equal(s3d.layers3d[0].kind, 'cutout_relief');
+    assert.ok(s3d.layers3d[0].imageDataUrl.startsWith('data:image/png;base64,'));
+    assert.equal(runNode(VALIDATE_SCRIPT, [packOk]).status, 0);
+
+    // Negative A: tampered binary PNG bytes -> LIB_SHA_MISMATCH
+    writeFileSync(join(okLib, 'cutouts', 'sample.png'), Buffer.concat([pngBuf, Buffer.from([0x00])]));
+    const cTamper = runNode(COMPILE_SCRIPT, ['--spec', pOk, '--library-dir', okLib, '--check']);
+    assert.equal(cTamper.status, 1);
+    assert.ok(cTamper.json?.errors?.some((e) => e.code === 'LIB_SHA_MISMATCH'), `expected LIB_SHA_MISMATCH on tampered PNG, got ${cTamper.stdout}`);
+
+    // Negative B: path traversal / external URL -> LIB_UNSAFE_ASSET
+    const badPathLib = join(workDir, 'v51-cutout-badpath');
+    mkdirSync(join(badPathLib, 'cutouts'), { recursive: true });
+    const badCutout = { ...cutoutDoc, id: 'evil-cutout', imageFile: '../outside.png' };
+    const badTxt = JSON.stringify(badCutout);
+    writeFileSync(join(badPathLib, 'cutouts', 'evil-cutout.json'), badTxt);
+    writeFileSync(join(badPathLib, 'index.json'), JSON.stringify({
+      schemaVersion: 1,
+      version: '5.1.0',
+      components: [],
+      materials: [],
+      reliefs3d: [],
+      cutouts: [{ id: 'evil-cutout', kind: 'cutout-raster', family: 'cutouts', file: 'cutouts/evil-cutout.json', sha256: createHash('sha256').update(badTxt).digest('hex'), imageFile: '../outside.png', imageSha256: pngSha }],
+    }));
+    const bpBad = makeSculpted3dBlueprint();
+    bpBad.scene.layers3d = [{ id: 'bad_cut', cutoutRef: 'evil-cutout', z: -0.6 }];
+    const pBad = join(workDir, 'v51-cutout-bad.json');
+    writeFileSync(pBad, JSON.stringify(bpBad));
+    const cBad = runNode(COMPILE_SCRIPT, ['--spec', pBad, '--library-dir', badPathLib, '--check']);
+    assert.equal(cBad.status, 1);
+    assert.ok(cBad.json?.errors?.some((e) => e.code === 'LIB_UNSAFE_ASSET'), `expected LIB_UNSAFE_ASSET on traversal, got ${cBad.stdout}`);
+
+    // Negative C: fake PNG magic bytes -> LIB_UNSAFE_ASSET
+    const fakeLib = join(workDir, 'v51-cutout-fake');
+    mkdirSync(join(fakeLib, 'cutouts'), { recursive: true });
+    const fakeBuf = Buffer.from('<script>alert(1)</script>', 'utf8');
+    const fakeSha = createHash('sha256').update(fakeBuf).digest('hex');
+    writeFileSync(join(fakeLib, 'cutouts', 'fake.png'), fakeBuf);
+    const fakeDoc = { ...cutoutDoc, id: 'fake-cutout', imageFile: 'cutouts/fake.png', imageSha256: fakeSha };
+    const fakeTxt = JSON.stringify(fakeDoc);
+    writeFileSync(join(fakeLib, 'cutouts', 'fake-cutout.json'), fakeTxt);
+    writeFileSync(join(fakeLib, 'index.json'), JSON.stringify({
+      schemaVersion: 1,
+      version: '5.1.0',
+      components: [],
+      materials: [],
+      reliefs3d: [],
+      cutouts: [{ id: 'fake-cutout', kind: 'cutout-raster', family: 'cutouts', file: 'cutouts/fake-cutout.json', sha256: createHash('sha256').update(fakeTxt).digest('hex'), imageFile: 'cutouts/fake.png', imageSha256: fakeSha }],
+    }));
+    const bpFake = makeSculpted3dBlueprint();
+    bpFake.scene.layers3d = [{ id: 'fake_cut', cutoutRef: 'fake-cutout', z: -0.6 }];
+    const pFake = join(workDir, 'v51-cutout-fake.json');
+    writeFileSync(pFake, JSON.stringify(bpFake));
+    const cFake = runNode(COMPILE_SCRIPT, ['--spec', pFake, '--library-dir', fakeLib, '--check']);
+    assert.equal(cFake.status, 1);
+    assert.ok(cFake.json?.errors?.some((e) => e.code === 'LIB_UNSAFE_ASSET'), `expected LIB_UNSAFE_ASSET on bad magic bytes, got ${cFake.stdout}`);
+  });
+
+  // =========================================================================
+  // v5.1 Step 2B TDD SUITE — Modular Rig Archetypes, Retargeting & Dynamic Parent
+  // =========================================================================
+  test('v5.1 Modular Rig Archetypes Catalog: index.json registers >=2 verified archetypes (biped + quadruped) with boneMapping and SHA-256', () => {
+    const LIB_CLI = join(__dirname, 'library_cli.mjs');
+    const libDir = join(SKILL_DIR, 'assets', 'library');
+    const idx = JSON.parse(readFileSync(join(libDir, 'index.json'), 'utf8'));
+    assert.ok(Array.isArray(idx.archetypes) && idx.archetypes.length >= 2, 'index.json must declare >= 2 modular rig archetypes');
+    const ids = idx.archetypes.map((a) => a.id);
+    assert.ok(ids.includes('biped-storybook-base'), 'must include biped-storybook-base archetype');
+    assert.ok(ids.includes('quadruped-fable-base'), 'must include quadruped-fable-base archetype');
+    for (const a of idx.archetypes) {
+      const f = join(libDir, a.file);
+      assert.ok(existsSync(f), `missing archetype file ${a.file}`);
+      const sha = createHash('sha256').update(readFileSync(f)).digest('hex');
+      assert.equal(sha, a.sha256, `archetype SHA-256 mismatch for ${a.id}`);
+      const doc = JSON.parse(readFileSync(f, 'utf8'));
+      assert.equal(doc.kind, 'rig-archetype');
+      assert.ok(doc.boneMapping && Object.keys(doc.boneMapping).length >= 6, `${a.id} must define canonical boneMapping`);
+      assert.ok(Array.isArray(doc.bones) && doc.bones.length >= 6, `${a.id} must define bones[]`);
+    }
+    const listArch = runNode(LIB_CLI, ['list', '--kind', 'rig-archetype', '--json']);
+    assert.equal(listArch.status, 0, `list --kind rig-archetype failed: ${listArch.stdout}`);
+    assert.ok((listArch.json?.count ?? 0) >= 2, 'library_cli list --kind rig-archetype must return >= 2 items');
+  });
+
+  test('v5.1 Archetype Direct Ref & Retarget (archetypeRef + boneMapping): compiles across >=2 different-proportion characters and >=2 variants', () => {
+    const bp = makeSculpted3dBlueprint('shadowbox-moonlit');
+    bp.meta.packId = 'test-v51-archetype-retarget';
+    // Add shared parts required by biped-storybook-base with 4 hand states + 3 head/torso angles + expressions
+    const makeSimplePart = (id, cat, w, h, px, py, anchors = {}) => ({
+      id,
+      category: cat,
+      size: [w, h],
+      pivot: [px, py],
+      anchors,
+      svg: `<rect x="${-px + 2}" y="${-py + 2}" width="${w - 4}" height="${h - 4}" rx="8" fill="#f4a261"/>`,
+    });
+    bp.parts = [
+      makeSimplePart('pelvis', 'body', 56, 36, 28, 18, { spine: [28, 6], hipL: [16, 28], hipR: [40, 28] }),
+      makeSimplePart('spine', 'body', 48, 32, 24, 24, { torso: [24, 6] }),
+      makeSimplePart('torso_front', 'body', 68, 64, 34, 52, { head: [34, 10], shL: [12, 18], shR: [56, 18] }),
+      makeSimplePart('torso_tq', 'body', 64, 64, 32, 52, { head: [32, 10], shL: [14, 18], shR: [52, 18] }),
+      makeSimplePart('torso_side', 'body', 52, 64, 26, 52, { head: [26, 10], shL: [22, 18], shR: [30, 18] }),
+      makeSimplePart('head_front', 'head', 56, 56, 28, 46, { face: [28, 28] }),
+      makeSimplePart('head_tq', 'head', 56, 56, 28, 46, { face: [30, 28] }),
+      makeSimplePart('head_side', 'head', 52, 56, 24, 46, { face: [34, 28] }),
+      makeSimplePart('face_neutral', 'face', 32, 20, 16, 10, {}),
+      makeSimplePart('face_happy', 'face', 32, 20, 16, 10, {}),
+      makeSimplePart('face_wonder', 'face', 32, 20, 16, 10, {}),
+      makeSimplePart('uarm', 'limb', 20, 44, 10, 8, { elbow: [10, 38] }),
+      makeSimplePart('farm', 'limb', 18, 40, 9, 8, { wrist: [9, 34] }),
+      makeSimplePart('hand_open', 'hand', 20, 22, 10, 6, { grip: [10, 14] }),
+      makeSimplePart('hand_grip', 'hand', 20, 22, 10, 6, { grip: [10, 14] }),
+      makeSimplePart('hand_point', 'hand', 20, 22, 10, 6, { grip: [10, 14] }),
+      makeSimplePart('hand_relaxed', 'hand', 20, 22, 10, 6, { grip: [10, 14] }),
+      makeSimplePart('thigh', 'limb', 24, 52, 12, 10, { knee: [12, 44] }),
+      makeSimplePart('shin', 'limb', 20, 50, 10, 8, { ankle: [10, 42] }),
+      makeSimplePart('foot', 'foot', 32, 18, 10, 8, { sole: [16, 16] }),
+    ];
+    // 2 characters with different proportions sharing the exact same biped archetype & boneMapping
+    bp.rigs = [
+      {
+        id: 'short_artisan',
+        archetypeRef: 'biped-storybook-base',
+        rootPos: { x: 340, y: 380 },
+        scale: 0.85,
+        facing: 1,
+        gait: {
+          enabled: true,
+          lockToTravel: true,
+          strideScaleByLegLength: true,
+          groundCurve: [[0, 470], [480, 462], [960, 470]],
+        },
+      },
+      {
+        id: 'tall_traveler',
+        archetypeRef: 'biped-storybook-base',
+        rootPos: { x: 620, y: 350 },
+        scale: 1.15,
+        facing: -1,
+        gait: {
+          enabled: true,
+          lockToTravel: true,
+          strideScaleByLegLength: true,
+          groundCurve: [[0, 470], [480, 462], [960, 470]],
+        },
+      },
+    ];
+    bp.motions = [
+      {
+        id: 'walk_retarget',
+        name: 'Retargeted Walk',
+        type: 'cycle',
+        period: 4,
+        phases: [
+          {
+            from: 0,
+            to: 1,
+            resetToRest: true,
+            rigs: {
+              short_artisan: { rootX: [300, 420], rootY: [380, 380] },
+              tall_traveler: { rootX: [660, 540], rootY: [350, 350] },
+            },
+          },
+        ],
+      },
+    ];
+
+    const bpPath = join(workDir, 'v51-arch.json');
+    const packDir = join(workDir, 'v51-arch-pack');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir]);
+    assert.equal(c.status, 0, `archetypeRef compile failed: ${c.stdout}\n${c.stderr}`);
+    const rigDoc = JSON.parse(readFileSync(join(packDir, 'rig.json'), 'utf8'));
+    assert.ok(rigDoc.boneMapping && rigDoc.boneMapping.pelvis === 'pelvis', 'compiled rig.json must preserve boneMapping');
+    assert.equal(runNode(VALIDATE_SCRIPT, [packDir]).status, 0, 'compiled archetype pack must pass validate_pack');
+  });
+
+  test('v5.1 Retarget & Gait Validation (fail-closed): unknown archetypeRef, bad boneMapping, or invalid groundCurve fails closed', () => {
+    const bpBadArch = makeSculpted3dBlueprint();
+    bpBadArch.rigs[0].archetypeRef = 'nonexistent-archetype-999';
+    const p1 = join(workDir, 'v51-bad-arch.json');
+    writeFileSync(p1, JSON.stringify(bpBadArch));
+    const r1 = runNode(COMPILE_SCRIPT, ['--spec', p1, '--check']);
+    assert.equal(r1.status, 1);
+    assert.ok(r1.json?.errors?.some((e) => e.code === 'BP_ARCHETYPE_NOT_FOUND'), `expected BP_ARCHETYPE_NOT_FOUND, got ${r1.stdout}`);
+
+    const bpBadMap = makeSculpted3dBlueprint();
+    bpBadMap.rigs[0].boneMapping = { pelvis: 'nonexistent_bone_id' };
+    const p2 = join(workDir, 'v51-bad-map.json');
+    writeFileSync(p2, JSON.stringify(bpBadMap));
+    const r2 = runNode(COMPILE_SCRIPT, ['--spec', p2, '--check']);
+    assert.equal(r2.status, 1);
+    assert.ok(r2.json?.errors?.some((e) => e.code === 'BP_BONEMAPPING_INVALID'), `expected BP_BONEMAPPING_INVALID, got ${r2.stdout}`);
+
+    const bpBadCurve = makeSculpted3dBlueprint();
+    bpBadCurve.rigs[0].gait = { enabled: true, groundCurve: [[500, 440], [200, 440]] }; // non-increasing X!
+    const p3 = join(workDir, 'v51-bad-curve.json');
+    writeFileSync(p3, JSON.stringify(bpBadCurve));
+    const r3 = runNode(COMPILE_SCRIPT, ['--spec', p3, '--check']);
+    assert.equal(r3.status, 1);
+    assert.ok(r3.json?.errors?.some((e) => e.code === 'BP_GAIT_INVALID'), `expected BP_GAIT_INVALID, got ${r3.stdout}`);
+  });
+
+  test('v5.1 Dynamic Parent Interaction Contract (grip/release): valid prop & reach PASS; missing grip anchor, wrist >22.5 deg/f, or out-of-reach fails closed', () => {
+    const makeInteractionBp = (eventOverride = {}, propAnchors = { grip: [16, 8], base: [16, 30] }) => {
+      const bp = makeSculpted3dBlueprint();
+      bp.parts.push({
+        id: 'lanternProp',
+        category: 'prop',
+        size: [32, 32],
+        pivot: [16, 16],
+        anchors: propAnchors,
+        svg: '<rect x="-10" y="-12" width="20" height="24" rx="4" fill="#ffd166"/>',
+      });
+      bp.motions = [
+        {
+          id: 'interact',
+          name: 'Grip & Release',
+          type: 'cycle',
+          period: 4,
+          phases: [
+            {
+              from: 0,
+              to: 0.5,
+              rigs: { [bp.rigs[0].id]: { rootX: [400, 400], rootY: [300, 300] } },
+              events: [
+                {
+                  type: 'grip',
+                  rig: bp.rigs[0].id,
+                  ikChain: Object.keys(bp.rigs[0].ik)[0],
+                  propPart: 'lanternProp',
+                  handVariant: 'grip',
+                  maxWristDegPerFrame: 18,
+                  targetPos: [442, 264],
+                  ...eventOverride,
+                },
+              ],
+            },
+          ],
+        },
+      ];
+      return bp;
+    };
+
+    // Positive: within reach, valid grip+base anchors, wrist speed <= 22.5
+    const pOk = join(workDir, 'v51-interact-ok.json');
+    writeFileSync(pOk, JSON.stringify(makeInteractionBp()));
+    const rOk = runNode(COMPILE_SCRIPT, ['--spec', pOk, '--check']);
+    assert.equal(rOk.status, 0, `valid interaction event failed: ${rOk.stdout}`);
+
+    // Negative A: missing grip anchor on prop
+    const pNoGrip = join(workDir, 'v51-interact-nogrip.json');
+    writeFileSync(pNoGrip, JSON.stringify(makeInteractionBp({}, { base: [16, 30] })));
+    const rNoGrip = runNode(COMPILE_SCRIPT, ['--spec', pNoGrip, '--check']);
+    assert.equal(rNoGrip.status, 1);
+    assert.ok(rNoGrip.json?.errors?.some((e) => e.code === 'BP_INTERACTION_ANCHOR_MISSING'), `expected BP_INTERACTION_ANCHOR_MISSING, got ${rNoGrip.stdout}`);
+
+    // Negative B: wrist rotation speed > 22.5 deg/frame
+    const pFastWrist = join(workDir, 'v51-interact-wrist.json');
+    writeFileSync(pFastWrist, JSON.stringify(makeInteractionBp({ maxWristDegPerFrame: 35 })));
+    const rFastWrist = runNode(COMPILE_SCRIPT, ['--spec', pFastWrist, '--check']);
+    assert.equal(rFastWrist.status, 1);
+    assert.ok(rFastWrist.json?.errors?.some((e) => e.code === 'BP_INTERACTION_INVALID'), `expected BP_INTERACTION_INVALID, got ${rFastWrist.stdout}`);
+
+    // Negative C: targetPos far outside 2-bone IK reach -> BP_REACH_EXCEEDED
+    const pFar = join(workDir, 'v51-interact-far.json');
+    writeFileSync(pFar, JSON.stringify(makeInteractionBp({ targetPos: [920, 40] })));
+    const rFar = runNode(COMPILE_SCRIPT, ['--spec', pFar, '--check']);
+    assert.equal(rFar.status, 1);
+    assert.ok(rFar.json?.errors?.some((e) => e.code === 'BP_REACH_EXCEEDED'), `expected BP_REACH_EXCEEDED, got ${rFar.stdout}`);
+  });
+
+  // =========================================================================
+  // v5.1 Step 3 TDD SUITE — paperFlex, groundCurve/lockToTravel & 5 New layers3d
+  // =========================================================================
+  test('v5.1 paperFlex Validation & Multi-Variant Compile: valid modes PASS across >=2 rigs; unknown mode fails closed (BP_CARDSTOCK_INVALID)', () => {
+    const bp = makeBlueprintA();
+    bp.style = 'shadowbox-moonlit';
+    bp.meta.packId = 'test-v51-paperflex';
+    bp.parts[0].cardstock = { thickness: 0.09, bevel: 0.015, edgeColor: '#f6ebd4', paperFlex: { mode: 'cloth_billow', amp: 0.12, freq: 1.5 } };
+    bp.parts[1].cardstock = { thickness: 0.07, bevel: 0.012, edgeColor: '#fff6e0', paperFlex: { mode: 'wing_cup', amp: 0.16, freq: 2.0 } };
+    bp.parts.push({
+      id: 'headA_flex_alt',
+      category: 'head',
+      cardstock: { thickness: 0.08, paperFlex: { mode: 'tail_wave', amp: 0.14, freq: 1.8 } },
+      size: [60, 60],
+      pivot: [20, 30],
+      anchors: {},
+      svg: '<path d="M-12 -10 C-10 -22 12 -22 18 -10 C22 2 12 14 -4 12 Z" fill="#f4a261"/>',
+    });
+    bp.rigs[0].bones[1].variants = { alt: 'headA_flex_alt' };
+    bp.rigs[0].variants = { head: ['default', 'alt'] };
+    const pOk = join(workDir, 'v51-paperflex-ok.json');
+    const packOk = join(workDir, 'v51-paperflex-pack');
+    const htmlOk = join(workDir, 'v51-paperflex.html');
+    writeFileSync(pOk, JSON.stringify(bp));
+    const cOk = runNode(COMPILE_SCRIPT, ['--spec', pOk, '--out-pack', packOk, '--out-html', htmlOk]);
+    assert.equal(cOk.status, 0, `paperFlex valid compile failed: ${cOk.stdout}`);
+    assert.equal(runNode(VALIDATE_SCRIPT, [packOk]).status, 0);
+    const manifest = JSON.parse(readFileSync(join(packOk, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.assets[0].cardstock?.paperFlex?.mode, 'cloth_billow');
+
+    // Negative: invalid paperFlex.mode must fail closed
+    const bpBad = makeSculpted3dBlueprint();
+    bpBad.parts[0].cardstock = { thickness: 0.09, paperFlex: { mode: 'rubber_stretch_invalid' } };
+    const pBad = join(workDir, 'v51-paperflex-bad.json');
+    writeFileSync(pBad, JSON.stringify(bpBad));
+    const cBad = runNode(COMPILE_SCRIPT, ['--spec', pBad, '--check']);
+    assert.equal(cBad.status, 1);
+    assert.ok(cBad.json?.errors?.some((e) => e.code === 'BP_CARDSTOCK_INVALID'), `expected BP_CARDSTOCK_INVALID, got ${cBad.stdout}`);
+  });
+
+  test('v5.1 Engine 5 New layers3d + groundCurve/lockToTravel + Docs Sync: all 5 kinds compile into 3D HTML & pack and are documented in blueprint-schema.md', () => {
+    const TINY_PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const bp = makeBlueprintA();
+    bp.style = 'shadowbox-moonlit';
+    bp.meta.packId = 'test-v51-5layers';
+    bp.rigs[0].gait = { enabled: true, lockToTravel: true, groundCurve: [[0, 445], [480, 438], [960, 445]] };
+    bp.rigs[1].gait = { enabled: true, lockToTravel: false, groundCurve: [[0, 445], [960, 445]] };
+    bp.scene.layers3d = [
+      { id: 'l_strata', reliefRef: 'strata-mountain-mist', z: -2.6 },
+      { id: 'l_clouds', reliefRef: 'clouds-billowing-canopy', z: -1.8 },
+      { id: 'l_bonsai', reliefRef: 'bonsai-frame-pine', z: 0.4 },
+      { id: 'l_peony', reliefRef: 'peony-botanical-cluster', z: 0.8 },
+      {
+        id: 'l_cutout',
+        kind: 'cutout_relief',
+        z: -0.9,
+        imageDataUrl: `data:image/png;base64,${TINY_PNG_B64}`,
+        width: 12,
+        thickness: 0.11,
+        reliefStrength: 2.4,
+        paperFlex: { anchor: 'edges', ampX: 0.12, ampZ: 0.15, freq: 1.3 },
+      },
+    ];
+    const pOk = join(workDir, 'v51-5layers.json');
+    const packOk = join(workDir, 'v51-5layers-pack');
+    const htmlOk = join(workDir, 'v51-5layers.html');
+    writeFileSync(pOk, JSON.stringify(bp));
+    const cOk = runNode(COMPILE_SCRIPT, ['--spec', pOk, '--out-pack', packOk, '--out-html', htmlOk]);
+    assert.equal(cOk.status, 0, `5 new layers3d compile failed: ${cOk.stdout}`);
+    assert.equal(runNode(VALIDATE_SCRIPT, [packOk]).status, 0);
+
+    // Negative: cutout_relief with external URL instead of data:image URI fails closed
+    const bpBadCut = makeSculpted3dBlueprint();
+    bpBadCut.scene.layers3d = [{ id: 'bad_cut', kind: 'cutout_relief', z: -1, imageDataUrl: 'https://example.com/evil.png' }];
+    const pBadCut = join(workDir, 'v51-bad-cuturl.json');
+    writeFileSync(pBadCut, JSON.stringify(bpBadCut));
+    const cBadCut = runNode(COMPILE_SCRIPT, ['--spec', pBadCut, '--check']);
+    assert.equal(cBadCut.status, 1);
+    assert.ok(cBadCut.json?.errors?.some((e) => e.code === 'BP_SCENE3D_INVALID'));
+
+    // Verify docs sync in blueprint-schema.md
+    const schemaDoc = readFileSync(join(SKILL_DIR, 'references', 'blueprint-schema.md'), 'utf8');
+    for (const kw of ['paperFlex', 'groundCurve', 'lockToTravel', 'organic_strata', 'bonsai_calligraphy', 'billowing_clouds', 'sculpted_peony', 'cutout_relief', 'boneMapping', 'materialRef', 'reliefRef', 'archetypeRef', 'cutoutRef']) {
+      assert.ok(schemaDoc.includes(kw), `blueprint-schema.md must document "${kw}"`);
+    }
   });
 } finally {
   rmSync(workDir, { recursive: true, force: true });

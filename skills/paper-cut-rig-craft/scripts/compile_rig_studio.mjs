@@ -25,6 +25,7 @@ import {
   validateAndBuildCustomMaterials,
 } from './lib/svg-guard.mjs';
 import { loadKitCatalog, resolveBlueprintKits } from './lib/kit-resolver.mjs';
+import { loadMaterialLibrary, resolveBlueprintMaterials, VALID_LAYER3D_KINDS } from './lib/material-library.mjs';
 import { applyStylePreset } from './lib/style-loader.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -33,23 +34,6 @@ const SHELL_3D_PATH = resolve(__dirname, '../assets/viewer-shell-3d.html');
 const ENGINE_3D_PATH = resolve(__dirname, '../assets/sculpted-paper-engine.js');
 const VENDOR_BUNDLE_PATH = resolve(__dirname, '../assets/vendor/three-sculpted.bundle.min.js');
 const VENDOR_SHA_PATH = resolve(__dirname, '../assets/vendor/three-sculpted.bundle.sha256');
-const VALID_LAYER3D_KINDS = new Set([
-  'backdrop',
-  'celestial_disk',
-  'box_frame',
-  'extruded_svg',
-  'folded_ridge',
-  'cupped_petals',
-  'pine_fan_tree',
-  'botanical_frond',
-  'tiered_pine_group',
-  'architecture',
-  'organic_strata',
-  'bonsai_calligraphy',
-  'billowing_clouds',
-  'sculpted_peony',
-  'cutout_relief',
-]);
 const SAFE_DATA_IMAGE_RE = /^data:image\/(png|webp|jpeg);base64,[A-Za-z0-9+/=]+$/;
 const VALID_PAPER_FLEX_MODES = new Set(['wing_cup', 'cloth_billow', 'tail_wave', 'branch_sway']);
 
@@ -260,6 +244,41 @@ function validateBlueprint(bp) {
             if (r.tremor[k] != null && !(typeof r.tremor[k] === 'number' && Number.isFinite(r.tremor[k]) && r.tremor[k] >= 0)) {
               pushErr('BP_SCHEMA', `${rWhere}.tremor.${k}`, `tremor.${k} must be a non-negative finite number`);
             }
+          }
+        }
+      }
+      if (r.boneMapping != null) {
+        if (typeof r.boneMapping !== 'object' || Array.isArray(r.boneMapping)) {
+          pushErr('BP_BONEMAPPING_INVALID', `${rWhere}.boneMapping`, 'boneMapping must be an object mapping canonical role -> boneId');
+        } else {
+          const boneSet = new Set(r.bones.map((b) => b?.id).filter(Boolean));
+          for (const [role, bId] of Object.entries(r.boneMapping)) {
+            if (typeof bId !== 'string' || !boneSet.has(bId)) {
+              pushErr('BP_BONEMAPPING_INVALID', `${rWhere}.boneMapping.${role}`, `mapped bone "${bId}" does not exist in ${rWhere}.bones`);
+            }
+          }
+        }
+      }
+      if (r.gait != null) {
+        if (typeof r.gait !== 'object' || Array.isArray(r.gait)) {
+          pushErr('BP_GAIT_INVALID', `${rWhere}.gait`, 'gait must be an object');
+        } else {
+          if (r.gait.groundCurve != null) {
+            const pts = Array.isArray(r.gait.groundCurve) ? r.gait.groundCurve : r.gait.groundCurve?.points;
+            if (!Array.isArray(pts) || pts.length < 2) {
+              pushErr('BP_GAIT_INVALID', `${rWhere}.gait.groundCurve`, 'groundCurve must have at least 2 [x, y] control points');
+            } else {
+              for (let pIdx = 0; pIdx < pts.length; pIdx++) {
+                if (!isFinitePair(pts[pIdx])) {
+                  pushErr('BP_GAIT_INVALID', `${rWhere}.gait.groundCurve[${pIdx}]`, 'control point must be finite [x, y]');
+                } else if (pIdx > 0 && !(pts[pIdx][0] > pts[pIdx - 1][0])) {
+                  pushErr('BP_GAIT_INVALID', `${rWhere}.gait.groundCurve[${pIdx}]`, 'groundCurve control point X coordinates must be strictly increasing');
+                }
+              }
+            }
+          }
+          if (r.gait.lockToTravel != null && typeof r.gait.lockToTravel !== 'boolean') {
+            pushErr('BP_GAIT_INVALID', `${rWhere}.gait.lockToTravel`, 'lockToTravel must be a boolean');
           }
         }
       }
@@ -481,6 +500,92 @@ function validateBlueprint(bp) {
           scanScene(normPart, `motions[${mIdx}].phases[${pIdx}].vfx.particles.shapeSvg`);
         }
       }
+      if (Array.isArray(ph?.events)) {
+        const partsById = new Map((Array.isArray(bp.parts) ? bp.parts : []).filter((p) => p?.id).map((p) => [p.id, p]));
+        const rigsById = new Map(rigList.filter((r) => r?.id).map((r) => [r.id, r]));
+        const VALID_HAND_VARIANTS = new Set(['open', 'grip', 'point', 'relaxed']);
+        for (const [eIdx, ev] of ph.events.entries()) {
+          const eWhere = `motions[${mIdx}].phases[${pIdx}].events[${eIdx}]`;
+          if (!ev || typeof ev !== 'object') {
+            pushErr('BP_INTERACTION_INVALID', eWhere, 'event must be an object');
+            continue;
+          }
+          if (ev.type !== 'grip' && ev.type !== 'release') {
+            pushErr('BP_INTERACTION_INVALID', `${eWhere}.type`, `event type must be "grip" or "release", got "${ev.type}"`);
+          }
+          const targetRig = rigsById.get(ev.rig);
+          if (!targetRig) {
+            pushErr('BP_INTERACTION_INVALID', `${eWhere}.rig`, `unknown rig "${ev.rig}"`);
+          }
+          const propPart = partsById.get(ev.propPart);
+          if (!propPart) {
+            pushErr('BP_INTERACTION_INVALID', `${eWhere}.propPart`, `prop part "${ev.propPart}" not found in parts[]`);
+          } else {
+            if (!isFinitePair(propPart.anchors?.grip)) {
+              pushErr('BP_INTERACTION_ANCHOR_MISSING', `${eWhere}.propPart`, `prop "${ev.propPart}" missing required anchors.grip [x, y]`);
+            }
+            if (ev.type === 'release' && ev.requireBase !== false && !isFinitePair(propPart.anchors?.base)) {
+              pushErr('BP_INTERACTION_ANCHOR_MISSING', `${eWhere}.propPart`, `prop "${ev.propPart}" missing required anchors.base [x, y] for release`);
+            }
+          }
+          if (ev.handVariant != null && !VALID_HAND_VARIANTS.has(ev.handVariant)) {
+            pushErr('BP_INTERACTION_INVALID', `${eWhere}.handVariant`, `handVariant must be one of [open, grip, point, relaxed], got "${ev.handVariant}"`);
+          }
+          if (ev.maxWristDegPerFrame != null && !(typeof ev.maxWristDegPerFrame === 'number' && Number.isFinite(ev.maxWristDegPerFrame) && ev.maxWristDegPerFrame > 0 && ev.maxWristDegPerFrame <= 22.5)) {
+            pushErr('BP_INTERACTION_INVALID', `${eWhere}.maxWristDegPerFrame`, 'maxWristDegPerFrame must be in (0, 22.5]');
+          }
+          // Data-driven 2-bone IK reach check (zero hardcoded body measurements)
+          if (targetRig && ev.targetPos != null) {
+            if (!isFinitePair(ev.targetPos)) {
+              pushErr('BP_INTERACTION_INVALID', `${eWhere}.targetPos`, 'targetPos must be finite [x, y]');
+            } else if (ev.ikChain && targetRig.ik?.[ev.ikChain]) {
+              const chain = targetRig.ik[ev.ikChain];
+              const boneMap = new Map((targetRig.bones ?? []).map((b) => [b.id, b]));
+              const bUp = boneMap.get(chain.upper);
+              const bLo = boneMap.get(chain.lower);
+              const bEnd = boneMap.get(chain.end);
+              const pUp = bUp ? partsById.get(bUp.part) : null;
+              const pLo = bLo ? partsById.get(bLo.part) : null;
+              if (bUp && bLo && bEnd && pUp && pLo) {
+                const aElb = pUp.anchors?.[bLo.attach];
+                const aWri = pLo.anchors?.[bEnd.attach];
+                if (isFinitePair(aElb) && isFinitePair(aWri)) {
+                  const scRig = Number.isFinite(targetRig.scale) ? targetRig.scale : 1;
+                  const len1 = Math.hypot(aElb[0] - pUp.pivot[0], aElb[1] - pUp.pivot[1]) * scRig;
+                  const len2 = Math.hypot(aWri[0] - pLo.pivot[0], aWri[1] - pLo.pivot[1]) * scRig;
+                  const maxReach = len1 + len2;
+                  // Compute approximate rest shoulder position from rootPos + ancestor anchor offsets
+                  const phaseRig = ph.rigs?.[targetRig.id];
+                  const rx = Array.isArray(phaseRig?.rootX) ? phaseRig.rootX[0] : (targetRig.rootPos?.x ?? 0);
+                  const ry = Array.isArray(phaseRig?.rootY) ? phaseRig.rootY[0] : (targetRig.rootPos?.y ?? 0);
+                  let shX = rx;
+                  let shY = ry;
+                  let cur = bUp;
+                  let guard = 0;
+                  while (cur && cur.parent && guard++ < 32) {
+                    const par = boneMap.get(cur.parent);
+                    const pPar = par ? partsById.get(par.part) : null;
+                    const att = pPar?.anchors?.[cur.attach];
+                    if (pPar && isFinitePair(att)) {
+                      shX += (att[0] - pPar.pivot[0]) * scRig * (targetRig.facing ?? 1);
+                      shY += (att[1] - pPar.pivot[1]) * scRig;
+                    }
+                    cur = par;
+                  }
+                  const dist = Math.hypot(ev.targetPos[0] - shX, ev.targetPos[1] - shY);
+                  if (dist > maxReach * 1.02) {
+                    pushErr(
+                      'BP_REACH_EXCEEDED',
+                      `${eWhere}.targetPos`,
+                      `target [${ev.targetPos[0]}, ${ev.targetPos[1]}] is ${dist.toFixed(1)}px from shoulder (max 2-bone reach ${maxReach.toFixed(1)}px); move prop closer or step character forward`,
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -543,6 +648,7 @@ function buildRigDoc(r) {
     schemaVersion: 1,
     id: r.id,
     ...(r.sides ? { sides: r.sides } : {}),
+    ...(r.boneMapping ? { boneMapping: r.boneMapping } : {}),
     bones: r.bones.map((b) => ({
       id: b.id,
       parent: b.parent,
@@ -554,6 +660,8 @@ function buildRigDoc(r) {
     ...(r.contacts ? { contacts: r.contacts } : {}),
     ...(r.ground ? { ground: r.ground } : {}),
     ...(r.ik ? { ik: r.ik } : {}),
+    ...(r.handTransition ? { handTransition: r.handTransition } : {}),
+    ...(r.followThrough ? { followThrough: r.followThrough } : {}),
     ...(r.gait ? { gait: r.gait } : {}),
     characters: [
       {
@@ -602,7 +710,9 @@ const preErrors = [];
 const pushPreErr = (code, where, detail) => preErrors.push({ code, where, detail });
 const styledBp = applyStylePreset(rawBp, pushPreErr);
 const kitCatalog = loadKitCatalog(extraKitDirs, pushPreErr);
-const bp = resolveBlueprintKits(styledBp, kitCatalog, pushPreErr);
+const kitResolvedBp = resolveBlueprintKits(styledBp, kitCatalog, pushPreErr);
+const matLibrary = loadMaterialLibrary(argVals(args, '--library-dir'), pushPreErr);
+const bp = resolveBlueprintMaterials(kitResolvedBp, matLibrary, pushPreErr);
 
 const validationErrors = [...preErrors, ...validateBlueprint(bp)];
 if (validationErrors.length > 0) {

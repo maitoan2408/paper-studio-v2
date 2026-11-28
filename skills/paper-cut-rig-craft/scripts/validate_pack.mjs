@@ -94,6 +94,18 @@ function validateRigFile(rigPath, label, assetsById, pushErr) {
     pushErr('RIG_CYCLE', `${label}.bones.${stuck?.id}`, 'bone is unreachable from root (cycle detected)');
   }
 
+  if (rig.boneMapping != null) {
+    if (typeof rig.boneMapping !== 'object' || Array.isArray(rig.boneMapping)) {
+      pushErr('RIG_BONEMAPPING_INVALID', `${label}.boneMapping`, 'boneMapping must be an object');
+    } else {
+      for (const [role, bId] of Object.entries(rig.boneMapping)) {
+        if (typeof bId !== 'string' || !boneMap.has(bId)) {
+          pushErr('RIG_BONEMAPPING_INVALID', `${label}.boneMapping.${role}`, `mapped bone "${bId}" does not exist in ${label}.bones`);
+        }
+      }
+    }
+  }
+
   for (const ch of rig.characters ?? []) {
     const at = `${label}.characters.${ch.id}`;
     for (const b of rig.bones) {

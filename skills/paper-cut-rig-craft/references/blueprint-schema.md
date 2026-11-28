@@ -1,6 +1,6 @@
-# Blueprint JSON Schema v2.3 (`blueprint.json`)
+# Blueprint JSON Schema v5.1 (`blueprint.json`)
 
-100% theme-agnostic declarative contract validated and compiled by `scripts/compile_rig_studio.mjs` (supports `--kit-dir`), validated by `scripts/validate_pack.mjs` (`--strict-craft`), and visually audited by `scripts/render_audit.mjs`.
+100% theme-agnostic declarative contract validated and compiled by `scripts/compile_rig_studio.mjs` (supports `--kit-dir` and `--library-dir`), validated by `scripts/validate_pack.mjs` (`--strict-craft`), verified by `scripts/library_cli.mjs verify`, and visually audited by `scripts/render_audit.mjs`.
 
 ## 1. Top-Level Structure
 
@@ -211,6 +211,42 @@
 - **`scene.boxCavity`:** Multi-ply 3D shadow-box surround `{ frameShape: "oval_scallop_bottom"|"pagoda_lantern_window"|"scalloped_arch"|"rounded_rect"|"none", z, depth, plies, plyStep?, plyZGap?, apertureRx, apertureRy, plyColors: string[], rimHighlightColor?, frameCastShadow?: boolean }`.
 - **`scene.lighting3d`:** `{ bgColor, fov: 24, exposure, backlightGain, aoIntensity, aoRadius, bloomStrength, bloomThreshold, moteCount, moteColor, hemiLight, keyLight, rimLight, pointLights[] }`.
 - **`scene.layers3d[]`:** True 3D sculpted environment planes (`z` in `[-3.5 .. +1.4]`), validated fail-closed (`BP_SCENE3D_INVALID`). Allowed `kind`:
-  - `backdrop`, `celestial_disk`, `box_frame`, `extruded_svg`, `folded_ridge` (`foldStyle: "pleated" | "faceted" | "tiered_cliff_slabs"`), `cupped_petals`, `pine_fan_tree`, `botanical_frond`, `tiered_pine_group`, `architecture` (`parts[]` with `rect` + `holeArches`, `pagoda_roof` with carved rafters, `cone`, `svg`).
-- **`part.cardstock`:** `{ thickness?: number, bevel?: number, edgeColor?: string, roughness?: number, translucency?: number }` (validated fail-closed `BP_CARDSTOCK_INVALID`). Exported into `manifest.json` assets alongside `scene3d.json` (`SCENE3D_SHA_MISMATCH` / `SCENE3D_MISSING` verified by `validate_pack.mjs`).
+  - Core v5.0: `backdrop`, `celestial_disk`, `box_frame`, `extruded_svg`, `folded_ridge` (`foldStyle: "pleated" | "faceted" | "tiered_cliff_slabs"`), `cupped_petals`, `pine_fan_tree`, `botanical_frond`, `tiered_pine_group`, `architecture` (`parts[]` with `rect` + `holeArches`, `pagoda_roof` with carved rafters, `cone`, `svg`).
+  - Extended v5.1 (active in `sculpted-paper-engine.js`):
+    - **`organic_strata`:** Multi-layer smooth rolling ridge silhouettes with curved topographic erosion flutes (`baseY`, `xMin`, `xMax`, `samples`, `seed`, `zStep`, `strata: [{ baseH, fbmAmp, peaks: [[x, h, w, skew?]], topColor, midColor, bottomColor, edgeColor, flutes, thickness, bevel, roughness, translucency }]`).
+    - **`bonsai_calligraphy`:** Tapering cubic-Bézier calligraphy trunks (`branches: [{ pts: [[x0,y0],[x1,y1],[x2,y2],[x3,y3]], w0, w1, steps, z }]`) + feathered two-layer pine-needle tufts (`tufts: [{ x, y, z, radius, height, needleCount, rotDeg, swayDeg? }]`) + optional `paperFlex`.
+    - **`billowing_clouds`:** Multi-tier scalloped backlit cloud canopies (`edge: "top"|"bottom"`, `xMin`, `xMax`, `tiers: [{ baseY, puffs: [[cx, cy, rx, ry]], color, edgeColor, thickness, bevel, translucency, zOffset, driftX?, driftY?, freq?, phase? }]`).
+    - **`sculpted_peony`:** Multi-ring cupped 3D peony blooms with recessed gold stamen clusters (`blooms: [{ x, y, z, scale, outerColor, midColor, innerColor, coreColor, rings? }]`) + optional swaying `ferns[]`.
+    - **`cutout_relief`:** Optional raster relief plane with luminance-derived Sobel normal map (`flipY = true`), stacked 300gsm cream cardstock core slices, and optional `paperFlex` (`imageDataUrl: "data:image/(png|webp|jpeg);base64,..."`, `width`, `height?`, `thickness`, `reliefStrength`, `normalScale`, `roughness`, `alphaTest`, `edgeColor`, `translucency`, `paperFlex?: { anchor: "edges"|"bottom", ampX, ampZ, freq, phase }`). Prefer referencing verified local PNG/WebP files via `cutoutRef` instead of raw inline data URIs.
+- **`part.cardstock`:** `{ thickness?: number, bevel?: number, edgeColor?: string, roughness?: number, normalScale?: number, translucency?: number, paperFlex?: { mode: "wing_cup"|"cloth_billow"|"tail_wave"|"branch_sway", amp?, freq?, phase? } }` (validated fail-closed `BP_CARDSTOCK_INVALID`). Exported into `manifest.json` assets alongside `scene3d.json` (`SCENE3D_SHA_MISMATCH` / `SCENE3D_MISSING` verified by `validate_pack.mjs`).
+
+---
+
+## v5.1 Extensions (Standardized 2D/3D/PBR/Archetype Library, Direct ID Refs & Runtime Scope)
+
+### 1. Direct Library ID References (Fail-Closed SHA-256 Verified)
+All presets registered in `assets/library/index.json` (and custom `--library-dir`) are verified via SHA-256 at compile time and can be referenced directly by ID in `blueprint.json`:
+- **`parts[].materialRef`:** `"paper-cotton-300gsm"` or `{ "id": "paper-washi-translucent", "overrides": { "translucency": 0.55 } }` → merges PBR paper `cardstock` defaults (`BP_MATERIAL_NOT_FOUND`, `BP_MATERIAL_INVALID`).
+- **`scene.layers3d[].reliefRef`:** `"strata-mountain-mist"` (or `bonsai-frame-pine`, `clouds-billowing-canopy`, `peony-botanical-cluster`, `cutout-relief-cardstock`) → expands `kind` + `defaults` under explicit layer overrides (`BP_RELIEF_NOT_FOUND`, `BP_RELIEF_INVALID`).
+- **`rigs[].archetypeRef`:** `"biped-storybook-base"` or `"quadruped-fable-base"` → expands modular `bones[]`, `boneMapping`, `sides`, `variants`, `ik`, `contacts`, `handTransition`, `followThrough`, and `gait` defaults under explicit rig overrides (`BP_ARCHETYPE_NOT_FOUND`, `BP_ARCHETYPE_INVALID`).
+- **`scene.layers3d[].cutoutRef` *(optional)*:** References a verified `cutout-raster` entry (`.png`/`.webp` confined inside library dir, magic-byte checked, binary SHA-256 verified, ≤ 4 MiB) and embeds it into `cutout_relief` (`BP_CUTOUT_NOT_FOUND`, `LIB_SHA_MISMATCH`, `LIB_UNSAFE_ASSET`). Pure `svg-2d` + `procedural-3d` + `pbr-paper` scenes work 100% independently without any raster cutouts.
+
+### 2. Runtime Scope Matrix (Viewer Runtime vs M1–M3 Film Engine Data Contract)
+
+| Feature / Field | Active in Viewer Runtime (`viewer-shell*` / `sculpted-paper-engine.js`) | Validated & Exported Pack Contract for M1–M3 Film Engine (`src/`) |
+| --- | :---: | :---: |
+| `part.cardstock.paperFlex` (`wing_cup`, `cloth_billow`, `tail_wave`, `branch_sway`) | **Yes** (real-time 3D mesh flex in `sculpted3d`) | **Yes** (`manifest.json` `cardstock`) |
+| `layers3d` (`organic_strata`, `bonsai_calligraphy`, `billowing_clouds`, `sculpted_peony`, `cutout_relief` + `paperFlex`) | **Yes** (real-time WebGL2 3D geometry & Sobel normal maps) | **Yes** (`scene3d.json` + SHA-256) |
+| `gait.groundCurve` + `gait.lockToTravel` | **Yes** (terrain-following `rootY` & IK foot contact in `sculpted3d`) | **Yes** (`rig.json` `gait`, validated `BP_GAIT_INVALID`) |
+| `materialRef`, `reliefRef`, `archetypeRef`, `cutoutRef` | **Yes** (expanded deterministically by compiler before HTML/pack emit) | **Yes** (resolved into `manifest.json`, `rig.json`, `scene3d.json`) |
+| Pure `t → pose` reset (`resetToRest`) | **Yes** (omitted bones/rigs reset cleanly to rest pose natively in viewer) | **Yes** (explicit `phase.resetToRest` contract for M2 clip transitions) |
+| `rig.boneMapping` (canonical role → boneId) | Compile/pack validated only *(viewer evaluates by boneId)* | **Yes** (exported in `rig.json` for cross-proportion M2 action retargeting) |
+| `rig.handTransition` & `rig.gait.strideScaleByLegLength` | Compile/pack validated only | **Yes** (exported in `rig.json` for M2/M3 motion engine) |
+| `motions[].phases[].events[]` (`grip`/`release`, `anchors.grip`/`base`, `maxWristDegPerFrame ≤ 22.5`, 2-bone `targetPos` reach check) | Compile-time validated fail-closed *(no live Rapier/parenting in preview viewer)* | **Yes** (early reach & anchor contract for M2/M3 dynamic-parenting & Rapier drop) |
+
+### 3. Extended v5.1 Fail-Closed Error Codes
+- **Library & Material Resolver (`material-library.mjs` / `library_cli.mjs verify`):** `LIB_SCHEMA`, `LIB_DUP_ID`, `LIB_FILE_MISSING`, `LIB_SHA_MISMATCH`, `LIB_UNSAFE_ASSET`, `LIB_SVG_UNSAFE`, `LIB_MISSING_DEF`, `LIB_STYLE_INVALID`
+- **Compiler (`compile_rig_studio.mjs`):** `BP_CARDSTOCK_INVALID`, `BP_SCENE3D_INVALID`, `BP_STYLE_UNKNOWN`, `BP_MATERIAL_NOT_FOUND`, `BP_MATERIAL_INVALID`, `BP_RELIEF_NOT_FOUND`, `BP_RELIEF_INVALID`, `BP_ARCHETYPE_NOT_FOUND`, `BP_ARCHETYPE_INVALID`, `BP_CUTOUT_NOT_FOUND`, `BP_CUTOUT_INVALID`, `BP_BONEMAPPING_INVALID`, `BP_GAIT_INVALID`, `BP_INTERACTION_ANCHOR_MISSING`, `BP_INTERACTION_INVALID`, `BP_REACH_EXCEEDED`
+- **Pack Validator (`validate_pack.mjs`):** `SCENE3D_SCHEMA`, `SCENE3D_MISSING`, `SCENE3D_SHA_MISMATCH`, `SCENE3D_JSON_INVALID`, `RIG_BONEMAPPING_INVALID`
+
 

@@ -11,6 +11,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { auditPartsCraft } from './lib/craft-audit.mjs';
 import { loadKitCatalog, resolveBlueprintKits } from './lib/kit-resolver.mjs';
+import { loadMaterialLibrary, resolveBlueprintMaterials } from './lib/material-library.mjs';
 import { applyStylePreset } from './lib/style-loader.mjs';
 
 function printHelp() {
@@ -143,7 +144,9 @@ if (specArg) {
   try {
     const raw = applyStylePreset(JSON.parse(readFileSync(specPath, 'utf8')), () => {});
     const catalog = loadKitCatalog(extraKitDirs);
-    bp = resolveBlueprintKits(raw, catalog, () => {});
+    const kitResolved = resolveBlueprintKits(raw, catalog, () => {});
+    const matLib = loadMaterialLibrary(argVals(args, '--library-dir'), () => {});
+    bp = resolveBlueprintMaterials(kitResolved, matLib, () => {});
   } catch (err) {
     console.error(`Error: failed to parse spec JSON: ${err.message}`);
     process.exit(1);

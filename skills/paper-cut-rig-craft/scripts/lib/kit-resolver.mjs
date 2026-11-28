@@ -17,14 +17,20 @@ const SAFE_TOKEN_NAME_RE = /^[A-Z][A-Z0-9_]{0,31}$/;
 const SAFE_TOKEN_VALUE_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*[\d.]+)?\s*\)|url\(#[-A-Za-z0-9_]+\)|none|transparent|-?\d+(?:\.\d+)?)$/;
 const KIT_MACRO_RE = /\{\{KIT:([^}]+)\}\}/g;
 
+const NON_SVG_LIB_DIRS = new Set(['materials', 'reliefs3d', 'cutouts', 'archetypes']);
+
 function collectJsonFiles(rootDir) {
   const out = [];
   const walk = (dir) => {
     const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
     for (const ent of entries) {
       const full = join(dir, ent.name);
-      if (ent.isDirectory()) walk(full);
-      else if (ent.isFile() && ent.name.endsWith('.json') && ent.name !== 'index.json') out.push(full);
+      if (ent.isDirectory()) {
+        if (NON_SVG_LIB_DIRS.has(ent.name)) continue;
+        walk(full);
+      } else if (ent.isFile() && ent.name.endsWith('.json') && ent.name !== 'index.json') {
+        out.push(full);
+      }
     }
   };
   walk(rootDir);

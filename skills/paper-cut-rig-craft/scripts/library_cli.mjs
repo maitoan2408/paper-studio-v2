@@ -22,6 +22,7 @@ import {
   scanSvgFragment,
 } from './lib/svg-guard.mjs';
 import { expandKitMacrosInString, loadKitCatalog } from './lib/kit-resolver.mjs';
+import { loadMaterialLibrary, verifyLibraryIntegrity } from './lib/material-library.mjs';
 import { analyzeSvgCraft } from './lib/craft-audit.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,8 +32,11 @@ function printHelp() {
   console.log(`Usage: node scripts/library_cli.mjs <command> [OPTIONS]
 
 Commands:
-  list [--family <fam>] [--category <cat>] [--library-dir <DIR>] [--json]
-      List all available components across assets/kit/, assets/library/, and custom libraries.
+  list [--kind <svg-2d|pbr-paper|procedural-3d|cutout-raster|all>] [--family <fam>] [--category <cat>] [--library-dir <DIR>] [--json]
+      List available components and material/3D relief presets across assets/kit/, assets/library/, and custom libraries.
+
+  verify [--library-dir <DIR>] [--kit-dir <DIR>] [--json]
+      Verify SHA-256 integrity, schema, SVG allowlist, raster magic bytes, and style packs fail-closed.
 
   contact-sheet --out <DIR> [--family <fam>] [--library-dir <DIR>] [--no-chrome]
       Render a visual contact sheet (library_contact_sheet.html + .png) for visual QA.
@@ -92,45 +96,136 @@ function escapeHtml(str) {
 }
 
 function cmdList(args) {
-  const extraDirs = [...argVals(args, '--library-dir'), ...argVals(args, '--kit-dir')];
+  const extraLibDirs = argVals(args, '--library-dir');
+  const extraDirs = [...extraLibDirs, ...argVals(args, '--kit-dir')];
+  const kindFilter = argVal(args, '--kind') ?? 'svg-2d';
   const famFilter = argVal(args, '--family');
   const catFilter = argVal(args, '--category');
   const asJson = args.includes('--json');
 
   const errs = [];
-  const cat = loadKitCatalog(extraDirs, (c, w, d) => errs.push({ code: c, where: w, detail: d }));
+  const pushErr = (c, w, d) => errs.push({ code: c, where: w, detail: d });
+  const items = [];
+
+  if (kindFilter === 'svg-2d' || kindFilter === 'all') {
+    const cat = loadKitCatalog(extraDirs, pushErr);
+    for (const e of cat.values()) {
+      items.push({
+        id: e.id,
+        kind: 'svg-2d',
+        family: inferFamily(e),
+        category: e.category ?? 'prop',
+        size: e.size,
+        pivot: e.pivot,
+        tokens: Object.keys(e.tokens ?? {}),
+        styles: Array.isArray(e.styles) ? e.styles : [],
+        description: e.description ?? '',
+      });
+    }
+  }
+
+  if (kindFilter !== 'svg-2d') {
+    const matLib = loadMaterialLibrary(extraLibDirs, pushErr);
+    if (kindFilter === 'pbr-paper' || kindFilter === 'all') {
+      for (const m of matLib.materials.values()) {
+        items.push({
+          id: m.id,
+          kind: 'pbr-paper',
+          family: m.family ?? 'materials',
+          category: 'material',
+          gsm: m.gsm ?? null,
+          cardstock: m.cardstock,
+          styles: Array.isArray(m.styles) ? m.styles : [],
+          description: m.description ?? '',
+        });
+      }
+    }
+    if (kindFilter === 'procedural-3d' || kindFilter === 'all') {
+      for (const r of matLib.reliefs3d.values()) {
+        items.push({
+          id: r.id,
+          kind: 'procedural-3d',
+          family: r.family ?? 'reliefs3d',
+          category: r.layerKind,
+          layerKind: r.layerKind,
+          styles: Array.isArray(r.styles) ? r.styles : [],
+          description: r.description ?? '',
+        });
+      }
+    }
+    if (kindFilter === 'rig-archetype' || kindFilter === 'all') {
+      for (const a of matLib.archetypes.values()) {
+        items.push({
+          id: a.id,
+          kind: 'rig-archetype',
+          family: a.family ?? 'archetypes',
+          category: 'rig-archetype',
+          boneCount: a.bones?.length ?? 0,
+          boneMapping: Object.keys(a.boneMapping ?? {}),
+          description: a.description ?? '',
+        });
+      }
+    }
+    if (kindFilter === 'cutout-raster' || kindFilter === 'all') {
+      for (const c of matLib.cutouts.values()) {
+        items.push({
+          id: c.id,
+          kind: 'cutout-raster',
+          family: c.family ?? 'cutouts',
+          category: 'cutout_relief',
+          mimeType: c.mimeType,
+          imageFile: c.imageFile,
+          description: c.description ?? '',
+        });
+      }
+    }
+  }
+
   if (errs.length > 0) {
     console.log(JSON.stringify({ status: 'FAIL', errors: errs }, null, 2));
     process.exit(1);
   }
 
-  let items = [...cat.values()].map((e) => ({
-    id: e.id,
-    family: inferFamily(e),
-    category: e.category ?? 'prop',
-    size: e.size,
-    pivot: e.pivot,
-    tokens: Object.keys(e.tokens ?? {}),
-    styles: Array.isArray(e.styles) ? e.styles : [],
-    description: e.description ?? '',
-  }));
-  if (famFilter) items = items.filter((i) => i.family === famFilter);
-  if (catFilter) items = items.filter((i) => i.category === catFilter);
-  items.sort((a, b) => a.family.localeCompare(b.family) || a.id.localeCompare(b.id));
+  let filtered = items;
+  if (famFilter) filtered = filtered.filter((i) => i.family === famFilter);
+  if (catFilter) filtered = filtered.filter((i) => i.category === catFilter);
+  filtered.sort((a, b) => a.kind.localeCompare(b.kind) || a.family.localeCompare(b.family) || a.id.localeCompare(b.id));
 
   if (asJson) {
-    console.log(JSON.stringify({ status: 'PASS', count: items.length, components: items }, null, 2));
+    console.log(JSON.stringify({ status: 'PASS', kind: kindFilter, count: filtered.length, components: filtered }, null, 2));
     return;
   }
-  console.log(`Paper Studio Craft Library — ${items.length} component(s)\n`);
+  console.log(`Paper Studio Craft Library (${kindFilter}) — ${filtered.length} item(s)\n`);
   let curFam = '';
-  for (const it of items) {
+  for (const it of filtered) {
     if (it.family !== curFam) {
       curFam = it.family;
       console.log(`[${curFam}]`);
     }
-    console.log(`  - ${it.id.padEnd(26)} (${it.category}) tokens=[${it.tokens.join(', ')}]`);
+    const extra = it.tokens
+      ? `tokens=[${it.tokens.join(', ')}]`
+      : (it.layerKind ? `layerKind=${it.layerKind}` : (it.gsm ? `${it.gsm}gsm` : (it.boneCount ? `${it.boneCount} bones` : it.kind)));
+    console.log(`  - ${it.id.padEnd(26)} (${it.category}) ${extra}`);
   }
+}
+
+function cmdVerify(args) {
+  const extraLibDirs = argVals(args, '--library-dir');
+  const extraKitDirs = argVals(args, '--kit-dir');
+  const asJson = args.includes('--json');
+  const report = verifyLibraryIntegrity(extraLibDirs, extraKitDirs);
+  if (asJson) {
+    console.log(JSON.stringify(report, null, 2));
+  } else if (report.status === 'PASS') {
+    const c = report.counts;
+    console.log(
+      `PASS: verified ${c.svg2dLibrary} library SVGs, ${c.svg2dKit} kit SVGs, ${c.pbrMaterials} PBR materials, ${c.reliefs3d} 3D reliefs, ${c.archetypes} archetypes, ${c.cutouts} cutouts, ${c.styles} styles`,
+    );
+  } else {
+    console.error(`FAIL: ${report.errorCount} library integrity error(s):`);
+    for (const e of report.errors) console.error(`  [${e.code}] ${e.where}: ${e.detail}`);
+  }
+  process.exit(report.status === 'PASS' ? 0 : 1);
 }
 
 function cmdContactSheet(args) {
@@ -405,6 +500,7 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 const sub = args[0];
 const rest = args.slice(1);
 if (sub === 'list') cmdList(rest);
+else if (sub === 'verify') cmdVerify(rest);
 else if (sub === 'contact-sheet') cmdContactSheet(rest);
 else if (sub === 'import') cmdImport(rest);
 else {
