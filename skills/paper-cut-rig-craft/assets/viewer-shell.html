@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__TITLE__</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --ps-bg: var(--background, #0f1117);
+      --ps-fg: var(--foreground, #e8ecf4);
+      --ps-card: var(--card, #171a23);
+      --ps-border: var(--border, #2a2f3d);
+      --ps-primary: var(--primary, #f59e0b);
+      --ps-primary-fg: var(--primary-foreground, #0f1117);
+      --ps-muted: var(--muted-foreground, #94a3b8);
+      --ps-content: var(--content, #0a0c12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--ps-bg);
+      color: var(--ps-fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    input[type="range"] { height: 5px; }
+    .pill-btn[data-active="true"], .tab-btn[data-active="true"] {
+      background: var(--ps-primary);
+      color: var(--ps-primary-fg);
+      border-color: var(--ps-primary);
+    }
+    .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 3px; }
+    .ik-handle { cursor: grab; }
+    .ik-handle:active { cursor: grabbing; }
+    body.stage-only header,
+    body.stage-only aside,
+    body.stage-only #stageControlsDock { display: none !important; }
+    body.stage-only #stageWrap { padding: 0 !important; min-height: 100vh !important; }
+    body.stage-only main { grid-column: 1 / -1 !important; border: none !important; }
+    body.stage-only #stageBox { max-width: 100vw !important; width: 100vw !important; height: 100vh !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
+  </style>
+</head>
+<body class="bg-[var(--ps-bg)] text-[var(--ps-fg)] antialiased m-0 p-0">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="px-4 py-2.5 border-b border-[var(--ps-border)] bg-[var(--ps-card)] flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div id="badgeIcon" class="w-8 h-8 rounded-lg bg-[var(--ps-primary)] text-[var(--ps-primary-fg)] flex items-center justify-center font-bold text-sm">✂</div>
+        <div>
+          <div id="hdrTitle" class="font-semibold text-sm leading-tight"></div>
+          <div id="hdrSub" class="text-xs text-[var(--ps-muted)]"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <div id="presetBar" class="flex flex-wrap items-center gap-1.5"></div>
+        <span class="mx-1 text-[var(--ps-border)]">|</span>
+        <button id="btnFlip" class="px-2 py-1.5 rounded-md border border-[var(--ps-border)] bg-[var(--ps-bg)] font-medium">⇄ Lật</button>
+        <button id="btnPlay" class="px-2.5 py-1.5 rounded-md border border-[var(--ps-border)] bg-[var(--ps-bg)] font-medium">⏸ Tạm dừng</button>
+        <select id="selSpeed" class="px-2 py-1.5 rounded-md border border-[var(--ps-border)] bg-[var(--ps-bg)] text-[var(--ps-fg)]">
+          <option value="1">1.0×</option>
+          <option value="0.5">0.5×</option>
+          <option value="0.25">0.25×</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12">
+      <main class="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-[var(--ps-border)]">
+        <div id="stageWrap" class="relative flex-1 min-h-[420px] bg-[var(--ps-content)] flex flex-col items-center justify-center gap-2.5 p-3 sm:p-5 overflow-hidden select-none">
+          <div class="w-full max-w-[960px] aspect-[16/9] rounded-xl shadow-2xl border border-[var(--ps-border)] overflow-hidden relative" id="stageBox">
+            <svg id="sceneSvg" viewBox="0 0 960 540" class="w-full h-full block">
+              <defs id="svgDefs"></defs>
+              <clipPath id="stageClip"><rect id="stageClipRect" x="0" y="0" width="960" height="540"/></clipPath>
+              <g clip-path="url(#stageClip)">
+                <g id="layerSky"></g>
+                <g id="layerFocalGlow"></g>
+                <g id="layerAmbientBack"></g>
+                <g id="layerCelestial"></g>
+                <g id="layerLightShafts"></g>
+                <g id="layerBackScenery"></g>
+                <g id="layerClustersBack"></g>
+                <g id="layerMistMid"></g>
+                <g id="layerSwarmBack"></g>
+                <g id="layerFallingBack"></g>
+                <g id="layerGroundShadows"></g>
+                <g id="layerHeroes"></g>
+                <g id="layerVfx"></g>
+                <g id="layerFrontScenery"></g>
+                <g id="layerClustersFront"></g>
+                <g id="layerSwarmFront"></g>
+                <g id="layerFallingFront"></g>
+                <g id="layerOverlayProps"></g>
+                <g id="layerAtmosphereFore"></g>
+                <g id="layerFrame"></g>
+                <g id="layerCorners"></g>
+                <g id="layerDiag"></g>
+                <g id="layerIk"></g>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Stage Control Dock (sits cleanly outside #stageBox — 0% canvas obstruction on any viewport) -->
+          <div id="stageControlsDock" class="w-full max-w-[960px] flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 bg-[var(--ps-card)] px-2.5 py-1.5 rounded-lg border border-[var(--ps-border)] shadow-sm">
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkBones" type="checkbox" class="accent-[var(--ps-primary)]"> Khung xương</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAnchors" type="checkbox" class="accent-[var(--ps-primary)]"> Anchors</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkParallax" type="checkbox" checked class="accent-[var(--ps-primary)]"> Parallax 3D</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAtmos" type="checkbox" checked class="accent-[var(--ps-primary)]"> Ánh sáng</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkFrame" type="checkbox" checked class="accent-[var(--ps-primary)]"> Khung hộp</label>
+            </div>
+
+            <div class="flex items-center gap-2 ml-auto">
+              <div id="phaseBadge" class="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-[var(--ps-card)] border border-[var(--ps-border)] text-[var(--ps-muted)] truncate max-w-[260px] sm:max-w-[340px]"></div>
+              <div class="shrink-0 flex items-center gap-1 bg-[var(--ps-card)] px-2 py-1 rounded-lg border border-[var(--ps-border)] shadow-sm">
+                <button id="btnZoomOut" class="px-1.5 py-0.5 rounded hover:bg-[var(--ps-bg)]">−</button>
+                <span id="zoomLabel" class="font-mono tabular-nums w-10 text-center">100%</span>
+                <button id="btnZoomIn" class="px-1.5 py-0.5 rounded hover:bg-[var(--ps-bg)]">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Inspector -->
+      <aside class="lg:col-span-4 bg-[var(--ps-card)] flex flex-col max-h-[720px]">
+        <div class="p-2 border-b border-[var(--ps-border)] grid grid-cols-3 gap-1.5 text-xs">
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--ps-border)] font-medium" data-tab="rig" data-active="true">Khớp Rig</button>
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--ps-border)] font-medium" data-tab="scene" data-active="false">Cảnh &amp; Ánh sáng</button>
+          <button class="tab-btn py-1.5 rounded-md border border-[var(--ps-border)] font-medium" data-tab="spec" data-active="false">Cấu trúc &amp; JSON</button>
+        </div>
+
+        <div id="tab-rig" class="p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
+          <div id="rigSwitcher" class="hidden flex flex-wrap gap-1.5 pb-2 border-b border-[var(--ps-border)]"></div>
+          <div id="variantSection" class="space-y-2 hidden pb-2 border-b border-[var(--ps-border)]"></div>
+          <div class="flex items-center justify-between text-[var(--ps-muted)]">
+            <span>Chỉnh trực tiếp góc từng khớp (FK)</span>
+            <button id="btnRest" class="px-2 py-0.5 rounded border border-[var(--ps-border)] hover:border-[var(--ps-primary)]">↺ Nghỉ</button>
+          </div>
+          <div id="rootControls" class="space-y-2 pb-2 border-b border-[var(--ps-border)]"></div>
+          <div id="boneSliders" class="space-y-2"></div>
+        </div>
+
+        <div id="tab-scene" class="hidden p-3.5 space-y-3.5 overflow-y-auto scroll-thin flex-1 text-xs">
+          <div class="space-y-2">
+            <div class="font-semibold">Ánh sáng &amp; Chất liệu giấy</div>
+            <label class="flex items-center gap-2">
+              <span class="w-28 text-[var(--ps-muted)]">Độ sâu bóng giấy</span>
+              <input id="rngShadow" type="range" min="0.2" max="1.8" step="0.1" value="1" class="flex-1 accent-[var(--ps-primary)]"/>
+              <span id="valShadow" class="w-10 text-right font-mono">1.0×</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <span class="w-28 text-[var(--ps-muted)]">Nhịp gió &amp; chuyển động</span>
+              <input id="rngAmbient" type="range" min="0" max="2.2" step="0.1" value="1" class="flex-1 accent-[var(--ps-primary)]"/>
+              <span id="valAmbient" class="w-10 text-right font-mono">1.0×</span>
+            </label>
+            <label class="flex items-center justify-between pt-1">
+              <span class="text-[var(--ps-muted)]">Hạt bay (Lá / Tuyết / Bọt / Đom đóm)</span>
+              <input id="chkAmbient" type="checkbox" checked class="accent-[var(--ps-primary)]"/>
+            </label>
+            <label class="flex items-center justify-between">
+              <span class="text-[var(--ps-muted)]">Đàn sinh vật nhỏ (Chim / Cá / Bướm)</span>
+              <input id="chkSwarm" type="checkbox" checked class="accent-[var(--ps-primary)]"/>
+            </label>
+            <label class="flex items-center justify-between">
+              <span class="text-[var(--ps-muted)]">Nhịp thở máy quay điện ảnh</span>
+              <input id="chkCamBreath" type="checkbox" checked class="accent-[var(--ps-primary)]"/>
+            </label>
+          </div>
+        </div>
+
+        <div id="tab-spec" class="hidden p-3.5 space-y-3 overflow-y-auto scroll-thin flex-1 text-xs">
+          <div id="specSummary" class="p-2.5 rounded-lg bg-[var(--ps-bg)] border border-[var(--ps-border)] space-y-1"></div>
+          <div class="space-y-1">
+            <div class="font-semibold">Cây xương Rig</div>
+            <pre id="boneTreeOut" class="p-2 rounded bg-[var(--ps-bg)] border border-[var(--ps-border)] font-mono text-[11px] overflow-x-auto leading-relaxed"></pre>
+          </div>
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">Pose JSON hiện tại</span>
+              <button id="btnCopyPose" class="px-2 py-0.5 rounded border border-[var(--ps-border)] hover:border-[var(--ps-primary)]">Copy</button>
+            </div>
+            <pre id="poseJsonOut" class="p-2 rounded bg-[var(--ps-bg)] border border-[var(--ps-border)] font-mono text-[11px] max-h-44 overflow-auto"></pre>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const BLUEPRINT = __BLUEPRINT_JSON__;
+
+    // Deterministic Park-Miller LCG (strictly seeded, zero non-deterministic RNG)
+    function makeRng(seed) {
+      let s = (seed >>> 0) || 4219;
+      return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+    }
+    const DEG = Math.PI / 180;
+    const RAD = 180 / Math.PI;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const smoothstep = (t) => { const c = clamp(t, 0, 1); return c * c * (3 - 2 * c); };
+    const easeOutBack = (t) => { const c = clamp(t, 0, 1), c1 = 1.35, c3 = c1 + 1; return 1 + c3 * Math.pow(c - 1, 3) + c1 * Math.pow(c - 1, 2); };
+
+    // Canvas dimensions (supports 16:9 [960,540] or 4:3 [960,720] from blueprint!)
+    const VW = BLUEPRINT.scene?.width ?? 960;
+    const VH = BLUEPRINT.scene?.height ?? 540;
+    const stageBox = document.getElementById('stageBox');
+    stageBox.style.aspectRatio = `${VW} / ${VH}`;
+    const sceneSvg = document.getElementById('sceneSvg');
+    sceneSvg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    const clipRect = document.getElementById('stageClipRect');
+    clipRect.setAttribute('width', String(VW));
+    clipRect.setAttribute('height', String(VH));
+
+    // Normalize single rig or multi-rig rigs[]
+    const RAW_RIGS = Array.isArray(BLUEPRINT.rigs) && BLUEPRINT.rigs.length > 0 ? BLUEPRINT.rigs : [BLUEPRINT.rig];
+    const PART_BY_ID = Object.fromEntries(BLUEPRINT.parts.map(p => [p.id, p]));
+
+    function topoSort(rawBones) {
+      const out = [], byP = new Map();
+      for (const b of rawBones) {
+        const k = b.parent ?? '__root__';
+        byP.set(k, [...(byP.get(k) ?? []), b]);
+      }
+      const visit = (pid) => { for (const b of byP.get(pid) ?? []) { out.push(b); visit(b.id); } };
+      visit('__root__');
+      return out;
+    }
+
+    const RIGS = RAW_RIGS.map((r) => {
+      const bones = topoSort(r.bones);
+      return { ...r, label: r.label ?? r.characterId ?? r.id, bones, boneById: Object.fromEntries(bones.map(b => [b.id, b])) };
+    });
+    const RIG_BY_ID = Object.fromEntries(RIGS.map(r => [r.id, r]));
+
+    const rigStates = {};
+    for (const r of RIGS) {
+      rigStates[r.id] = {
+        rootX: r.rootPos?.x ?? VW * 0.5,
+        rootY: r.rootPos?.y ?? VH * 0.72,
+        facing: r.facing ?? 1,
+        userFlip: 1,
+        scale: r.scale ?? 1,
+        breath: 0,
+        angles: Object.fromEntries(r.bones.map(b => [b.id, b.rest ?? 0])),
+        scales: Object.fromEntries(r.bones.map(b => [b.id, { x: 1, y: 1 }])),
+        variants: Object.fromEntries(Object.entries(r.variants ?? {}).map(([k, list]) => [k, list[0]])),
+        emote: null,
+      };
+    }
+
+    const state = {
+      activeRigId: RIGS[0].id,
+      preset: BLUEPRINT.motions?.[0]?.id ?? 'manual',
+      playing: true, speed: 1, time: 0, zoom: 1,
+      showBones: false, showAnchors: false, parallax: true, showAtmos: true,
+      showFrame: true, showAmbient: true, showSwarm: true, camBreath: true,
+      shadowScale: 1, ambientAmp: 1,
+      pointer: { x: 0, y: 0 }, smoothPtr: { x: 0, y: 0 },
+      draggingIk: null,
+      vfx: { glow: null, burst: null, particles: null },
+      silhouette: false,
+      cropRig: null,
+      cropPad: 120,
+    };
+
+    document.getElementById('badgeIcon').textContent = BLUEPRINT.meta.icon ?? '✂';
+    document.getElementById('hdrTitle').textContent = BLUEPRINT.meta.title;
+    document.getElementById('hdrSub').textContent = BLUEPRINT.meta.subtitle ?? '';
+    stageBox.style.background = BLUEPRINT.scene.bgColor ?? '#0b1326';
+
+    // Universal Cardstock Paper Fibres + Physical Cut-Paper Edge Bevel + Cardstock Material Patterns + 4 Shadow Tiers
+    const lit = BLUEPRINT.scene.lighting ?? {};
+    const fg = lit.focalGlow;
+    const fgDef = fg ? `<radialGradient id="autoFocalGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${fg.color ?? '#ffe9a3'}" stop-opacity="${fg.opacity ?? 0.65}"/><stop offset="55%" stop-color="${fg.midColor ?? fg.color ?? '#f5a855'}" stop-opacity="${(fg.opacity ?? 0.65) * 0.35}"/><stop offset="100%" stop-color="${fg.color ?? '#f5a855'}" stop-opacity="0"/></radialGradient>` : '';
+    const mst = lit.mist;
+    const mstDef = mst ? `<linearGradient id="autoMistGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/><stop offset="52%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="${mst.opacity ?? 0.24}"/><stop offset="100%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/></linearGradient>` : '';
+    const customDefs = BLUEPRINT.scene.defsSvg ?? '';
+    const defaultMeteorDef = /id\s*=\s*["']meteorTrail["']/.test(customDefs) ? '' : `<linearGradient id="meteorTrail" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#fff7d6" stop-opacity="0.92"/></linearGradient>`;
+
+    const shCol = lit.shadowColor ?? '#050712';
+    const shOpMul = lit.shadowOpacity ?? 1;
+    const vigCol = lit.vignetteColor ?? '#080510';
+
+    const buildBevelDef = (id, mul) => {
+      const d = Array.isArray(lit.bevelDir) && lit.bevelDir.length === 2 ? lit.bevelDir : [-1, -1];
+      const mag = Math.hypot(d[0], d[1]) || 1;
+      const dx = d[0] / mag, dy = d[1] / mag;
+      const w = (lit.bevelWidth ?? 1.35) * mul;
+      const lCol = lit.bevelLightColor ?? '#ffffff';
+      const dCol = lit.bevelDarkColor ?? shCol;
+      const lOp = lit.bevelLightOpacity ?? 0.44;
+      const dOp = lit.bevelDarkOpacity ?? 0.32;
+      return `<filter id="${id}" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB"><feOffset in="SourceAlpha" dx="${(-dx * w).toFixed(2)}" dy="${(-dy * w).toFixed(2)}" result="offL"/><feComposite in="SourceAlpha" in2="offL" operator="out" result="edgeL"/><feFlood flood-color="${lCol}" flood-opacity="${lOp.toFixed(2)}" result="flL"/><feComposite in="flL" in2="edgeL" operator="in" result="rimL"/><feOffset in="SourceAlpha" dx="${(dx * w).toFixed(2)}" dy="${(dy * w).toFixed(2)}" result="offD"/><feComposite in="SourceAlpha" in2="offD" operator="out" result="edgeD"/><feFlood flood-color="${dCol}" flood-opacity="${dOp.toFixed(2)}" result="flD"/><feComposite in="flD" in2="edgeD" operator="in" result="rimD"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="rimD"/><feMergeNode in="rimL"/></feMerge></filter>`;
+    };
+
+    const buildCutoutBorderDef = () => {
+      const bCol = lit.cutoutBorderColor ?? '#fffdf7';
+      const eCol = lit.cutoutEdgeColor ?? '#b8ab9a';
+      const r = clamp(lit.cutoutBorderWidth ?? 3.0, 1.2, 8);
+      const rEdge = (r + 1.2).toFixed(2);
+      return `<filter id="cutoutBorder" x="-18%" y="-18%" width="136%" height="136%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="${rEdge}" result="edA"/><feOffset in="edA" dx="0.6" dy="1.8" result="edOff"/><feFlood flood-color="${eCol}" flood-opacity="1" result="edFl"/><feComposite in="edFl" in2="edOff" operator="in" result="edgeLayer"/><feMorphology in="SourceAlpha" operator="dilate" radius="${r.toFixed(2)}" result="bdA"/><feFlood flood-color="${bCol}" flood-opacity="1" result="bdFl"/><feComposite in="bdFl" in2="bdA" operator="in" result="borderLayer"/><feMerge><feMergeNode in="edgeLayer"/><feMergeNode in="borderLayer"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+    };
+
+    const buildBacklitPulpDef = () => {
+      const seed = (BLUEPRINT.meta.seed ?? 13) + 11;
+      const rimCol = lit.bevelLightColor ?? '#ffebc2';
+      const rimOp = lit.bevelLightOpacity ?? 0.52;
+      const darkCol = lit.bevelDarkColor ?? '#070b18';
+      const darkOp = lit.bevelDarkOpacity ?? 0.36;
+      return `<filter id="backlitPulp" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.045 0.065" numOctaves="3" seed="${seed}" result="pulp"/><feColorMatrix in="pulp" type="matrix" values="0 0 0 0 1.0  0 0 0 0 0.88  0 0 0 0 0.66  0 0 0 0.22 0" result="pCol"/><feComposite in="pCol" in2="SourceAlpha" operator="in" result="pIn"/><feBlend in="SourceGraphic" in2="pIn" mode="screen" result="litBody"/><feOffset in="SourceAlpha" dx="0" dy="2.2" result="offT"/><feComposite in="SourceAlpha" in2="offT" operator="out" result="eT"/><feFlood flood-color="${rimCol}" flood-opacity="${rimOp.toFixed(2)}" result="fT"/><feComposite in="fT" in2="eT" operator="in" result="rimT"/><feOffset in="SourceAlpha" dx="0" dy="-2.2" result="offB"/><feComposite in="SourceAlpha" in2="offB" operator="out" result="eB"/><feFlood flood-color="${darkCol}" flood-opacity="${darkOp.toFixed(2)}" result="fB"/><feComposite in="fB" in2="eB" operator="in" result="rimB"/><feMerge><feMergeNode in="litBody"/><feMergeNode in="rimB"/><feMergeNode in="rimT"/></feMerge></filter>`;
+    };
+
+    const buildMatPat = (m) => {
+      const col = m.color ?? '#ffffff', alt = m.altColor ?? '#000000', bg = m.bg ?? null;
+      const op = clamp(m.opacity ?? 0.22, 0.02, 1), sc = clamp(m.scale ?? 1, 0.4, 4);
+      const op2 = (op * 0.55).toFixed(2), opS = op.toFixed(2);
+      const p = (n) => (n * sc).toFixed(1);
+      if (m.type === 'linen') {
+        const s = p(10), h = p(5);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<path d="M0 ${h} H${s} M${h} 0 V${s}" stroke="${col}" stroke-width="${(0.8 * sc).toFixed(2)}" opacity="${opS}"/><path d="M0 ${p(2)} H${s} M${p(2)} 0 V${s}" stroke="${alt}" stroke-width="${(0.55 * sc).toFixed(2)}" opacity="${op2}"/></pattern>`;
+      }
+      if (m.type === 'crosshatch') {
+        const s = p(12);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<path d="M0 ${s} L${s} 0 M-${p(3)} ${p(3)} L${p(3)} -${p(3)} M${p(9)} ${p(15)} L${p(15)} ${p(9)}" stroke="${col}" stroke-width="${(0.75 * sc).toFixed(2)}" opacity="${opS}"/><path d="M0 0 L${s} ${s}" stroke="${alt}" stroke-width="${(0.55 * sc).toFixed(2)}" opacity="${op2}"/></pattern>`;
+      }
+      if (m.type === 'kraft') {
+        const s = p(24);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<circle cx="${p(3.5)}" cy="${p(4.2)}" r="${p(0.9)}" fill="${col}" opacity="${opS}"/><circle cx="${p(14.8)}" cy="${p(6.4)}" r="${p(0.7)}" fill="${alt}" opacity="${op2}"/><circle cx="${p(19.2)}" cy="${p(15.6)}" r="${p(1.0)}" fill="${col}" opacity="${opS}"/><circle cx="${p(7.6)}" cy="${p(18.5)}" r="${p(0.8)}" fill="${col}" opacity="${op2}"/><path d="M${p(9)} ${p(11)} L${p(12.5)} ${p(10.2)} M${p(1.5)} ${p(14)} L${p(4.2)} ${p(15.1)} M${p(17)} ${p(3)} L${p(20.4)} ${p(2.4)}" stroke="${col}" stroke-width="${p(0.65)}" stroke-linecap="round" opacity="${opS}"/></pattern>`;
+      }
+      if (m.type === 'ribbed') {
+        const s = p(8);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<line x1="0" y1="${p(2)}" x2="${s}" y2="${p(2)}" stroke="${col}" stroke-width="${(0.9 * sc).toFixed(2)}" opacity="${opS}"/><line x1="0" y1="${p(5.5)}" x2="${s}" y2="${p(5.5)}" stroke="${alt}" stroke-width="${(0.65 * sc).toFixed(2)}" opacity="${op2}"/></pattern>`;
+      }
+      if (m.type === 'dots') {
+        const s = p(12);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<circle cx="${p(3)}" cy="${p(3)}" r="${p(1.1)}" fill="${col}" opacity="${opS}"/><circle cx="${p(9)}" cy="${p(9)}" r="${p(1.1)}" fill="${col}" opacity="${opS}"/><circle cx="${p(3.4)}" cy="${p(3.4)}" r="${p(0.7)}" fill="${alt}" opacity="${op2}"/></pattern>`;
+      }
+      const s = p(28);
+      return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<path d="M${p(2)} ${p(7)} Q${p(10)} ${p(4)} ${p(19)} ${p(8)} T${p(27)} ${p(6)}" fill="none" stroke="${col}" stroke-width="${p(0.8)}" opacity="${opS}"/><path d="M${p(0)} ${p(20)} Q${p(9)} ${p(17)} ${p(17)} ${p(22)} T${p(28)} ${p(19)}" fill="none" stroke="${alt}" stroke-width="${p(0.7)}" opacity="${op2}"/></pattern>`;
+    };
+
+    const builtinMats = [
+      { id: 'pat-linen', type: 'linen', color: '#ffffff', altColor: '#000000', opacity: 0.14, scale: 1 },
+      { id: 'pat-crosshatch', type: 'crosshatch', color: '#000000', altColor: '#ffffff', opacity: 0.12, scale: 1 },
+      { id: 'pat-kraft', type: 'kraft', color: '#2b1d12', altColor: '#fff5e4', opacity: 0.15, scale: 1 },
+      { id: 'pat-ribbed', type: 'ribbed', color: '#000000', altColor: '#ffffff', opacity: 0.12, scale: 1 },
+      { id: 'pat-dots', type: 'dots', color: '#ffffff', altColor: '#000000', opacity: 0.16, scale: 1 },
+      { id: 'pat-vellum', type: 'vellum', color: '#ffffff', altColor: '#dbeafe', opacity: 0.14, scale: 1 },
+    ];
+    const materialPatternsDef = [...builtinMats, ...(Array.isArray(BLUEPRINT.scene.materials) ? BLUEPRINT.scene.materials : [])].map(buildMatPat).join('');
+
+    document.getElementById('svgDefs').innerHTML = `
+      <!-- Fine Cardstock Paper Texture (tactile horizontal fibre + grain, sRGB-synced with pack SVGs) -->
+      <filter id="paperTex" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06 0.72" numOctaves="2" seed="${BLUEPRINT.meta.seed ?? 13}" result="fibre"/>
+        <feColorMatrix in="fibre" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0.11 0" result="g"/>
+        <feComposite in="g" in2="SourceGraphic" operator="in" result="gc"/>
+        <feBlend in="SourceGraphic" in2="gc" mode="multiply"/>
+      </filter>
+      ${buildBevelDef('paperBevel', 1)}
+      ${buildBevelDef('paperBevelSoft', 0.65)}
+      ${buildCutoutBorderDef()}
+      ${buildBacklitPulpDef()}
+      <!-- Edge-gathered Gouache Grain & Chalky Pooled Shadow (adapted from MIT MengTo/Skills) -->
+      <filter id="gouacheGrain" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="2" seed="${(BLUEPRINT.meta.seed ?? 13) + 5}" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.56  0 0 0 0 0.47  0 0 0 0 0.41  0 -0.34 0 0 0.22" result="dk"/>
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
+        <feComposite in="SourceAlpha" in2="b" operator="arithmetic" k1="0" k2="1.65" k3="-1.45" k4="0" result="w"/>
+        <feComposite in="dk" in2="w" operator="in" result="g"/>
+        <feBlend in="g" in2="SourceGraphic" mode="multiply"/>
+      </filter>
+      <filter id="chalkShadow" x="-15%" y="-80%" width="130%" height="260%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="1.35" numOctaves="2" seed="${(BLUEPRINT.meta.seed ?? 13) + 3}" result="fine"/>
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="b"/>
+        <feDisplacementMap in="b" in2="fine" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.22 0.5" numOctaves="3" seed="${(BLUEPRINT.meta.seed ?? 13) + 12}" result="mott"/>
+        <feColorMatrix in="mott" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.25 0 0 0 0.35" result="ma"/>
+        <feComposite in="d" in2="ma" operator="in"/>
+      </filter>
+      <filter id="silhouetteFilter" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0 0.11  0 0 0 1 0"/>
+      </filter>
+      ${materialPatternsDef}
+      <filter id="shadowDeep" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+        <feDropShadow id="fDeep" dx="0" dy="7" stdDeviation="8" flood-color="${shCol}" flood-opacity="${(0.58 * shOpMul).toFixed(2)}"/>
+      </filter>
+      <filter id="shadowMed" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+        <feDropShadow id="fMed" dx="1.5" dy="4.5" stdDeviation="4.8" flood-color="${shCol}" flood-opacity="${(0.42 * shOpMul).toFixed(2)}"/>
+      </filter>
+      <filter id="shadowSoft" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+        <feDropShadow id="fSoft" dx="0" dy="3" stdDeviation="4" flood-color="${shCol}" flood-opacity="${(0.28 * shOpMul).toFixed(2)}"/>
+      </filter>
+      <filter id="shadowInner" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+        <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="${shCol}" flood-opacity="${(0.16 * shOpMul).toFixed(2)}"/>
+      </filter>
+      <filter id="softGlow" x="-250%" y="-250%" width="600%" height="600%" color-interpolation-filters="sRGB">
+        <feGaussianBlur stdDeviation="9" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="groundShadowGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${shCol}" stop-opacity="${(0.42 * shOpMul).toFixed(2)}"/>
+        <stop offset="62%" stop-color="${shCol}" stop-opacity="${(0.14 * shOpMul).toFixed(2)}"/>
+        <stop offset="100%" stop-color="${shCol}" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="dynVfxGlow" cx="50%" cy="50%" r="50%">
+        <stop id="vfxGlowS0" offset="0%" stop-color="#fff0ad" stop-opacity="0.52"/>
+        <stop id="vfxGlowS1" offset="48%" stop-color="#f7a854" stop-opacity="0.20"/>
+        <stop id="vfxGlowS2" offset="100%" stop-color="#f7a854" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="autoVignette" cx="50%" cy="52%" r="70%">
+        <stop offset="60%" stop-color="${vigCol}" stop-opacity="0"/>
+        <stop offset="100%" stop-color="${vigCol}" stop-opacity="${lit.vignetteOpacity ?? 0.34}"/>
+      </radialGradient>
+      ${defaultMeteorDef}${fgDef}${mstDef}${customDefs}`;
+
+    // Universal Data-Driven Proscenium Shadow-Box Frame Builder!
+    function buildProsceniumFrame() {
+      const f = BLUEPRINT.scene.frame;
+      if (!f || f.style === 'none') return BLUEPRINT.scene.frameSvg ?? '';
+      if (f.style === 'proscenium') {
+        const colors = f.layers ?? ['#0e344c', '#3d2247', '#b5502c'];
+        const baseInset = f.inset ?? 10;
+        const step = f.step ?? 12;
+        const baseR = f.radius ?? 56;
+        // Draw inner layers first, outer layer last? In SVG evenodd cutout, outer layers should sit ON TOP with wider cutout or INNER sits deeper!
+        // Specifically: outermost color covers edge, each deeper tier peeks inward with its own recessed shadow!
+        let html = '';
+        for (let i = colors.length - 1; i >= 0; i--) {
+          const pad = baseInset + i * step;
+          const r = Math.max(12, baseR - i * 6);
+          const x = pad, y = pad, w = VW - pad * 2, h = VH - pad * 2;
+          const inner = `M${x + r} ${y} H${x + w - r} Q${x + w} ${y} ${x + w} ${y + r} V${y + h - r} Q${x + w} ${y + h} ${x + w - r} ${y + h} H${x + r} Q${x} ${y + h} ${x} ${y + h - r} V${y + r} Q${x} ${y} ${x + r} ${y} Z`;
+          const outer = `M-20 -20 H${VW + 20} V${VH + 20} H-20 Z`;
+          html += `<path d="${outer} ${inner}" fill="${colors[i]}" fill-rule="evenodd" filter="url(#shadowDeep)"/>`;
+        }
+        return `<g filter="url(#paperTex)">${html}</g>`;
+      }
+      return BLUEPRINT.scene.frameSvg ?? '';
+    }
+    document.getElementById('layerFrame').innerHTML = buildProsceniumFrame();
+    document.getElementById('layerCorners').innerHTML = BLUEPRINT.scene.cornersSvg ?? '';
+
+    // Universal Procedural Organic Motif Cluster Builder (100% Theme-Agnostic, Multi-Variant!)
+    function buildClusters() {
+      const backItems = [], midItems = [], frontItems = [];
+      for (const cl of BLUEPRINT.scene.clusters ?? []) {
+        const cr = makeRng(cl.seed ?? 3011);
+        const count = cl.count ?? 24;
+        const pal = cl.palette ?? [['#d94432', '#b53224', '#8f2218'], ['#f27a38', '#cf5c24', '#a84418']];
+        const shapeList = Array.isArray(cl.shapesSvg) && cl.shapesSvg.length > 0
+          ? cl.shapesSvg
+          : [cl.shapeSvg ?? '<path d="M0 -12 C5 -8 9 -2 7 6 C4 10 1 11 0 12 Z" fill="FILL_A"/><path d="M0 -12 C-5 -8 -9 -2 -7 6 C-4 10 -1 11 0 12 Z" fill="FILL_B"/>'];
+        const lineAng = cl.mode === 'line' ? Math.atan2((cl.y1 ?? 0) - (cl.y0 ?? 0), (cl.x1 ?? 1) - (cl.x0 ?? 0)) * RAD : 0;
+        const items = [];
+        for (let i = 0; i < count; i++) {
+          let x, y, u = count > 1 ? i / (count - 1) : 0.5, baseRot = 0;
+          if (cl.mode === 'arc') {
+            u = cr();
+            const ang = lerp(cl.a0 ?? -Math.PI, cl.a1 ?? 0, u);
+            const radX = (cl.rx ?? 140) * (0.35 + 0.65 * Math.sqrt(cr()));
+            const radY = (cl.ry ?? 90) * (0.35 + 0.65 * Math.sqrt(cr()));
+            x = cl.cx + Math.cos(ang) * radX;
+            y = cl.cy + Math.sin(ang) * radY;
+            if (cl.alignToPath) baseRot = ang * RAD + 90;
+          } else if (cl.mode === 'line') {
+            u = cr();
+            x = lerp(cl.x0, cl.x1, u) + (cr() - 0.5) * (cl.spread ?? 40);
+            y = lerp(cl.y0, cl.y1, u) + (cr() - 0.5) * (cl.spread ?? 40);
+            if (cl.alignToPath) baseRot = lineAng;
+          } else {
+            const ang = cr() * Math.PI * 2;
+            const r = Math.sqrt(cr());
+            u = r;
+            x = cl.cx + Math.cos(ang) * (cl.rx ?? 100) * r;
+            y = cl.cy + Math.sin(ang) * (cl.ry ?? 70) * r;
+            if (cl.alignToPath) baseRot = ang * RAD + 90;
+          }
+          const rotJitter = (cl.rotMin ?? -180) + cr() * ((cl.rotMax ?? 180) - (cl.rotMin ?? -180));
+          const rot = cl.alignToPath ? (baseRot + rotJitter) : rotJitter;
+          const progScale = Array.isArray(cl.scaleByProgress) ? lerp(cl.scaleByProgress[0], cl.scaleByProgress[1], u) : 1;
+          const sc = ((cl.scaleMin ?? 0.7) + cr() * ((cl.scaleMax ?? 1.3) - (cl.scaleMin ?? 0.7))) * progScale;
+          const pair = pal[Math.floor(cr() * pal.length)];
+          const cA = Array.isArray(pair) ? pair[0] : pair;
+          const cB = Array.isArray(pair) ? (pair[1] ?? cA) : pair;
+          const cC = Array.isArray(pair) ? (pair[2] ?? cB) : pair;
+          const rawShape = shapeList[i % shapeList.length];
+          const svg = rawShape.replace(/FILL_A/g, cA).replace(/FILL_B/g, cB).replace(/FILL_C/g, cC);
+          items.push({ x, y, rot, sc, svg, ph: cr() * 6.28 });
+        }
+        if (cl.sortY) items.sort((a, b) => a.y - b.y);
+        const lane = cl.lane ?? 'back';
+        const entry = {
+          lane,
+          z: cl.z ?? 0,
+          parallax: cl.parallax ?? (lane === 'front' ? 22 : (lane === 'mid' ? 15 : 14)),
+          sway: cl.sway ?? 3.5,
+          filter: cl.filter ?? 'shadowSoft',
+          items,
+        };
+        if (lane === 'front') frontItems.push(entry);
+        else if (lane === 'mid') midItems.push(entry);
+        else backItems.push(entry);
+      }
+      return { backItems, midItems, frontItems };
+    }
+    const CLUSTERS = buildClusters();
+
+    // Seeded Stars & Falling/Rising Particles
+    const rng = makeRng(BLUEPRINT.meta.seed ?? 4219);
+    const STARS = [];
+    for (let i = 0; i < (BLUEPRINT.scene.stars?.count ?? 0); i++) {
+      STARS.push({
+        x: 30 + rng() * (VW - 60),
+        y: 25 + rng() * (BLUEPRINT.scene.stars.maxY ?? VH * 0.55),
+        r: 0.7 + rng() * 1.8, op: 0.3 + rng() * 0.65, phase: rng() * 6.28, freq: 1.2 + rng() * 2.2,
+      });
+    }
+
+    const FALLING = [];
+    for (const em of (BLUEPRINT.scene.emitters ?? []).filter(e => e.type === 'falling')) {
+      const fr = makeRng(em.seed ?? 5511);
+      const pal = em.palette ?? (em.colors ?? ['#f27138', '#f7b249']).map(c => [c, c]);
+      const shapes = em.shapesSvg ?? ['<path d="M0 -8 C3 -4 6 0 4 6 C2 8 0 9 0 9 Z" fill="FILL_A"/><path d="M0 -8 C-3 -4 -6 0 -4 6 C-2 8 0 9 0 9 Z" fill="FILL_B"/>'];
+      const yMin = em.yMin ?? -40;
+      const yMax = em.yMax ?? (VH + 40);
+      const ySpan = Math.max(20, yMax - yMin);
+      for (let i = 0; i < (em.count ?? 22); i++) {
+        const pair = pal[i % pal.length];
+        const cA = Array.isArray(pair) ? pair[0] : pair;
+        const cB = Array.isArray(pair) ? (pair[1] ?? cA) : pair;
+        const cC = Array.isArray(pair) ? (pair[2] ?? cB) : pair;
+        FALLING.push({
+          lane: i % 3 === 0 ? 'front' : 'back',
+          x0: fr() * (VW + 140) - 70, y0: fr() * ySpan,
+          yMin, ySpan,
+          vy: (em.speedY ?? 28) * (0.65 + fr() * 0.7),
+          vx: (em.windX ?? -24) * (0.7 + fr() * 0.6),
+          swayAmp: (em.swayAmp ?? 22) * (0.6 + fr() * 0.8),
+          swayFreq: 1.0 + fr() * 1.4,
+          spinFreq: (fr() > 0.5 ? 1 : -1) * (1.1 + fr() * 1.7),
+          tumbleFreq: 1.4 + fr() * 1.5,
+          phase: fr() * 6.28,
+          scale: (em.scale ?? 1) * (0.6 + fr() * 0.65),
+          svg: shapes[i % shapes.length].replace(/FILL_A|CURRENT/g, cA).replace(/FILL_B/g, cB).replace(/FILL_C/g, cC),
+        });
+      }
+    }
+
+    const FIREFLIES = [];
+    for (const em of (BLUEPRINT.scene.emitters ?? []).filter(e => e.type === 'fireflies')) {
+      const fr = makeRng(em.seed ?? 901);
+      const xMin = em.xMin ?? 60, xMax = em.xMax ?? (VW - 60);
+      const yMin = em.yMin ?? (VH * 0.35), yMax = em.yMax ?? (VH * 0.92);
+      for (let i = 0; i < (em.count ?? 18); i++) {
+        FIREFLIES.push({
+          bx: xMin + fr() * (xMax - xMin),
+          by: yMin + fr() * (yMax - yMin),
+          ph: fr() * 6.28,
+          color: em.color ?? '#ffe985',
+        });
+      }
+    }
+
+    function resolvePartId(rigObj, bone) {
+      const rs = rigStates[rigObj.id];
+      if (bone.variantGroup && bone.variants) {
+        const sel = rs.variants[bone.variantGroup];
+        if (sel && bone.variants[sel]) return bone.variants[sel];
+      }
+      return bone.part;
+    }
+
+    function computeWorld(rigObj) {
+      const rs = rigStates[rigObj.id], world = {};
+      for (const b of rigObj.bones) {
+        const localDeg = rs.angles[b.id] ?? 0;
+        if (b.parent === null) world[b.id] = { x: rs.rootX, y: rs.rootY, deg: localDeg };
+        else {
+          const pw = world[b.parent], pb = rigObj.boneById[b.parent];
+          const pp = PART_BY_ID[resolvePartId(rigObj, pb)];
+          const anc = pp?.anchors?.[b.attach] ?? pp?.pivot ?? [0, 0];
+          const piv = pp?.pivot ?? [0, 0];
+          const psc = rs.scales?.[b.parent] ?? { x: 1, y: 1 };
+          const lx = (anc[0] - piv[0]) * rs.scale * psc.x;
+          const ly = (anc[1] - piv[1]) * rs.scale * psc.y;
+          const r = pw.deg * DEG, c = Math.cos(r), s = Math.sin(r);
+          world[b.id] = { x: pw.x + lx * c - ly * s, y: pw.y + lx * s + ly * c, deg: pw.deg + localDeg };
+        }
+      }
+      return world;
+    }
+
+    // Precompute rest-pose world offsets relative to rootPos for analytic IK gait & ground-lock
+    const REST_WORLD = {};
+    for (const r of RIGS) {
+      const w = computeWorld(r);
+      const rx = rigStates[r.id].rootX, ry = rigStates[r.id].rootY;
+      REST_WORLD[r.id] = {};
+      for (const b of r.bones) {
+        REST_WORLD[r.id][b.id] = { dx: w[b.id].x - rx, dy: w[b.id].y - ry, deg: w[b.id].deg };
+      }
+    }
+
+    function wrapDeg180(d) {
+      let x = d;
+      while (x > 180) x -= 360;
+      while (x < -180) x += 360;
+      return x;
+    }
+
+    function solveIk(rigObj, chain, target) {
+      const rs = rigStates[rigObj.id], world = computeWorld(rigObj);
+      const uB = rigObj.boneById[chain.upper], lB = rigObj.boneById[chain.lower];
+      const uP = PART_BY_ID[resolvePartId(rigObj, uB)], lP = PART_BY_ID[resolvePartId(rigObj, lB)];
+      const uA = uP.anchors[lB.attach], lA = lP.anchors[rigObj.boneById[chain.end].attach];
+      const L1 = Math.hypot(uA[0] - uP.pivot[0], uA[1] - uP.pivot[1]) * rs.scale;
+      const L2 = Math.hypot(lA[0] - lP.pivot[0], lA[1] - lP.pivot[1]) * rs.scale;
+      const off = Math.atan2(uA[1] - uP.pivot[1], uA[0] - uP.pivot[0]);
+      const org = world[chain.upper];
+      const pDeg = uB.parent != null && world[uB.parent] ? world[uB.parent].deg : 0;
+      const dx = target.x - org.x, dy = target.y - org.y;
+      const d = clamp(Math.hypot(dx, dy), Math.abs(L1 - L2) + 1, L1 + L2 - 0.5);
+      const aim = Math.atan2(dy, dx);
+      const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+      const b = Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
+      const bend = chain.bend ?? 1;
+      const uLocal = wrapDeg180((aim + bend * a - off) * RAD - pDeg);
+      rs.angles[chain.upper] = clamp(uLocal, uB.limits.min, uB.limits.max);
+      rs.angles[chain.lower] = clamp(-bend * (Math.PI - b) * RAD, lB.limits.min, lB.limits.max);
+    }
+
+    function computeBoneScale(sw, t) {
+      if (!sw) return { x: 1, y: 1 };
+      const s = Math.sin(t * (sw.freq ?? 2) + (sw.phase ?? 0));
+      const ax = sw.ampX ?? sw.amp ?? 0;
+      const ay = sw.ampY ?? (sw.amp != null ? -sw.amp : 0);
+      return { x: clamp(1 + s * ax, 0.55, 1.55), y: clamp(1 + s * ay, 0.55, 1.55) };
+    }
+
+    function computeSpinAngle(sp, baseDeg, t) {
+      const speed = typeof sp === 'number' ? sp : (sp.speed ?? 90);
+      const off = (typeof sp === 'object' && sp.offset != null) ? sp.offset : baseDeg;
+      return (((off + t * speed) % 360) + 540) % 360 - 180;
+    }
+
+    // Analytic 2-bone IK Gait (adapted from MIT K-ulucay/spine_anim_mcp):
+    // 2x vertical hip bob + 60% ground-locked stance + 40% lifted swing arc + heel/toe foot leveling
+    function applyGaitToRig(rigObj, gait, sampleT, travelDir) {
+      if (!gait) return;
+      const rs = rigStates[rigObj.id];
+      const yBase = rs.rootY;
+      const freq = gait.freq ?? 1.0;
+      const stride = gait.stride ?? 34;
+      const lift = gait.lift ?? 16;
+      const bob = gait.bob ?? 5;
+      const stanceFrac = clamp(gait.stanceFrac ?? 0.6, 0.25, 0.85);
+      const omegaT = 2 * Math.PI * sampleT * freq + (gait.phase ?? 0);
+
+      // 2x vertical hip bob per full stride cycle (contact low at u=0, 0.5; passing high at u=0.25, 0.75)
+      rs.rootY = yBase - bob * Math.abs(Math.sin(omegaT));
+      if (gait.swayX) rs.rootX += Math.sin(omegaT) * gait.swayX;
+
+      if (gait.spineBone && rigObj.boneById[gait.spineBone]) {
+        const sb = rigObj.boneById[gait.spineBone];
+        rs.angles[sb.id] = clamp((rs.angles[sb.id] ?? 0) + Math.sin(omegaT) * (gait.spineSway ?? 3.2), sb.limits.min, sb.limits.max);
+      }
+      if (gait.headBone && rigObj.boneById[gait.headBone]) {
+        const hb = rigObj.boneById[gait.headBone];
+        rs.angles[hb.id] = clamp((rs.angles[hb.id] ?? 0) - Math.sin(omegaT * 2 - 0.45) * (gait.headBob ?? 2.4), hb.limits.min, hb.limits.max);
+      }
+      for (const swArm of gait.swingBones ?? []) {
+        const ab = rigObj.boneById[swArm.bone];
+        if (!ab) continue;
+        const aPh = 2 * Math.PI * (sampleT * freq + (swArm.phase ?? 0));
+        rs.angles[ab.id] = clamp((rs.angles[ab.id] ?? 0) + Math.sin(aPh) * (swArm.amp ?? 18), ab.limits.min, ab.limits.max);
+      }
+
+      const scaleRatio = rs.scale / (rigObj.scale ?? 1);
+      for (const chSpec of gait.chains ?? []) {
+        const chain = rigObj.ik?.[chSpec.ik];
+        const restEnd = chain ? REST_WORLD[rigObj.id]?.[chain.end] : null;
+        if (!chain || !restEnd) continue;
+        const u = (((sampleT * freq + (chSpec.phase ?? 0)) % 1) + 1) % 1;
+        const chStride = chSpec.stride ?? stride;
+        const chLift = chSpec.lift ?? lift;
+        const dir = chSpec.dir ?? gait.dir ?? travelDir ?? 1;
+        const baseEndX = rs.rootX + restEnd.dx * scaleRatio + (chSpec.offsetX ?? 0);
+        const groundEndY = chSpec.groundY ?? gait.groundY ?? (yBase + restEnd.dy * scaleRatio + (chSpec.offsetY ?? 0));
+        const toeOff = chSpec.toeOff ?? 12;
+        const heelStrike = chSpec.heelStrike ?? -8;
+
+        let dxStride = 0, dyLift = 0, footPitch = 0;
+        if (u < stanceFrac) {
+          const su = u / stanceFrac;
+          dxStride = dir * lerp(chStride * 0.5, -chStride * 0.5, su);
+          dyLift = 0;
+          footPitch = su < 0.2 ? lerp(heelStrike, 0, su / 0.2) : (su > 0.72 ? lerp(0, toeOff, (su - 0.72) / 0.28) : 0);
+        } else {
+          const wu = (u - stanceFrac) / (1 - stanceFrac);
+          const easeW = 0.5 - 0.5 * Math.cos(wu * Math.PI);
+          dxStride = dir * lerp(-chStride * 0.5, chStride * 0.5, easeW);
+          dyLift = -Math.sin(wu * Math.PI) * chLift;
+          footPitch = lerp(toeOff, heelStrike, smoothstep(wu));
+        }
+
+        solveIk(rigObj, chain, { x: baseEndX + dxStride, y: groundEndY + dyLift });
+        const footId = chSpec.footBone ?? chain.end;
+        const fBone = footId ? rigObj.boneById[footId] : null;
+        if (fBone && fBone.parent && REST_WORLD[rigObj.id]?.[footId]) {
+          const wNow = computeWorld(rigObj);
+          const restFootDeg = REST_WORLD[rigObj.id][footId].deg;
+          const targetLocal = wrapDeg180((restFootDeg + dir * footPitch) - wNow[fBone.parent].deg);
+          rs.angles[footId] = clamp(targetLocal, fBone.limits.min, fBone.limits.max);
+        }
+      }
+    }
+
+    function applyPhaseToRig(rigObj, spec, localT, t) {
+      const rs = rigStates[rigObj.id];
+      const baseX = rigObj.rootPos?.x ?? VW * 0.5;
+      const baseY = rigObj.rootPos?.y ?? VH * 0.72;
+      const baseFacing = rigObj.facing ?? 1;
+      rs.breath = Math.sin(t * 2.3 + rigObj.id.length * 0.7) * 0.015;
+      if (!spec) {
+        rs.rootX = baseX;
+        rs.rootY = baseY;
+        rs.facing = baseFacing * rs.userFlip;
+        rs.emote = null;
+        for (const b of rigObj.bones) {
+          rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+          rs.scales[b.id] = { x: 1, y: 1 };
+        }
+        return;
+      }
+      const e = spec.ease === 'back' ? easeOutBack(localT) : (spec.ease === 'linear' ? localT : smoothstep(localT));
+      rs.rootX = Array.isArray(spec.rootX)
+        ? lerp(spec.rootX[0], spec.rootX[1], e)
+        : (typeof spec.rootX === 'number' ? spec.rootX : baseX);
+      const yLin = Array.isArray(spec.rootY)
+        ? lerp(spec.rootY[0], spec.rootY[1], e)
+        : (typeof spec.rootY === 'number' ? spec.rootY : baseY);
+      rs.rootY = yLin - (spec.arcY ? Math.sin(localT * Math.PI) * spec.arcY : 0);
+      rs.facing = (spec.facing ?? baseFacing) * rs.userFlip;
+      rs.emote = spec.emote ?? null;
+      for (const b of rigObj.bones) {
+        const k = spec.bones?.[b.id];
+        let deg = Array.isArray(k) ? lerp(k[0], k[1], e) : (typeof k === 'number' ? k : (b.rest ?? 0));
+        const sp = spec.spins?.[b.id];
+        if (sp != null) deg = computeSpinAngle(sp, deg, t);
+        const wv = spec.waves?.[b.id];
+        if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
+        rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
+        rs.scales[b.id] = computeBoneScale(spec.scaleWaves?.[b.id], t);
+      }
+      if (spec.gait) {
+        let travelDir = 1;
+        if (Array.isArray(spec.rootX) && Math.abs(spec.rootX[1] - spec.rootX[0]) > 1) {
+          travelDir = Math.sign((spec.rootX[1] - spec.rootX[0]) * (spec.facing ?? baseFacing)) || 1;
+        }
+        applyGaitToRig(rigObj, spec.gait, t, travelDir);
+      }
+    }
+
+    function applyHarmonicToRig(r, hm, t) {
+      const rs = rigStates[r.id];
+      rs.breath = Math.sin(t * 2.2 + r.id.length * 0.5) * 0.016;
+      if (!hm) {
+        rs.rootX = r.rootPos?.x ?? VW * 0.5;
+        rs.rootY = r.rootPos?.y ?? VH * 0.7;
+        rs.facing = (r.facing ?? 1) * rs.userFlip;
+        rs.emote = null;
+        for (const b of r.bones) {
+          rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+          rs.scales[b.id] = { x: 1, y: 1 };
+        }
+        return;
+      }
+      rs.rootX = (r.rootPos?.x ?? VW * 0.5) + (hm.rootWaveX ? Math.sin(t * hm.rootWaveX.freq + (hm.rootWaveX.phase ?? 0)) * hm.rootWaveX.amp : 0);
+      rs.rootY = (r.rootPos?.y ?? VH * 0.7) + (hm.rootWaveY ? Math.sin(t * hm.rootWaveY.freq + (hm.rootWaveY.phase ?? 0)) * hm.rootWaveY.amp : 0);
+      rs.facing = (hm.facing ?? r.facing ?? 1) * rs.userFlip;
+      rs.emote = hm.emote ?? null;
+      for (const b of r.bones) {
+        let deg = hm.base?.[b.id] ?? b.rest ?? 0;
+        const sp = hm.spins?.[b.id];
+        if (sp != null) deg = computeSpinAngle(sp, deg, t);
+        const wv = hm.waves?.[b.id];
+        if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
+        rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
+        rs.scales[b.id] = computeBoneScale(hm.scaleWaves?.[b.id], t);
+      }
+      if (hm.gait) applyGaitToRig(r, hm.gait, t, 1);
+    }
+
+    function evalSingleRigAt(m, r, sampleT) {
+      if (m.type === 'cycle' && Array.isArray(m.phases) && m.phases.length > 0) {
+        const period = m.period ?? 10;
+        const u = ((sampleT % period) + period) % period / period;
+        let phase = m.phases[m.phases.length - 1], lt = 0;
+        for (const ph of m.phases) {
+          if (u >= ph.from && u <= ph.to) { phase = ph; lt = (u - ph.from) / Math.max(0.0001, ph.to - ph.from); break; }
+        }
+        const spec = phase.rigs ? phase.rigs[r.id] : (r.id === RIGS[0].id ? phase : null);
+        applyPhaseToRig(r, spec, lt, sampleT);
+      } else if (m.type === 'harmonic') {
+        const hm = m.rigs ? m.rigs[r.id] : (r.id === RIGS[0].id ? m : null);
+        applyHarmonicToRig(r, hm, sampleT);
+      }
+    }
+
+    // Stateless closed-form secondary motion (followThrough): samples t - lag vs t with zero mutable state!
+    function applyFollowThroughToRig(m, r, t) {
+      const ftBones = r.bones.filter(b => b.followThrough);
+      if (ftBones.length === 0) return;
+      const rs = rigStates[r.id];
+      const snapNow = {
+        rootX: rs.rootX,
+        rootY: rs.rootY,
+        facing: rs.facing,
+        breath: rs.breath,
+        emote: rs.emote,
+        angles: { ...rs.angles },
+        scales: Object.fromEntries(Object.entries(rs.scales).map(([k, v]) => [k, { ...v }])),
+      };
+      const worldNow = computeWorld(r);
+      const deltas = {};
+      for (const b of ftBones) {
+        const ft = b.followThrough;
+        const lag = clamp(ft.lag ?? 0.14, 0.02, 0.6);
+        evalSingleRigAt(m, r, t - lag);
+        const worldLag = computeWorld(r);
+        const dx = snapNow.rootX - rs.rootX;
+        const dy = snapNow.rootY - rs.rootY;
+        const vx = Math.abs(dx) < 160 ? (dx / lag) * snapNow.facing : 0;
+        const vy = Math.abs(dy) < 120 ? (dy / lag) : 0;
+        const pDegNow = b.parent && worldNow[b.parent] ? worldNow[b.parent].deg : snapNow.angles[b.id];
+        const pDegLag = b.parent && worldLag[b.parent] ? worldLag[b.parent].deg : rs.angles[b.id];
+        const dParent = wrapDeg180(pDegLag - pDegNow);
+        const velGain = ft.velGain ?? 0.16;
+        const vertGain = ft.vertGain ?? (velGain * 0.35);
+        const rotGain = ft.rotGain ?? 0.45;
+        deltas[b.id] = -vx * velGain + vy * vertGain + dParent * rotGain;
+      }
+      rs.rootX = snapNow.rootX;
+      rs.rootY = snapNow.rootY;
+      rs.facing = snapNow.facing;
+      rs.breath = snapNow.breath;
+      rs.emote = snapNow.emote;
+      rs.scales = snapNow.scales;
+      rs.angles = snapNow.angles;
+      for (const b of ftBones) {
+        rs.angles[b.id] = clamp((rs.angles[b.id] ?? 0) + (deltas[b.id] ?? 0), b.limits.min, b.limits.max);
+      }
+    }
+
+    function quantizeCharTime(t) {
+      const charFps = Number(BLUEPRINT.scene?.cadence?.charFps ?? 0);
+      return charFps > 0 ? Math.floor(t * charFps) / charFps : t;
+    }
+
+    // Deterministic hand-held paper/rod tremor (zero mutable state, pure function of quantized evalT)
+    function applyTremorToRig(r, evalT) {
+      if (!r.tremor) return;
+      const rs = rigStates[r.id];
+      const seedOff = r.id.length * 1.37;
+      const ax = r.tremor.ampX ?? 0;
+      const ay = r.tremor.ampY ?? 0;
+      const ad = r.tremor.ampDeg ?? 0;
+      if (ax > 0) rs.rootX += Math.sin(evalT * 7.3 + seedOff) * ax;
+      if (ay > 0) rs.rootY += Math.cos(evalT * 5.9 + seedOff * 1.4) * ay;
+      if (ad > 0 && r.bones.length > 0) {
+        const rb = r.bones[0];
+        rs.angles[rb.id] = clamp((rs.angles[rb.id] ?? 0) + Math.sin(evalT * 6.4 + seedOff * 0.8) * ad, rb.limits.min, rb.limits.max);
+      }
+    }
+
+    function evalMotion(t) {
+      const m = (BLUEPRINT.motions ?? []).find(x => x.id === state.preset);
+      if (!m) return;
+      const evalT = quantizeCharTime(t);
+      state.vfx.glow = null; state.vfx.burst = null; state.vfx.particles = null;
+      if (m.type === 'cycle' && Array.isArray(m.phases) && m.phases.length > 0) {
+        const period = m.period ?? 10;
+        const u = ((evalT % period) + period) % period / period;
+        let phase = m.phases[m.phases.length - 1], lt = 0;
+        for (const ph of m.phases) {
+          if (u >= ph.from && u <= ph.to) { phase = ph; lt = (u - ph.from) / Math.max(0.0001, ph.to - ph.from); break; }
+        }
+        if (phase.label) document.getElementById('phaseBadge').textContent = phase.label;
+        if (phase.rigs) for (const r of RIGS) applyPhaseToRig(r, phase.rigs[r.id], lt, evalT);
+        else {
+          applyPhaseToRig(RIGS[0], phase, lt, evalT);
+          for (let i = 1; i < RIGS.length; i++) applyPhaseToRig(RIGS[i], null, lt, evalT);
+        }
+        for (const r of RIGS) {
+          applyFollowThroughToRig(m, r, evalT);
+          applyTremorToRig(r, evalT);
+        }
+        const v = phase.vfx;
+        if (v) {
+          const glowSpec = v.glow ?? v.warmGlow;
+          if (glowSpec) {
+            const intensity = Math.sin(lt * Math.PI) * (glowSpec.intensity ?? 1);
+            if (intensity > 0.04) {
+              state.vfx.glow = {
+                intensity,
+                x: glowSpec.x ?? VW * 0.55,
+                y: glowSpec.y ?? VH * 0.72,
+                r: glowSpec.r ?? 120,
+                color: glowSpec.color ?? BLUEPRINT.scene.lighting?.focalGlow?.color ?? '#fff0ad',
+                midColor: glowSpec.midColor ?? glowSpec.color ?? BLUEPRINT.scene.lighting?.focalGlow?.midColor ?? '#f7a854',
+              };
+            }
+          }
+          const burstSpec = v.burst ?? (v.splashAtY != null ? { y: v.splashAtY, type: 'splash' } : null);
+          if (burstSpec) {
+            const targetRig = rigStates[burstSpec.rigId] ?? rigStates[RIGS[0].id];
+            const bMode = burstSpec.mode ?? ((burstSpec.y != null || burstSpec.triggerY != null || BLUEPRINT.scene.waterlineY != null) ? 'proximity' : 'phase');
+            let bIntensity = 0;
+            const bx = burstSpec.x ?? targetRig.rootX;
+            let by = burstSpec.y ?? targetRig.rootY;
+            if (bMode === 'phase') {
+              bIntensity = Math.sin(lt * Math.PI) * (burstSpec.intensity ?? 1);
+            } else {
+              const triggerY = burstSpec.triggerY ?? burstSpec.y ?? BLUEPRINT.scene.waterlineY ?? VH * 0.74;
+              const radius = burstSpec.radius ?? 90;
+              const d = Math.abs(targetRig.rootY - triggerY);
+              if (d < radius) bIntensity = (1 - d / radius) * (burstSpec.intensity ?? 1);
+              by = burstSpec.y ?? triggerY;
+            }
+            if (bIntensity > 0.04) {
+              state.vfx.burst = {
+                intensity: bIntensity,
+                x: bx,
+                y: by,
+                type: burstSpec.type ?? 'splash',
+                svg: burstSpec.svg ?? null,
+                color: burstSpec.color ?? '#d4f1ff',
+                highlightColor: burstSpec.highlightColor ?? '#ffffff',
+                scale: burstSpec.scale ?? 1,
+              };
+            }
+          }
+          const partSpec = v.particles ?? (v.bubbles ? { intensity: v.bubbles } : null);
+          if (partSpec) {
+            const pObj = typeof partSpec === 'number' ? { intensity: partSpec } : partSpec;
+            const targetRig = rigStates[pObj.rigId] ?? rigStates[RIGS[0].id];
+            const intensity = Math.sin(lt * Math.PI) * (pObj.intensity ?? 1);
+            if (intensity > 0.05) {
+              state.vfx.particles = {
+                intensity,
+                x: pObj.x ?? targetRig.rootX,
+                baseY: pObj.baseY ?? (BLUEPRINT.scene.waterlineY != null ? BLUEPRINT.scene.waterlineY + 32 : targetRig.rootY),
+                count: pObj.count ?? 6,
+                color: pObj.color ?? '#c8efff',
+                highlightColor: pObj.highlightColor ?? '#ffffff',
+                shapeSvg: pObj.shapeSvg ?? null,
+                dir: pObj.dir ?? -1,
+                spreadX: pObj.spreadX ?? 13,
+                riseHeight: pObj.riseHeight ?? 85,
+              };
+            }
+          }
+        }
+      } else if (m.type === 'harmonic') {
+        if (m.label) document.getElementById('phaseBadge').textContent = m.label;
+        if (m.rigs) for (const r of RIGS) applyHarmonicToRig(r, m.rigs[r.id], evalT);
+        else {
+          applyHarmonicToRig(RIGS[0], m, evalT);
+          for (let i = 1; i < RIGS.length; i++) applyHarmonicToRig(RIGS[i], null, evalT);
+        }
+        for (const r of RIGS) {
+          applyFollowThroughToRig(m, r, evalT);
+          applyTremorToRig(r, evalT);
+        }
+      }
+    }
+
+    function renderClusters(list, t, px, py) {
+      return list.map(cl => {
+        const dx = px * cl.parallax, dy = py * cl.parallax * 0.7;
+        let inner = '';
+        for (const it of cl.items) {
+          const w = cl.sway ? Math.sin(t * 1.4 * state.ambientAmp + it.ph) * cl.sway : 0;
+          inner += `<g transform="translate(${it.x.toFixed(1)},${it.y.toFixed(1)}) rotate(${(it.rot + w).toFixed(1)}) scale(${it.sc.toFixed(2)})">${it.svg}</g>`;
+        }
+        return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" filter="url(#${cl.filter})">${inner}</g>`;
+      }).join('');
+    }
+
+    function renderAll(t, px, py) {
+      const sc = BLUEPRINT.scene;
+      const driftAmp = sc.cadence?.cameraDrift ?? 0.16;
+      const epx = px + (state.camBreath ? Math.sin(t * 0.42) * driftAmp : 0);
+      const epy = py + (state.camBreath ? Math.cos(t * 0.34) * (driftAmp * 0.625) : 0);
+
+      // 1. Sky + stars (or clean high-contrast paper backdrop in silhouette audit mode)
+      if (state.silhouette) {
+        document.getElementById('layerSky').innerHTML = `<rect x="-40" y="-40" width="${VW + 80}" height="${VH + 80}" fill="#f4efe6"/>`;
+        for (const id of ['layerFocalGlow', 'layerAmbientBack', 'layerCelestial', 'layerLightShafts', 'layerMistMid', 'layerAtmosphereFore', 'layerBackScenery', 'layerFrontScenery', 'layerClustersBack', 'layerClustersFront', 'layerSwarmBack', 'layerSwarmFront', 'layerFallingBack', 'layerFallingFront', 'layerGroundShadows', 'layerVfx', 'layerOverlayProps']) {
+          document.getElementById(id).innerHTML = '';
+        }
+        const fEl = document.getElementById('layerFrame');
+        const cEl = document.getElementById('layerCorners');
+        if (fEl) fEl.style.display = 'none';
+        if (cEl) cEl.style.display = 'none';
+      } else {
+        let sky = sc.skySvg ?? `<rect x="-40" y="-40" width="${VW + 80}" height="${VH + 80}" fill="${sc.bgColor ?? '#0b1326'}"/>`;
+        if (STARS.length) {
+          sky += `<g transform="translate(${(epx * 4).toFixed(1)},${(epy * 4).toFixed(1)})">`;
+          for (const s of STARS) sky += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${s.r.toFixed(2)}" fill="${sc.stars.color ?? '#fff'}" opacity="${clamp(s.op + Math.sin(t * s.freq + s.phase) * 0.25, 0.12, 1).toFixed(2)}"/>`;
+          sky += '</g>';
+        }
+        document.getElementById('layerSky').innerHTML = sky;
+
+        // 2. Data-driven Backlit Focal Glow (Shadow-Box Light-Box Heart!)
+        document.getElementById('layerFocalGlow').innerHTML = (state.showAtmos && fg)
+          ? `<circle cx="${(fg.x + epx * 6).toFixed(1)}" cy="${(fg.y + epy * 5).toFixed(1)}" r="${(fg.r ?? 260) * (1 + Math.sin(t * 1.1) * 0.03)}" fill="url(#autoFocalGlow)"/>` : '';
+
+        // 3. Ambient emitters (meteor & pre-computed fireflies)
+        let amb = '';
+        if (state.showAmbient) {
+          for (const em of (sc.emitters ?? [])) {
+            if (em.type === 'meteor') {
+              const loc = (t * state.ambientAmp + (em.offset ?? 0)) % (em.period ?? 6);
+              if (loc <= (em.dur ?? 1)) {
+                const p = loc / (em.dur ?? 1), ease = 1 - Math.pow(1 - p, 2);
+                const hx = em.x0 + em.dx * ease + epx * 6, hy = em.y0 + em.dy * ease + epy * 6;
+                const ang = Math.atan2(em.dy, em.dx) * RAD;
+                const fade = p < 0.2 ? p / 0.2 : (p > 0.72 ? (1 - p) / 0.28 : 1);
+                const len = (em.len ?? 110) * Math.sin(p * Math.PI);
+                amb += `<g transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${fade.toFixed(2)}"><polygon points="${(-len).toFixed(1)},0 0,-2.4 0,2.4" fill="url(#${em.gradId ?? 'meteorTrail'})"/><path d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" fill="${em.color ?? '#fff7c2'}" filter="url(#softGlow)"/></g>`;
+              }
+            }
+          }
+          for (const f of FIREFLIES) {
+            const fx = f.bx + Math.sin(t * 0.7 * state.ambientAmp + f.ph) * 24 + epx * 13;
+            const fy = f.by + Math.cos(t * 1.0 * state.ambientAmp + f.ph) * 14 + epy * 9;
+            const g = 0.22 + 0.78 * Math.pow((Math.sin(t * 2.1 + f.ph) + 1) * 0.5, 2);
+            const r = 1.6 + g * 2.0;
+            amb += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(r * 3.1).toFixed(1)}" fill="${f.color}" opacity="${(g * 0.16).toFixed(2)}"/><circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(r * 1.7).toFixed(1)}" fill="${f.color}" opacity="${(g * 0.34).toFixed(2)}"/><circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${r.toFixed(1)}" fill="#ffffff" opacity="${(g * 0.92).toFixed(2)}"/>`;
+          }
+        }
+        document.getElementById('layerAmbientBack').innerHTML = amb;
+
+        // 4. Celestial Rig (Concentric Moon/Sun + Optional Crescent!)
+        let cel = '';
+        if (sc.celestial) {
+          const c = sc.celestial, pulse = Math.sin(t * 1.2 * state.ambientAmp) * 0.028;
+          cel += `<g transform="translate(${(c.x + epx * 7).toFixed(1)},${(c.y + epy * 6).toFixed(1)})">`;
+          (c.rings ?? []).forEach((rg, i) => {
+            cel += `<circle cx="${(epx * i * 1.2).toFixed(1)}" cy="${(epy * i * 1.2).toFixed(1)}" r="${(rg.r * (1 + pulse * (0.6 + i * 0.14))).toFixed(1)}" fill="${rg.fill}" filter="url(#shadowMed)"/>`;
+          });
+          cel += `<g transform="translate(${(epx * 7).toFixed(1)},${(epy * 6).toFixed(1)})">${c.coreSvg ?? ''}</g>`;
+          if (c.orbitSvg) cel += `<g transform="rotate(${(t * (c.orbitSpeed ?? 10) * state.ambientAmp).toFixed(1)})">${c.orbitSvg}</g>`;
+          cel += '</g>';
+        }
+        document.getElementById('layerCelestial').innerHTML = cel;
+
+        // 5. Atmosphere (Shafts, Mist, Vignette)
+        const atm = sc.atmosphere ?? {};
+        document.getElementById('layerLightShafts').innerHTML = state.showAtmos && atm.lightShaftsSvg
+          ? `<g transform="translate(${(epx * 8).toFixed(1)},${(epy * 5).toFixed(1)})" opacity="${(0.84 + Math.sin(t * 0.9) * 0.12).toFixed(2)}">${atm.lightShaftsSvg}</g>` : '';
+        document.getElementById('layerMistMid').innerHTML = state.showAtmos
+          ? (atm.midMistSvg ?? (mst ? `<rect x="-40" y="${mst.y ?? VH * 0.52}" width="${VW + 80}" height="${mst.height ?? VH * 0.32}" fill="url(#autoMistGrad)"/>` : '')) : '';
+        document.getElementById('layerAtmosphereFore').innerHTML = state.showAtmos
+          ? (atm.foregroundGlowSvg ?? `<rect x="0" y="0" width="${VW}" height="${VH}" fill="url(#autoVignette)" pointer-events="none"/>`) : '';
+
+        // 6. Back & Front Multiplane Scenery + Procedural Botanical/Motif Clusters!
+        const renderPlanes = (list) => (list ?? []).map(pl => {
+          const dx = epx * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.4) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
+          const dy = epy * ((pl.parallax ?? 12) * 0.7);
+          return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
+        }).join('');
+        document.getElementById('layerBackScenery').innerHTML = renderPlanes(sc.backLayers);
+        document.getElementById('layerFrontScenery').innerHTML = renderPlanes(sc.frontLayers);
+        document.getElementById('layerClustersBack').innerHTML = renderClusters(CLUSTERS.backItems, t, epx, epy);
+        document.getElementById('layerClustersFront').innerHTML = renderClusters(CLUSTERS.frontItems, t, epx, epy);
+
+        // 7. Perspective Swarms
+        let swB = '', swF = '';
+        if (state.showSwarm && Array.isArray(sc.swarms)) {
+          const span = VW + 120;
+          for (const sw of sc.swarms) {
+            const rawX = (sw.x0 + (sw.dir ?? 1) * t * (sw.speed ?? 50) * state.ambientAmp) % span;
+            const x = (rawX < -60 ? rawX + span : rawX) - 60;
+            let y = sw.y0 + Math.sin(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * (sw.amp ?? 12);
+            let pitch = Math.cos(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * 10;
+            if (sw.jump) {
+              const jt = (t * state.ambientAmp + (sw.jumpOffset ?? 0)) % (sw.jumpPeriod ?? 6);
+              if (jt < 1.4) { const u = jt / 1.4; y -= Math.sin(u * Math.PI) * (sw.jumpHeight ?? 70); pitch = -Math.cos(u * Math.PI) * 40; }
+            }
+            const wag = Math.sin(t * (sw.wagFreq ?? 12) * state.ambientAmp + (sw.phase ?? 0)) * (sw.wagAmp ?? 28);
+            const ox = epx * (sw.lane === 'front' ? 19 : 12), oy = epy * (sw.lane === 'front' ? 12 : 8);
+            const item = `<g transform="translate(${(x + ox).toFixed(1)},${(y + oy).toFixed(1)}) scale(${(sw.dir ?? 1) * (sw.scale ?? 1)},${sw.scale ?? 1}) rotate(${pitch.toFixed(1)})" filter="url(#shadowSoft)"><g transform="translate(${sw.tailPivotX ?? -12},${sw.tailPivotY ?? 0}) rotate(${wag.toFixed(1)})">${sw.tailSvg}</g>${sw.bodySvg}</g>`;
+            if (sw.lane === 'front') swF += item; else swB += item;
+          }
+        }
+        document.getElementById('layerSwarmBack').innerHTML = swB;
+        document.getElementById('layerSwarmFront').innerHTML = swF;
+
+        // 8. Falling / Rising Particles (Leaves, Petals, Snow, Rising Bubbles with optional yMin/yMax zone!)
+        let fB = '', fF = '';
+        if (state.showAmbient && FALLING.length > 0) {
+          const sX = VW + 140;
+          for (const p of FALLING) {
+            const rY = ((p.y0 + t * p.vy * state.ambientAmp) % p.ySpan + p.ySpan) % p.ySpan;
+            const y = p.yMin + rY;
+            const rX = ((p.x0 + t * p.vx * state.ambientAmp + Math.sin(t * p.swayFreq + p.phase) * p.swayAmp) % sX + sX) % sX;
+            const x = rX - 70;
+            const rot = (t * p.spinFreq * 42 + p.phase * 40) % 360;
+            const fx = 0.45 + 0.55 * Math.cos(t * p.tumbleFreq + p.phase);
+            const pm = p.lane === 'front' ? 21 : 12;
+            const item = `<g transform="translate(${(x + epx * pm).toFixed(1)},${(y + epy * pm * 0.7).toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(p.scale * fx).toFixed(2)},${p.scale.toFixed(2)})" filter="url(#shadowSoft)">${p.svg}</g>`;
+            if (p.lane === 'front') fF += item; else fB += item;
+          }
+        }
+        document.getElementById('layerFallingBack').innerHTML = fB;
+        document.getElementById('layerFallingFront').innerHTML = fF;
+      }
+
+      // 9. Ground Contact Shadows + Unified Z-Interleaved Mid-Stage (Rigs + midLayers + mid Clusters + mid Props)
+      const renderPlanesMid = (list) => (list ?? []).map(pl => {
+        const dx = epx * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.4) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
+        const dy = epy * ((pl.parallax ?? 12) * 0.7);
+        return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
+      }).join('');
+      const renderOverlayProp = (op) => {
+        const ox = op.x + epx * (op.parallax ?? 18) + Math.sin(t * (op.freqX ?? 0.85) * state.ambientAmp) * (op.ampX ?? 4);
+        const oy = op.y + epy * ((op.parallax ?? 18) * 0.75) + Math.cos(t * (op.freqY ?? 1.05) * state.ambientAmp) * (op.ampY ?? 3);
+        const tilt = Math.sin(t * (op.freqX ?? 0.9) * state.ambientAmp) * (op.tiltAmp ?? 3.4);
+        return `<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)}) scale(${op.scale ?? 1}) rotate(${tilt.toFixed(2)})" filter="url(#shadowDeep)">${op.svg}</g>`;
+      };
+
+      let gs = '', diag = '', ik = '';
+      const stageItems = [];
+      if (!state.silhouette) {
+        for (const pl of sc.midLayers ?? []) {
+          stageItems.push({ z: pl.z ?? 0, html: renderPlanesMid([pl]) });
+        }
+        for (const cl of CLUSTERS.midItems ?? []) {
+          stageItems.push({ z: cl.z ?? 0, html: renderClusters([cl], t, epx, epy) });
+        }
+        for (const op of (sc.overlayProps ?? []).filter(o => o.lane === 'mid')) {
+          stageItems.push({ z: op.z ?? 0, html: renderOverlayProp(op) });
+        }
+      }
+
+      const computeBlinkScaleY = (rigObj, sampleT) => {
+        if (rigObj.blink === false) return 1;
+        const bl = typeof rigObj.blink === 'object' && rigObj.blink ? rigObj.blink : null;
+        const period = Math.max(0.6, bl?.period ?? 3.8);
+        const dur = clamp(bl?.duration ?? 0.18, 0.06, period * 0.5);
+        const phase = bl?.phase ?? (rigObj.id.length * 0.67);
+        const loc = (((sampleT + phase) % period) + period) % period;
+        if (loc >= dur) return 1;
+        return clamp(1 - 0.92 * Math.sin((loc / dur) * Math.PI), 0.08, 1);
+      };
+
+      const applyBlinkToSvg = (svg, sy) => {
+        if (sy >= 0.995 || !svg.includes('data-eye')) return svg;
+        const syStr = sy.toFixed(3);
+        return svg.replace(/<g([^>]*\bdata-eye\s*=\s*["']1["'][^>]*)>/g, (_m, attrs) => {
+          if (/\btransform\s*=\s*["']/.test(attrs)) {
+            return `<g${attrs.replace(/\btransform\s*=\s*(["'])([^"']*)\1/, `transform=$1$2 scale(1,${syStr})$1`)}>`;
+          }
+          return `<g${attrs} transform="scale(1,${syStr})">`;
+        });
+      };
+
+      const renderHoseSvg = (h, world, scale, silhouette) => {
+        const w0 = world[h.upper], w1 = world[h.lower], w2 = world[h.end];
+        if (!w0 || !w1 || !w2) return '';
+        const mx = (w0.x + w2.x) * 0.5, my = (w0.y + w2.y) * 0.5;
+        const roundness = clamp(h.roundness ?? 0.85, 0.25, 1.0);
+        const kx = lerp(mx, w1.x, roundness), ky = lerp(my, w1.y, roundness);
+        const cx = 2 * kx - mx, cy = 2 * ky - my;
+        const r0 = 0.5 * (h.widthStart ?? 14) * scale;
+        const r2 = 0.5 * (h.widthEnd ?? 8) * scale;
+        const r1 = 0.5 * (h.widthMid ?? ((h.widthStart ?? 14) + (h.widthEnd ?? 8)) * 0.5) * scale;
+        const rc = 2 * r1 - 0.5 * (r0 + r2);
+        const sampleAt = (s) => {
+          const om = 1 - s;
+          const x = om * om * w0.x + 2 * om * s * cx + s * s * w2.x;
+          const y = om * om * w0.y + 2 * om * s * cy + s * s * w2.y;
+          const tx = 2 * om * (cx - w0.x) + 2 * s * (w2.x - cx);
+          const ty = 2 * om * (cy - w0.y) + 2 * s * (w2.y - cy);
+          const tl = Math.hypot(tx, ty) || 1;
+          const r = Math.max(1.1, om * om * r0 + 2 * om * s * rc + s * s * r2);
+          return { x, y, nx: -ty / tl, ny: tx / tl, r };
+        };
+        const buildRibbon = (s0, s1, extraR, capStart, capEnd) => {
+          const steps = 8, pts = [];
+          for (let i = 0; i <= steps; i++) pts.push(sampleAt(lerp(s0, s1, i / steps)));
+          const L = pts.map(p => [p.x + p.nx * (p.r + extraR), p.y + p.ny * (p.r + extraR)]);
+          const R = pts.map(p => [p.x - p.nx * (p.r + extraR), p.y - p.ny * (p.r + extraR)]);
+          let d = `M${L[0][0].toFixed(2)} ${L[0][1].toFixed(2)}`;
+          for (let i = 1; i <= steps; i++) d += ` L${L[i][0].toFixed(2)} ${L[i][1].toFixed(2)}`;
+          const re = (pts[steps].r + extraR).toFixed(2);
+          if (capEnd) d += ` A${re} ${re} 0 0 0 ${R[steps][0].toFixed(2)} ${R[steps][1].toFixed(2)}`;
+          else d += ` L${R[steps][0].toFixed(2)} ${R[steps][1].toFixed(2)}`;
+          for (let i = steps - 1; i >= 0; i--) d += ` L${R[i][0].toFixed(2)} ${R[i][1].toFixed(2)}`;
+          const rs0 = (pts[0].r + extraR).toFixed(2);
+          if (capStart) d += ` A${rs0} ${rs0} 0 0 0 ${L[0][0].toFixed(2)} ${L[0][1].toFixed(2)}`;
+          d += ' Z';
+          return { d, L };
+        };
+        const hasSplit = Boolean(h.lowerFill && h.cuffAt != null);
+        const mainEnd = hasSplit ? clamp(h.cuffAt, 0.1, 0.92) : 1;
+        const mainRib = buildRibbon(0, mainEnd, 0, true, !hasSplit);
+        let inner = `<path d="${mainRib.d}" fill="${h.fill ?? '#888'}"/>`;
+        if (hasSplit) {
+          const lowRib = buildRibbon(mainEnd, 1, 0, false, true);
+          inner += `<path d="${lowRib.d}" fill="${h.lowerFill}"/>`;
+        }
+        if (!silhouette && h.rimColor) {
+          const fullL = buildRibbon(0.06, 0.94, -0.6 * scale, false, false).L;
+          let rd = `M${fullL[0][0].toFixed(2)} ${fullL[0][1].toFixed(2)}`;
+          for (let i = 1; i < fullL.length; i++) rd += ` L${fullL[i][0].toFixed(2)} ${fullL[i][1].toFixed(2)}`;
+          inner += `<path d="${rd}" fill="none" stroke="${h.rimColor}" stroke-width="${(1.25 * scale).toFixed(2)}" stroke-linecap="round" opacity="0.4"/>`;
+        }
+        if (h.cuffAt != null && h.cuffFill) {
+          const c0 = clamp(h.cuffAt - 0.045, 0.02, 0.94);
+          const c1 = clamp(h.cuffAt + 0.045, 0.06, 0.98);
+          const cuffRib = buildRibbon(c0, c1, 1.8 * scale, false, false);
+          inner += `<path d="${cuffRib.d}" fill="${h.cuffFill}"/>`;
+        }
+        const hFilt = (!silhouette && !h.seamGroup && h.filter && h.filter !== 'none') ? `filter="url(#${h.filter})"` : '';
+        return `<g data-hose="${h.id}" ${hFilt}>${inner}</g>`;
+      };
+
+      // Deterministic multi-link ribbon / flowing hair / scarf / tail strands[] (inspired by MIT papermotion Strand.ts)
+      const renderStrandSvg = (st, rigObj, world, scale, sampleT, silhouette) => {
+        const w = world[st.bone];
+        const b = rigObj.boneById[st.bone];
+        if (!w || !b) return '';
+        let sx = w.x, sy = w.y;
+        const part = PART_BY_ID[resolvePartId(rigObj, b)];
+        if (st.anchor && part?.anchors?.[st.anchor]) {
+          const anc = part.anchors[st.anchor], piv = part.pivot ?? [0, 0];
+          const bsc = rigStates[rigObj.id].scales?.[b.id] ?? { x: 1, y: 1 };
+          const lx = (anc[0] - piv[0]) * scale * bsc.x;
+          const ly = (anc[1] - piv[1]) * scale * bsc.y;
+          const rad = w.deg * DEG, cs = Math.cos(rad), sn = Math.sin(rad);
+          sx = w.x + lx * cs - ly * sn;
+          sy = w.y + lx * sn + ly * cs;
+        }
+        const segs = Math.round(clamp(st.segments ?? 5, 2, 12));
+        const totalLen = (st.length ?? 46) * scale;
+        const baseDir = ((st.dirDeg ?? 175) + (st.inheritRot ? w.deg * (st.inheritRotWeight ?? 0.45) : 0)) * DEG;
+        const dx = Math.cos(baseDir), dy = Math.sin(baseDir);
+        const nx = -dy, ny = dx;
+        const waveAmp = (st.waveAmp ?? 7.5) * scale;
+        const waveFreq = st.waveFreq ?? 3.0;
+        const phase = st.phase ?? (st.id.length * 0.73);
+        const sag = (st.sag ?? 6) * scale;
+        const rStart = 0.5 * (st.widthStart ?? 9) * scale;
+        const rEnd = 0.5 * (st.widthEnd ?? 2.4) * scale;
+
+        const pts = [];
+        for (let i = 0; i <= segs; i++) {
+          const u = i / segs;
+          const sway = Math.sin(sampleT * waveFreq - u * 3.4 + phase) * waveAmp * Math.pow(u, 1.15);
+          const pxS = sx + dx * totalLen * u + nx * sway;
+          const pyS = sy + dy * totalLen * u + ny * sway + sag * u * u;
+          pts.push({ x: pxS, y: pyS, r: Math.max(0.8, lerp(rStart, rEnd, u)) });
+        }
+        const left = [], right = [];
+        for (let i = 0; i <= segs; i++) {
+          const p0 = pts[Math.max(0, i - 1)], p1 = pts[Math.min(segs, i + 1)];
+          const tx = p1.x - p0.x, ty = p1.y - p0.y, tl = Math.hypot(tx, ty) || 1;
+          const pnx = -ty / tl, pny = tx / tl;
+          left.push([pts[i].x + pnx * pts[i].r, pts[i].y + pny * pts[i].r]);
+          right.push([pts[i].x - pnx * pts[i].r, pts[i].y - pny * pts[i].r]);
+        }
+        let d = `M${left[0][0].toFixed(2)} ${left[0][1].toFixed(2)}`;
+        for (let i = 1; i <= segs; i++) {
+          const mx = (left[i - 1][0] + left[i][0]) * 0.5, my = (left[i - 1][1] + left[i][1]) * 0.5;
+          d += ` Q${left[i - 1][0].toFixed(2)} ${left[i - 1][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+        }
+        d += ` L${left[segs][0].toFixed(2)} ${left[segs][1].toFixed(2)} L${right[segs][0].toFixed(2)} ${right[segs][1].toFixed(2)}`;
+        for (let i = segs - 1; i >= 0; i--) {
+          const mx = (right[i + 1][0] + right[i][0]) * 0.5, my = (right[i + 1][1] + right[i][1]) * 0.5;
+          d += ` Q${right[i + 1][0].toFixed(2)} ${right[i + 1][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+        }
+        d += ` L${right[0][0].toFixed(2)} ${right[0][1].toFixed(2)} Z`;
+
+        let inner = `<path d="${d}" fill="${st.fill ?? '#d97706'}"/>`;
+        if (!silhouette && st.stripeColor) {
+          let sd = `M${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+          for (let i = 1; i <= segs; i++) sd += ` L${pts[i].x.toFixed(2)} ${pts[i].y.toFixed(2)}`;
+          inner += `<path d="${sd}" fill="none" stroke="${st.stripeColor}" stroke-width="${Math.max(1.1, rStart * 0.42).toFixed(2)}" stroke-linecap="round" stroke-dasharray="${(3.5 * scale).toFixed(1)} ${(3.0 * scale).toFixed(1)}" opacity="0.72"/>`;
+        }
+        if (!silhouette && st.rimColor) {
+          let rd = `M${left[0][0].toFixed(2)} ${left[0][1].toFixed(2)}`;
+          for (let i = 1; i <= segs; i++) rd += ` L${left[i][0].toFixed(2)} ${left[i][1].toFixed(2)}`;
+          inner += `<path d="${rd}" fill="none" stroke="${st.rimColor}" stroke-width="${(1.1 * scale).toFixed(2)}" stroke-linecap="round" opacity="0.48"/>`;
+        }
+        const sFilt = (!silhouette && !st.seamGroup && st.filter && st.filter !== 'none') ? `filter="url(#${st.filter})"` : '';
+        return `<g data-strand="${st.id}" ${sFilt}>${inner}</g>`;
+      };
+
+      let cropBox = null;
+      const charRenderT = quantizeCharTime(t);
+      for (const rigObj of RIGS) {
+        const rs = rigStates[rigObj.id], world = computeWorld(rigObj);
+        const hox = epx * (rigObj.parallax ?? 15), hoy = epy * ((rigObj.parallax ?? 15) * 0.75);
+
+        if (!state.silhouette && rigObj.groundY != null) {
+          const lift = Math.max(0, (rigObj.rootPos?.y ?? rigObj.groundY - 50) - rs.rootY);
+          const scS = clamp(1 - lift / 220, 0.35, 1.05), opS = clamp(1 - lift / 240, 0.22, 1);
+          const gsFilt = (rigObj.shadowStyle === 'chalk' || sc.lighting?.chalkShadows) ? 'filter="url(#chalkShadow)"' : '';
+          gs += `<ellipse cx="${(rs.rootX + hox + (rigObj.shadowOffsetX ?? 0)).toFixed(1)}" cy="${(rigObj.groundY + hoy).toFixed(1)}" rx="${((rigObj.shadowRx ?? 54) * scS).toFixed(1)}" ry="${((rigObj.shadowRy ?? 10) * scS).toFixed(1)}" fill="url(#groundShadowGrad)" opacity="${opS.toFixed(2)}" ${gsFilt}/>`;
+        }
+
+        const gSh = state.silhouette
+          ? 'filter="url(#silhouetteFilter)"'
+          : (rigObj.groupShadow === false ? '' : `filter="url(#${rigObj.groupShadow ?? 'shadowDeep'})"`);
+        const innerTex = state.silhouette ? '' : 'filter="url(#paperTex)"';
+        const brY = 1 + rs.breath, brX = 1 - rs.breath * 0.5;
+        let rigHtml = `<g ${gSh}><g transform="translate(${(rs.rootX + hox).toFixed(1)},${(rs.rootY + hoy).toFixed(1)}) scale(${(rs.facing * brX).toFixed(3)},${brY.toFixed(3)}) translate(${(-rs.rootX).toFixed(1)},${(-rs.rootY).toFixed(1)})" ${innerTex}>`;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        const blinkSy = computeBlinkScaleY(rigObj, charRenderT);
+        const seamFilterByGroup = {};
+        for (const b of rigObj.bones) {
+          if (b.seamGroup && b.seamFilter && !seamFilterByGroup[b.seamGroup]) seamFilterByGroup[b.seamGroup] = b.seamFilter;
+        }
+        for (const h of rigObj.hoses ?? []) {
+          if (h.seamGroup && h.seamFilter && !seamFilterByGroup[h.seamGroup]) seamFilterByGroup[h.seamGroup] = h.seamFilter;
+        }
+        for (const st of rigObj.strands ?? []) {
+          if (st.seamGroup && st.seamFilter && !seamFilterByGroup[st.seamGroup]) seamFilterByGroup[st.seamGroup] = st.seamFilter;
+        }
+
+        const drawables = [];
+        for (const b of rigObj.bones) {
+          const w = world[b.id], part = PART_BY_ID[resolvePartId(rigObj, b)];
+          if (!part) continue;
+          if (state.cropRig === rigObj.id) {
+            const sx = rs.rootX + (w.x - rs.rootX) * rs.facing + hox;
+            const sy = w.y + hoy;
+            const pr = Math.max(part.size?.[0] ?? 40, part.size?.[1] ?? 40) * 0.5 * rs.scale;
+            if (sx - pr < minX) minX = sx - pr;
+            if (sx + pr > maxX) maxX = sx + pr;
+            if (sy - pr < minY) minY = sy - pr;
+            if (sy + pr > maxY) maxY = sy + pr;
+          }
+          if (b.hiddenInViewer) continue;
+          const bsc = rs.scales?.[b.id] ?? { x: 1, y: 1 };
+          const bSh = (!state.silhouette && !b.seamGroup && b.shadow && b.shadow !== 'none') ? `filter="url(#${b.shadow})"` : '';
+          const brad = b.brad ? `<circle cx="0" cy="0" r="${b.brad.r ?? 4.2}" fill="${b.brad.fill ?? '#e8c49a'}" stroke="${b.brad.stroke ?? '#6e3a1f'}" stroke-width="1.3"/><circle cx="-0.8" cy="-0.8" r="${(b.brad.r ?? 4.2) * 0.35}" fill="#ffffff" opacity="0.5"/>` : '';
+          const partSvgBlinked = applyBlinkToSvg(part.svg, blinkSy);
+          const partSvg = b.seamGroup
+            ? partSvgBlinked.replace(/\s*filter\s*=\s*["']url\(#(?:paperBevel|paperBevelSoft)\)["']/g, '')
+            : partSvgBlinked;
+          drawables.push({
+            z: b.z ?? 0,
+            seamGroup: b.seamGroup ?? null,
+            html: `<g transform="translate(${w.x.toFixed(2)},${w.y.toFixed(2)}) rotate(${w.deg.toFixed(2)}) scale(${(rs.scale * bsc.x).toFixed(3)},${(rs.scale * bsc.y).toFixed(3)})" ${bSh}>${partSvg}${brad}</g>`,
+          });
+        }
+        for (const h of rigObj.hoses ?? []) {
+          const hHtml = renderHoseSvg(h, world, rs.scale, state.silhouette);
+          if (hHtml) drawables.push({ z: h.z ?? 0, seamGroup: h.seamGroup ?? null, html: hHtml });
+        }
+        for (const st of rigObj.strands ?? []) {
+          const sHtml = renderStrandSvg(st, rigObj, world, rs.scale, charRenderT, state.silhouette);
+          if (sHtml) drawables.push({ z: st.z ?? 0, seamGroup: st.seamGroup ?? null, html: sHtml });
+        }
+        drawables.sort((a, c) => a.z - c.z);
+
+        let di = 0;
+        while (di < drawables.length) {
+          const grp = drawables[di].seamGroup;
+          if (!grp) {
+            rigHtml += drawables[di].html;
+            di++;
+          } else {
+            let grpHtml = '';
+            while (di < drawables.length && drawables[di].seamGroup === grp) {
+              grpHtml += drawables[di].html;
+              di++;
+            }
+            const sf = seamFilterByGroup[grp] ?? 'paperBevelSoft';
+            const sfAttr = (!state.silhouette && sf !== 'none') ? `filter="url(#${sf})"` : '';
+            rigHtml += `<g data-seam-group="${grp}" ${sfAttr}>${grpHtml}</g>`;
+          }
+        }
+        rigHtml += '</g></g>';
+        if (state.cropRig === rigObj.id && Number.isFinite(minX)) {
+          cropBox = { minX, maxX, minY, maxY };
+        }
+
+        if (!state.silhouette && rs.emote) {
+          const emObj = typeof rs.emote === 'string' ? { type: rs.emote } : rs.emote;
+          const ex = rs.rootX + hox + rs.facing * (emObj.offsetX ?? 26);
+          const ey = rs.rootY + hoy + (emObj.offsetY ?? -60) - Math.sin(t * 3.1) * 7;
+          const esc = emObj.scale ?? 1;
+          const eCol = emObj.color ?? '#ffe98a';
+          const eType = emObj.type ?? 'spark';
+          let emSvg = emObj.svg;
+          if (!emSvg) {
+            if (eType === 'heart') {
+              emSvg = `<path data-emote="heart" d="M0 5 C-8 -2 -10 -10 -4 -12 C-1 -13 0 -9 0 -9 C0 -9 1 -13 4 -12 C10 -10 8 -2 0 5 Z" fill="${emObj.color ?? '#ffb38a'}"/>`;
+            } else if (eType === 'music') {
+              emSvg = `<g data-emote="music" fill="${eCol}"><ellipse cx="-4" cy="4" rx="3.4" ry="2.5" transform="rotate(-18 -4 4)"/><ellipse cx="5" cy="2" rx="3.4" ry="2.5" transform="rotate(-18 5 2)"/><path d="M-1.2 4 V-8 L8 -10 V2 H6 V-7.4 L0.8 -6.2 V4 Z"/></g>`;
+            } else if (eType === 'exclamation') {
+              emSvg = `<g data-emote="exclamation" fill="${eCol}"><path d="M-2.2 -11 H2.2 L1.4 1 H-1.4 Z"/><circle cx="0" cy="5.5" r="2"/></g>`;
+            } else if (eType === 'question') {
+              emSvg = `<g data-emote="question" fill="none" stroke="${eCol}" stroke-width="2.4" stroke-linecap="round"><path d="M-3.5 -7.5 C-3.5 -11 3.5 -11 3.5 -7 C3.5 -4.5 0 -4 0 -1"/><circle cx="0" cy="4.5" r="1.3" fill="${eCol}" stroke="none"/></g>`;
+            } else if (eType === 'zzz') {
+              emSvg = `<path data-emote="zzz" d="M-6 -6 H1 L-5 1 H2 M1 -11 H6 L2 -6 H7" fill="none" stroke="${eCol}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
+            } else {
+              emSvg = `<path data-emote="spark" d="M0 -7.5 L2 -2 L7.5 0 L2 2 L0 7.5 L-2 2 L-7.5 0 L-2 -2 Z" fill="${eCol}"/>`;
+            }
+          }
+          rigHtml += `<g transform="translate(${ex.toFixed(1)},${ey.toFixed(1)}) scale(${esc})" opacity="${(0.65 + Math.sin(t * 3.8) * 0.3).toFixed(2)}" filter="url(#softGlow)">${emSvg}</g>`;
+        }
+        stageItems.push({ z: rigObj.z ?? 0, html: rigHtml });
+
+        const toScrX = (wx) => rs.rootX + (wx - rs.rootX) * rs.facing + hox;
+        const toScrY = (wy) => wy + hoy;
+        if (!state.silhouette && (state.showBones || state.showAnchors)) {
+          if (state.showBones) {
+            const col = rigObj.id === state.activeRigId ? '#38bdf8' : '#c084fc';
+            for (const b of rigObj.bones) if (b.parent) diag += `<line x1="${toScrX(world[b.parent].x).toFixed(1)}" y1="${toScrY(world[b.parent].y).toFixed(1)}" x2="${toScrX(world[b.id].x).toFixed(1)}" y2="${toScrY(world[b.id].y).toFixed(1)}" stroke="${col}" stroke-width="2" opacity="0.9"/>`;
+            for (const b of rigObj.bones) {
+              const bx = toScrX(world[b.id].x), by = toScrY(world[b.id].y);
+              diag += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/><text x="${(bx + 5).toFixed(1)}" y="${(by - 3).toFixed(1)}" font-size="9" font-family="monospace" fill="#e0f2fe" stroke="#090d16" stroke-width="2.2" paint-order="stroke" font-weight="bold">${b.id}</text>`;
+            }
+          }
+          if (state.showAnchors) {
+            for (const b of rigObj.bones) {
+              const p = PART_BY_ID[resolvePartId(rigObj, b)], w = world[b.id], rd = w.deg * DEG, cs = Math.cos(rd), sn = Math.sin(rd);
+              const bsc = rs.scales?.[b.id] ?? { x: 1, y: 1 };
+              for (const pt of Object.values(p?.anchors ?? {})) {
+                const lx = (pt[0] - p.pivot[0]) * rs.scale * bsc.x, ly = (pt[1] - p.pivot[1]) * rs.scale * bsc.y;
+                diag += `<circle cx="${toScrX(w.x + lx * cs - ly * sn).toFixed(1)}" cy="${toScrY(w.y + lx * sn + ly * cs).toFixed(1)}" r="2.8" fill="#f97316" stroke="#fff" stroke-width="1"/>`;
+              }
+            }
+          }
+        }
+        if (!state.silhouette && rigObj.id === state.activeRigId && rigObj.ik && ((!state.stageOnly && state.preset === 'manual') || state.showBones || state.showAnchors)) {
+          for (const [ikId, ch] of Object.entries(rigObj.ik)) {
+            const ew = world[ch.end];
+            ik += `<g class="ik-handle" data-rig="${rigObj.id}" data-ik="${ikId}"><circle cx="${toScrX(ew.x).toFixed(1)}" cy="${toScrY(ew.y).toFixed(1)}" r="8" fill="#ef4444" fill-opacity="0.32" stroke="#ef4444" stroke-width="2"/><circle cx="${toScrX(ew.x).toFixed(1)}" cy="${toScrY(ew.y).toFixed(1)}" r="2.5" fill="#fff"/></g>`;
+          }
+        }
+      }
+      stageItems.sort((a, b) => a.z - b.z);
+      if (!state.silhouette) document.getElementById('layerGroundShadows').innerHTML = gs;
+      document.getElementById('layerHeroes').innerHTML = stageItems.map(it => it.html).join('');
+      document.getElementById('layerDiag').innerHTML = diag;
+      document.getElementById('layerIk').innerHTML = ik;
+
+      if (cropBox) {
+        const aspect = VW / VH;
+        const pad = state.cropPad ?? 120;
+        let cw = Math.max(180, (cropBox.maxX - cropBox.minX) + pad);
+        let ch = Math.max(120, (cropBox.maxY - cropBox.minY) + pad);
+        if (cw / ch < aspect) cw = ch * aspect; else ch = cw / aspect;
+        cw = Math.min(VW, cw); ch = Math.min(VH, ch);
+        const cx = (cropBox.minX + cropBox.maxX) * 0.5;
+        const cy = (cropBox.minY + cropBox.maxY) * 0.5;
+        const vx = clamp(cx - cw * 0.5, 0, VW - cw);
+        const vy = clamp(cy - ch * 0.5, 0, VH - ch);
+        sceneSvg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${cw.toFixed(1)} ${ch.toFixed(1)}`);
+      }
+
+      if (state.silhouette) return;
+
+      // 10. 100% Data-Driven Universal Dynamic VFX + Overlay Props
+      let vfx = '';
+      if (state.vfx.glow && state.showAtmos) {
+        const g = state.vfx.glow;
+        const gx = (g.x + epx * 15).toFixed(1), gy = (g.y + epy * 11).toFixed(1);
+        document.getElementById('vfxGlowS0')?.setAttribute('stop-color', g.color);
+        document.getElementById('vfxGlowS1')?.setAttribute('stop-color', g.midColor);
+        document.getElementById('vfxGlowS2')?.setAttribute('stop-color', g.midColor);
+        vfx += `<circle cx="${gx}" cy="${gy}" r="${g.r.toFixed(1)}" fill="url(#dynVfxGlow)" opacity="${g.intensity.toFixed(2)}"/>`;
+      }
+      if (state.vfx.burst) {
+        const b = state.vfx.burst, s = Math.max(0.25, b.intensity * b.scale);
+        let bInner = '';
+        if (b.svg) {
+          bInner = `<g transform="scale(${s.toFixed(2)})">${b.svg.replace(/FILL_A/g, b.color).replace(/FILL_B/g, b.highlightColor)}</g>`;
+        } else if (b.type === 'ring') {
+          bInner = `<circle cx="0" cy="0" r="${(36 * s).toFixed(1)}" fill="none" stroke="${b.color}" stroke-width="2.6" opacity="0.82"/><circle cx="0" cy="0" r="${(20 * s).toFixed(1)}" fill="none" stroke="${b.highlightColor}" stroke-width="1.6" opacity="0.7"/>`;
+        } else if (b.type === 'sparks') {
+          bInner = `<g fill="${b.color}"><path d="M0 ${(-34 * s).toFixed(1)} L3 ${(-12 * s).toFixed(1)} L-3 ${(-12 * s).toFixed(1)} Z"/><path d="M${(28 * s).toFixed(1)} ${(-22 * s).toFixed(1)} L${(12 * s).toFixed(1)} ${(-8 * s).toFixed(1)} L${(8 * s).toFixed(1)} ${(-13 * s).toFixed(1)} Z"/><path d="M${(-28 * s).toFixed(1)} ${(-22 * s).toFixed(1)} L${(-8 * s).toFixed(1)} ${(-13 * s).toFixed(1)} L${(-12 * s).toFixed(1)} ${(-8 * s).toFixed(1)} Z"/><circle cx="${(18 * s).toFixed(1)}" cy="${(-30 * s).toFixed(1)}" r="2.8" fill="${b.highlightColor}"/><circle cx="${(-20 * s).toFixed(1)}" cy="${(-28 * s).toFixed(1)}" r="2.4" fill="${b.highlightColor}"/></g>`;
+        } else if (b.type === 'dust') {
+          bInner = `<g fill="${b.color}" opacity="0.72"><circle cx="${(-24 * s).toFixed(1)}" cy="${(-6 * s).toFixed(1)}" r="${(9 * s).toFixed(1)}"/><circle cx="${(-12 * s).toFixed(1)}" cy="${(-11 * s).toFixed(1)}" r="${(7 * s).toFixed(1)}" fill="${b.highlightColor}"/><circle cx="${(24 * s).toFixed(1)}" cy="${(-6 * s).toFixed(1)}" r="${(9 * s).toFixed(1)}"/><circle cx="${(12 * s).toFixed(1)}" cy="${(-11 * s).toFixed(1)}" r="${(7 * s).toFixed(1)}" fill="${b.highlightColor}"/></g>`;
+        } else {
+          bInner = `<circle cx="${(-42 * s).toFixed(1)}" cy="${(-40 * s).toFixed(1)}" r="4.5" fill="${b.color}"/><circle cx="${(20 * s).toFixed(1)}" cy="${(-56 * s).toFixed(1)}" r="5" fill="${b.highlightColor}"/><path d="M${(-58 * s).toFixed(1)} 4 Q0 ${(-22 * s).toFixed(1)} ${(58 * s).toFixed(1)} 4 Q0 ${(-7 * s).toFixed(1)} ${(-58 * s).toFixed(1)} 4 Z" fill="${b.color}" opacity="0.85"/>`;
+        }
+        vfx += `<g data-burst="${b.type}" transform="translate(${(b.x + epx * 15).toFixed(1)},${(b.y + epy * 11).toFixed(1)})" opacity="${Math.min(1, b.intensity * 1.15).toFixed(2)}">${bInner}</g>`;
+      }
+      if (state.vfx.particles) {
+        const p = state.vfx.particles;
+        const half = (p.count - 1) * 0.5;
+        for (let i = 0; i < p.count; i++) {
+          const travel = (t * 46 + i * 22) % p.riseHeight;
+          const pyOff = p.dir < 0 ? -travel : travel;
+          const pxPos = p.x + (i - half) * p.spreadX + Math.sin(t * 4 + i) * 5 + epx * 15;
+          const pyPos = p.baseY + pyOff + epy * 11;
+          const op = (p.intensity * (1 - travel / (p.riseHeight + 5)) * 0.82).toFixed(2);
+          if (p.shapeSvg) {
+            const pSc = (0.75 + (i % 3) * 0.2).toFixed(2);
+            const pSvg = p.shapeSvg.replace(/FILL_A/g, p.color).replace(/FILL_B/g, p.highlightColor);
+            vfx += `<g transform="translate(${pxPos.toFixed(1)},${pyPos.toFixed(1)}) scale(${pSc})" opacity="${op}">${pSvg}</g>`;
+          } else {
+            vfx += `<circle cx="${pxPos.toFixed(1)}" cy="${pyPos.toFixed(1)}" r="${(2.4 + (i % 3) * 1.2).toFixed(1)}" fill="${p.color}" opacity="${op}"/>`;
+          }
+        }
+      }
+      document.getElementById('layerVfx').innerHTML = vfx;
+
+      document.getElementById('layerOverlayProps').innerHTML = (sc.overlayProps ?? []).filter(o => o.lane !== 'mid').map(renderOverlayProp).join('');
+    }
+
+    // Inspector UI
+    const presetBar = document.getElementById('presetBar');
+    for (const m of [...(BLUEPRINT.motions ?? []), { id: 'manual', name: '🎛️ Tự chỉnh Rig' }]) {
+      const btn = document.createElement('button');
+      btn.className = 'pill-btn px-2.5 py-1.5 rounded-md border border-[var(--ps-border)] font-medium';
+      btn.dataset.preset = m.id; btn.dataset.active = String(m.id === state.preset); btn.textContent = m.name;
+      btn.addEventListener('click', () => {
+        state.preset = m.id;
+        document.querySelectorAll('[data-preset]').forEach(x => x.dataset.active = String(x.dataset.preset === m.id));
+        if (m.id === 'manual') document.getElementById('phaseBadge').textContent = '🎛️ Chế độ tự chỉnh từng khớp Rig';
+      });
+      presetBar.appendChild(btn);
+    }
+
+    if (RIGS.length > 1) {
+      const sw = document.getElementById('rigSwitcher'); sw.classList.remove('hidden');
+      for (const r of RIGS) {
+        const b = document.createElement('button');
+        b.className = 'pill-btn px-2.5 py-1 rounded-md border border-[var(--ps-border)] font-medium';
+        b.dataset.rigbtn = r.id; b.dataset.active = String(r.id === state.activeRigId);
+        b.textContent = `${r.label} (${r.bones.length} xương)`;
+        b.addEventListener('click', () => {
+          state.activeRigId = r.id;
+          sw.querySelectorAll('button').forEach(x => x.dataset.active = String(x.dataset.rigbtn === r.id));
+          rebuildRigInspector();
+        });
+        sw.appendChild(b);
+      }
+    }
+
+    let sliderRefs = {};
+    function rebuildRigInspector() {
+      const rigObj = RIG_BY_ID[state.activeRigId], rs = rigStates[rigObj.id];
+      sliderRefs = {};
+      const vs = document.getElementById('variantSection'); vs.innerHTML = '';
+      const ve = Object.entries(rigObj.variants ?? {});
+      vs.classList.toggle('hidden', ve.length === 0);
+      for (const [grp, opts] of ve) {
+        const blk = document.createElement('div'); blk.className = 'space-y-1';
+        blk.innerHTML = `<div class="font-semibold">${grp}</div><div class="flex flex-wrap gap-1"></div>`;
+        for (const opt of opts) {
+          const b = document.createElement('button');
+          b.className = 'pill-btn px-2 py-1 rounded border border-[var(--ps-border)]';
+          b.dataset.active = String(rs.variants[grp] === opt); b.textContent = opt;
+          b.addEventListener('click', () => { rs.variants[grp] = opt; blk.lastChild.querySelectorAll('button').forEach(x => x.dataset.active = String(x.textContent === opt)); });
+          blk.lastChild.appendChild(b);
+        }
+        vs.appendChild(blk);
+      }
+      const addS = (p, k, lbl, min, max, val, u, fn) => {
+        const row = document.createElement('div'); row.className = 'flex items-center gap-2';
+        row.innerHTML = `<span class="w-32 truncate text-[var(--ps-muted)]" title="${k}">${lbl}</span><input type="range" min="${min}" max="${max}" step="1" value="${val}" class="flex-1 accent-[var(--ps-primary)]"/><span class="w-12 text-right font-mono tabular-nums">${Math.round(val)}${u}</span>`;
+        const inp = row.querySelector('input'), out = row.querySelectorAll('span')[1];
+        inp.addEventListener('input', () => {
+          state.preset = 'manual';
+          document.querySelectorAll('[data-preset]').forEach(x => x.dataset.active = String(x.dataset.preset === 'manual'));
+          fn(Number(inp.value)); out.textContent = `${Math.round(inp.value)}${u}`;
+        });
+        p.appendChild(row); sliderRefs[k] = { inp, out, u };
+      };
+      const rc = document.getElementById('rootControls'); rc.innerHTML = '';
+      addS(rc, '__rootX', 'Vị trí X', 60, VW - 60, rs.rootX, 'px', v => rs.rootX = v);
+      addS(rc, '__rootY', 'Vị trí Y', 60, VH - 40, rs.rootY, 'px', v => rs.rootY = v);
+      const bs = document.getElementById('boneSliders'); bs.innerHTML = '';
+      for (const b of rigObj.bones) addS(bs, b.id, b.label ?? b.id, b.limits.min, b.limits.max, rs.angles[b.id], '°', v => rs.angles[b.id] = v);
+      updateSpecTab();
+    }
+
+    function syncSliders() {
+      const rigObj = RIG_BY_ID[state.activeRigId], rs = rigStates[rigObj.id];
+      if (!sliderRefs.__rootX) return;
+      sliderRefs.__rootX.inp.value = rs.rootX; sliderRefs.__rootX.out.textContent = `${Math.round(rs.rootX)}px`;
+      sliderRefs.__rootY.inp.value = rs.rootY; sliderRefs.__rootY.out.textContent = `${Math.round(rs.rootY)}px`;
+      for (const b of rigObj.bones) { const r = sliderRefs[b.id]; if (r) { r.inp.value = rs.angles[b.id]; r.out.textContent = `${Math.round(rs.angles[b.id])}°`; } }
+    }
+
+    function updateSpecTab() {
+      const tot = RIGS.reduce((s, r) => s + r.bones.length, 0);
+      document.getElementById('specSummary').innerHTML = `<div class="font-semibold">${BLUEPRINT.meta.title}</div><div class="text-[var(--ps-muted)]">${RIGS.length} Rig · ${tot} xương · ${BLUEPRINT.parts.length} SVG parts · Canvas ${VW}×${VH}</div>`;
+      document.getElementById('boneTreeOut').textContent = RIGS.map(r => {
+        const fmt = (pid, pref) => r.bones.filter(b => b.parent === pid).map((k, i, arr) => `${pref}${pid === null ? '' : (i === arr.length - 1 ? '└─ ' : '├─ ')}${k.id} [${k.limits.min}°..${k.limits.max}°]\n` + fmt(k.id, pid === null ? ' ' : pref + (i === arr.length - 1 ? '   ' : '│  '))).join('');
+        return `[${r.label}]\n` + fmt(null, '').trim();
+      }).join('\n\n');
+    }
+
+    function updatePoseJson() {
+      const out = {};
+      for (const r of RIGS) {
+        const rs = rigStates[r.id], a = {};
+        for (const b of r.bones) a[b.id] = Number(rs.angles[b.id].toFixed(1));
+        out[r.id] = { root: { x: Math.round(rs.rootX), y: Math.round(rs.rootY) }, facing: rs.facing, angles: a };
+      }
+      document.getElementById('poseJsonOut').textContent = JSON.stringify(out, null, 2);
+    }
+
+    document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('[data-tab]').forEach(b => b.dataset.active = String(b === btn));
+      ['rig', 'scene', 'spec'].forEach(t => document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab));
+      if (tab === 'spec') updatePoseJson();
+    }));
+    document.getElementById('btnCopyPose').addEventListener('click', () => { updatePoseJson(); navigator.clipboard?.writeText(document.getElementById('poseJsonOut').textContent); });
+    document.getElementById('btnPlay').addEventListener('click', e => { state.playing = !state.playing; e.target.textContent = state.playing ? '⏸ Tạm dừng' : '▶ Phát'; });
+    document.getElementById('btnFlip').addEventListener('click', () => {
+      const rs = rigStates[state.activeRigId];
+      rs.userFlip *= -1;
+      rs.facing *= -1;
+    });
+    document.getElementById('btnRest').addEventListener('click', () => {
+      state.preset = 'manual';
+      const r = RIG_BY_ID[state.activeRigId], rs = rigStates[r.id];
+      for (const b of r.bones) { rs.angles[b.id] = b.rest ?? 0; rs.scales[b.id] = { x: 1, y: 1 }; }
+      rs.rootX = r.rootPos?.x ?? VW * 0.5; rs.rootY = r.rootPos?.y ?? VH * 0.72;
+      rs.userFlip = 1; rs.facing = r.facing ?? 1;
+      syncSliders();
+    });
+    document.getElementById('selSpeed').addEventListener('change', e => state.speed = Number(e.target.value));
+    document.getElementById('chkBones').addEventListener('change', e => state.showBones = e.target.checked);
+    document.getElementById('chkAnchors').addEventListener('change', e => state.showAnchors = e.target.checked);
+    document.getElementById('chkParallax').addEventListener('change', e => state.parallax = e.target.checked);
+    document.getElementById('chkAtmos').addEventListener('change', e => state.showAtmos = e.target.checked);
+    document.getElementById('chkFrame').addEventListener('change', e => { document.getElementById('layerFrame').style.display = e.target.checked ? 'inline' : 'none'; document.getElementById('layerCorners').style.display = e.target.checked ? 'inline' : 'none'; });
+    document.getElementById('chkAmbient').addEventListener('change', e => state.showAmbient = e.target.checked);
+    document.getElementById('chkSwarm').addEventListener('change', e => state.showSwarm = e.target.checked);
+    document.getElementById('chkCamBreath').addEventListener('change', e => state.camBreath = e.target.checked);
+    document.getElementById('rngAmbient').addEventListener('input', e => { state.ambientAmp = Number(e.target.value); document.getElementById('valAmbient').textContent = state.ambientAmp.toFixed(1) + '×'; });
+    document.getElementById('rngShadow').addEventListener('input', e => {
+      const v = Number(e.target.value); document.getElementById('valShadow').textContent = v.toFixed(1) + '×';
+      document.getElementById('fDeep').setAttribute('stdDeviation', (8 * v).toFixed(1));
+      document.getElementById('fDeep').setAttribute('dy', (7 * v).toFixed(1));
+      document.getElementById('fMed').setAttribute('stdDeviation', (4.8 * v).toFixed(1));
+      document.getElementById('fSoft').setAttribute('stdDeviation', (4 * v).toFixed(1));
+    });
+
+    const setZoom = (d) => {
+      state.zoom = clamp(state.zoom + d, 0.7, 2.2);
+      const w = VW / state.zoom, h = VH / state.zoom;
+      sceneSvg.setAttribute('viewBox', `${(VW / 2 - w / 2).toFixed(1)} ${(VH / 2 - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+      document.getElementById('zoomLabel').textContent = `${Math.round(state.zoom * 100)}%`;
+    };
+    document.getElementById('btnZoomIn').addEventListener('click', () => setZoom(0.2));
+    document.getElementById('btnZoomOut').addEventListener('click', () => setZoom(-0.2));
+
+    sceneSvg.addEventListener('pointerdown', e => { const h = e.target.closest('.ik-handle'); if (!h) return; state.draggingIk = { rigId: h.dataset.rig, ikId: h.dataset.ik }; state.preset = 'manual'; sceneSvg.setPointerCapture(e.pointerId); });
+    sceneSvg.addEventListener('pointermove', e => {
+      if (!state.draggingIk) return;
+      const r = RIG_BY_ID[state.draggingIk.rigId], rs = rigStates[r.id];
+      const pt = sceneSvg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+      const sp = pt.matrixTransform(sceneSvg.getScreenCTM().inverse());
+      const hox = state.smoothPtr.x * (r.parallax ?? 15), hoy = state.smoothPtr.y * ((r.parallax ?? 15) * 0.75);
+      solveIk(r, r.ik[state.draggingIk.ikId], { x: rs.rootX + (sp.x - hox - rs.rootX) * rs.facing, y: sp.y - hoy });
+      syncSliders();
+    });
+    sceneSvg.addEventListener('pointerup', () => state.draggingIk = null);
+
+    const stageWrap = document.getElementById('stageWrap');
+    stageWrap.addEventListener('pointermove', e => { const r = stageWrap.getBoundingClientRect(); state.pointer.x = ((e.clientX - r.left) / r.width - 0.5) * 2; state.pointer.y = ((e.clientY - r.top) / r.height - 0.5) * 2; });
+    stageWrap.addEventListener('pointerleave', () => { state.pointer.x = 0; state.pointer.y = 0; });
+
+    rebuildRigInspector();
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      if (qs.get('rest') === '1') {
+        state.preset = 'manual';
+        for (const r of RIGS) {
+          const rs = rigStates[r.id];
+          for (const b of r.bones) { rs.angles[b.id] = b.rest ?? 0; rs.scales[b.id] = { x: 1, y: 1 }; }
+          rs.rootX = r.rootPos?.x ?? VW * 0.5; rs.rootY = r.rootPos?.y ?? VH * 0.72;
+          rs.userFlip = 1; rs.facing = r.facing ?? 1; rs.breath = 0; rs.emote = null;
+        }
+        syncSliders();
+      } else {
+        const qT = qs.get('t');
+        if (qT !== null && qT !== '' && Number.isFinite(Number(qT))) {
+          state.time = Math.max(0, Number(qT));
+          if (state.preset !== 'manual') { evalMotion(state.time); syncSliders(); }
+        }
+      }
+      if (qs.get('pause') === '1') {
+        state.playing = false;
+        const bp = document.getElementById('btnPlay');
+        if (bp) bp.textContent = '▶ Phát';
+      }
+      if (qs.get('showBones') === '1') {
+        state.showBones = true;
+        const cb = document.getElementById('chkBones');
+        if (cb) cb.checked = true;
+      }
+      if (qs.get('showAnchors') === '1') {
+        state.showAnchors = true;
+        const ca = document.getElementById('chkAnchors');
+        if (ca) ca.checked = true;
+      }
+      if (qs.get('stageOnly') === '1') {
+        state.stageOnly = true;
+        document.body?.classList?.add('stage-only');
+      }
+      if (qs.get('silhouette') === '1') {
+        state.silhouette = true;
+      }
+      const qCrop = qs.get('cropRig');
+      if (qCrop && RIG_BY_ID[qCrop]) {
+        state.cropRig = qCrop;
+      }
+      const qPad = qs.get('cropPad');
+      if (qPad !== null && qPad !== '' && Number.isFinite(Number(qPad))) {
+        state.cropPad = clamp(Number(qPad), 20, 400);
+      }
+    } catch (_) {}
+    let last = null;
+    function tick(now) {
+      const dt = last === null ? 0 : clamp((now - last) / 1000, 0, 0.05);
+      last = now;
+      if (state.playing) {
+        state.time += dt * state.speed;
+        if (state.preset !== 'manual') { evalMotion(state.time); syncSliders(); }
+      }
+      const tpx = state.parallax ? state.pointer.x : 0, tpy = state.parallax ? state.pointer.y : 0;
+      state.smoothPtr.x += (tpx - state.smoothPtr.x) * 0.08; state.smoothPtr.y += (tpy - state.smoothPtr.y) * 0.08;
+      renderAll(state.time, state.smoothPtr.x, state.smoothPtr.y);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

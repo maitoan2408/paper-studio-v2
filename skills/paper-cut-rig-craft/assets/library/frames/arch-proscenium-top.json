@@ -1,0 +1,32 @@
+{
+  "id": "arch-proscenium-top",
+  "family": "frames",
+  "category": "frame",
+  "styles": [
+    "paper-lightbox",
+    "paper-popup",
+    "storybook-gouache",
+    "shadow-craft"
+  ],
+  "description": "Ornate theatre proscenium arch header valance with scalloped paper drapery and central gilded medallion.",
+  "size": [
+    280,
+    72
+  ],
+  "pivot": [
+    140,
+    0
+  ],
+  "anchors": {
+    "medallion": [
+      140,
+      26
+    ]
+  },
+  "tokens": {
+    "DRAPE": "#6e2329",
+    "DARK": "#421217",
+    "TRIM": "#e8bd63"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-136 0 H136 V26 C112 46 78 46 54 26 C34 48 -34 48 -54 26 C-78 46 -112 46 -136 26 Z\" fill=\"{{DRAPE}}\"/><path d=\"M-136 20 C-112 38 -78 38 -54 20 C-34 40 34 40 54 20 C78 38 112 38 136 20 V26 C112 46 78 46 54 26 C34 48 -34 48 -54 26 C-78 46 -112 46 -136 26 Z\" fill=\"{{DARK}}\" opacity=\"0.58\"/><path d=\"M-132 23 C-108 42 -78 42 -54 23 C-32 44 32 44 54 23 C78 42 108 42 132 23\" fill=\"none\" stroke=\"{{TRIM}}\" stroke-width=\"2\" stroke-linecap=\"round\"/><circle cx=\"0\" cy=\"24\" r=\"9.5\" fill=\"{{TRIM}}\" stroke=\"{{DARK}}\" stroke-width=\"1.4\"/><path d=\"M0 17 L2.5 22 L7.5 24 L2.5 26 L0 31 L-2.5 26 L-7.5 24 L-2.5 22 Z\" fill=\"{{DRAPE}}\"/></g>"
+}

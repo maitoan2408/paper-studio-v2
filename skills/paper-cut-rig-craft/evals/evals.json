@@ -1,0 +1,40 @@
+{
+  "skill_name": "paper-cut-rig-craft",
+  "version": "2.0.0",
+  "evals": [
+    {
+      "id": 1,
+      "name": "autumn-forest-fox-rabbit-diorama",
+      "prompt": "Tạo cảnh shadow-box cắt giấy lãng mạn rừng lá phong mùa thu lúc hoàng hôn: cáo nhỏ đi bộ theo đường mòn chữ S gặp thỏ trắng ngồi bên gốc cây phong cổ thụ có đèn lồng treo, trăng lưỡi liềm và lá phong rơi 3D.",
+      "expected_output": "16:9 proscenium shadow-box HTML studio + validated multi-rig pack (Fox with 2-segment legs & brad pins + Rabbit independent rig, backlit golden focal glow, S-curved path, procedural two-tone folded maple leaf clusters, falling leaves, perspective birds).",
+      "assertions": [
+        "validate_pack.mjs exits 0 with status PASS across rig.json and rigs/*.json",
+        "Blueprint uses scene.frame.style='proscenium', scene.lighting.focalGlow, and scene.clusters[]",
+        "Both Fox and Rabbit are independent rigs in rigs[] with groundY contact shadows",
+        "Fox legs use 2-segment upper->lower hierarchy and cohesive groupShadow"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "deep-ocean-whale-jellyfish-diorama",
+      "prompt": "Tạo cảnh shadow-box đại dương đêm kỳ ảo: cá voi cắt giấy lặn sâu qua rạn san hô rồi vọt lên ngắm trăng tròn cùng một chú sứa phát sáng, có bọt khí bay lên, sao băng và đàn cá nhỏ tung tăng.",
+      "expected_output": "16:9 proscenium shadow-box in deep ocean palette proving zero autumn hardcoding: 2 independent sea-creature rigs (Whale + Jellyfish), coral clusters via scene.clusters[], rising bubbles via falling emitter with negative speedY, meteors, and fish swarm.",
+      "assertions": [
+        "validate_pack.mjs exits 0 with status PASS across all exported rigs",
+        "Zero autumn/fox colors or shapes; proscenium frame & clusters[] use ocean coral palette",
+        "Bubbles rise upward via falling emitter with speedY < 0 and zero Math.random()"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "artisan-biped-workshop-rig",
+      "prompt": "Tạo bộ rig nhân vật người cắt giấy tỷ lệ 5.3 đầu mặc áo xưởng giấy trong căn phòng ấm áp, có xương cúi eo, khớp tròn chồng mép, 4 dáng tay và IK kéo trực tiếp.",
+      "expected_output": "Interactive viewer + validated paper-studio-v2 biped pack with symmetric l/r limbs, spine bend bone, 4 hand variants sharing common grip anchor, and 2-bone IK definitions.",
+      "assertions": [
+        "validate_pack.mjs exits 0 with status PASS",
+        "Rig defines sides ['l', 'r'], contacts, ground, and ik chains",
+        "Every hand variant shares the exact same grip anchor relative to pivot"
+      ]
+    }
+  ]
+}

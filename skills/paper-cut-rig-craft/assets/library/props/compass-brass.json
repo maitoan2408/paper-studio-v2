@@ -1,0 +1,33 @@
+{
+  "id": "compass-brass",
+  "family": "props",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Ornate antique brass pocket compass with hanging ring, parchment dial, and crimson-tipped compass rose.",
+  "size": [
+    56,
+    64
+  ],
+  "pivot": [
+    28,
+    36
+  ],
+  "anchors": {
+    "ring": [
+      28,
+      6
+    ]
+  },
+  "tokens": {
+    "BRASS": "#d9a441",
+    "BRASS_DARK": "#8c6018",
+    "DIAL": "#faf0d7",
+    "NEEDLE_N": "#c63d34",
+    "NEEDLE_S": "#2b3a4a"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><circle cx=\"0\" cy=\"-24\" r=\"5\" fill=\"none\" stroke=\"{{BRASS}}\" stroke-width=\"2.4\"/><circle cx=\"0\" cy=\"0\" r=\"22\" fill=\"{{BRASS}}\"/><circle cx=\"0\" cy=\"0\" r=\"17.5\" fill=\"{{DIAL}}\" stroke=\"{{BRASS_DARK}}\" stroke-width=\"1.5\"/><path d=\"M0 -15 V-11 M0 11 V15 M-15 0 H-11 M11 0 H15\" stroke=\"{{BRASS_DARK}}\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><path d=\"M0 -13 L3.6 0 L0 3 L-3.6 0 Z\" fill=\"{{NEEDLE_N}}\"/><path d=\"M0 13 L3.6 0 L0 -3 L-3.6 0 Z\" fill=\"{{NEEDLE_S}}\"/><circle cx=\"0\" cy=\"0\" r=\"2.8\" fill=\"{{BRASS}}\" stroke=\"{{BRASS_DARK}}\" stroke-width=\"1\"/></g>"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "boot-cuffed",
+  "category": "foot",
+  "description": "Sculpted storybook leather boot (faces +x, ankle pivot at top-back) with folded cuff, stitched vamp, heel block, flat ground sole, and toe highlight.",
+  "size": [42, 28],
+  "pivot": [12, 7],
+  "anchors": {
+    "sole": [22, 22],
+    "toe": [34, 20]
+  },
+  "tokens": {
+    "UPPER": "#5c3826",
+    "DARK": "#382015",
+    "CUFF": "#8c5a3c",
+    "SOLE": "#24150e",
+    "STITCH": "#e8caa4",
+    "HIGHLIGHT": "#a87454"
+  },
+  "svg": "<g filter=\"url(#gouacheGrain)\"><path d=\"M-6 2 L5 1 C7 5 11 8 18 9 C22 10 24 12.5 23.5 15.5 L-7.5 15.5 C-8.5 11 -7.5 6 -6 2 Z\" fill=\"{{UPPER}}\"/><path d=\"M-6 2 L-2 2 C-3 7 -3 11 -2 15.5 L-7.5 15.5 C-8.5 11 -7.5 6 -6 2 Z\" fill=\"{{DARK}}\" opacity=\"0.65\"/><path d=\"M-8 14.5 L24 14.5 L23.5 17.5 L4 17.5 L2 16.3 L-2 16.3 L-2.5 17.5 L-8 17.5 Z\" fill=\"{{SOLE}}\"/><path d=\"M-7.5 -2.5 Q-0.5 -4.2 6.5 -2.2 L5.8 3.5 Q-0.5 4.8 -6.8 3.2 Z\" fill=\"{{CUFF}}\"/><path d=\"M8 9.8 Q15 9.8 20.5 12.2\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"1.4\" stroke-linecap=\"round\" opacity=\"0.65\"/><path d=\"M-5 13.4 L21.5 13.4\" fill=\"none\" stroke=\"{{STITCH}}\" stroke-width=\"0.9\" stroke-dasharray=\"2.2 2\" stroke-linecap=\"round\" opacity=\"0.75\"/></g>"
+}

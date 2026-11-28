@@ -1,0 +1,20 @@
+{
+  "id": "cutout-relief-cardstock",
+  "kind": "procedural-3d",
+  "family": "reliefs3d",
+  "layerKind": "cutout_relief",
+  "styles": ["shadowbox-moonlit", "lightbox-led", "daylight-sculpted", "winter-tunnel"],
+  "defaults": {
+    "width": 14.2,
+    "thickness": 0.11,
+    "reliefStrength": 2.4,
+    "normalScale": 0.65,
+    "roughness": 0.88,
+    "alphaTest": 0.42,
+    "translucency": 0.26,
+    "edgeColor": "#f6ebd4",
+    "castShadow": true,
+    "receiveShadow": true
+  },
+  "description": "Standard 300gsm Sobel normal-map relief parameters (flipY=true, cream cardstock core slices) for optional cutout_relief layers."
+}

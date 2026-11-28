@@ -1,0 +1,16 @@
+{
+  "id": "paper-indigo-ribbed",
+  "kind": "pbr-paper",
+  "family": "materials",
+  "gsm": 320,
+  "cardstock": {
+    "thickness": 0.095,
+    "bevel": 0.02,
+    "edgeColor": "#b8d0eb",
+    "roughness": 0.91,
+    "normalScale": 0.72,
+    "translucency": 0.2
+  },
+  "styles": ["shadowbox-moonlit", "winter-tunnel"],
+  "description": "Deep nocturnal 320gsm ribbed cardstock with cool silver-blue bevel catchlights for moonlit shadow-box strata."
+}

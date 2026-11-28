@@ -1,0 +1,19 @@
+{
+  "id": "shadow-craft",
+  "name": "Shadow Craft & Openwork Cutout",
+  "surfaceFilter": "backlitPulp",
+  "sceneDefaults": {
+    "cadence": { "charFps": 12, "cameraDrift": 0.1 },
+    "lighting": {
+      "shadowColor": "#1a0f0a",
+      "shadowOpacity": 0.82,
+      "chalkShadows": true,
+      "vignetteColor": "#140b07",
+      "vignetteOpacity": 0.44,
+      "bevelDir": [-1, -1],
+      "bevelWidth": 1.2,
+      "bevelLightColor": "#ffdf9e",
+      "bevelLightOpacity": 0.5
+    }
+  }
+}

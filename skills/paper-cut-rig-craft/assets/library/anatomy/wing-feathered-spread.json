@@ -1,0 +1,33 @@
+{
+  "id": "wing-feathered-spread",
+  "family": "anatomy",
+  "category": "limb",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox",
+    "shadow-craft"
+  ],
+  "description": "Three-tier paper-cut bird/owl/creature wing with overlapping scalloped primaries, covert feathers, and warm quill highlights.",
+  "size": [
+    92,
+    64
+  ],
+  "pivot": [
+    14,
+    34
+  ],
+  "anchors": {
+    "tip": [
+      84,
+      18
+    ]
+  },
+  "tokens": {
+    "PRIMARY": "#4b6584",
+    "COVERT": "#778ca3",
+    "CREAM": "#f7ede2",
+    "QUILL": "#2d3e54"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M0 0 C18 -20 46 -28 74 -20 C68 -11 60 -5 50 -2 C62 -1 70 4 74 10 C62 12 50 10 38 7 C48 13 54 19 56 24 C42 25 28 21 16 14 C8 10 2 6 0 0 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M2 -1 C16 -15 38 -20 58 -14 C48 -6 36 -2 22 0 C32 3 40 7 44 12 C30 14 16 11 4 5 Z\" fill=\"{{COVERT}}\"/><path d=\"M2 -2 C12 -11 26 -14 40 -10 C32 -3 20 0 8 2 Z\" fill=\"{{CREAM}}\" opacity=\"0.88\"/><path d=\"M6 -2 C24 -12 46 -18 68 -17 M8 2 C26 -2 46 2 66 8 M8 6 C22 10 36 15 48 21\" fill=\"none\" stroke=\"{{QUILL}}\" stroke-width=\"1.25\" stroke-linecap=\"round\" opacity=\"0.65\"/></g>"
+}

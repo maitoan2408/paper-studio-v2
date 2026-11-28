@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="vi" data-render-mode="sculpted3d">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__TITLE__</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three-sculpted": "__THREE_BUNDLE_URI__",
+        "sculpted-paper-engine": "__SCULPTED_ENGINE_URI__"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #070c17;
+      --card: #0f1729;
+      --border: #1e2d4a;
+      --fg: #e8f0fa;
+      --muted: #8ea5c4;
+      --accent: #f5c36c;
+      --accent-fg: #141008;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .badge {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, #f5c36c, #60a5fa);
+      color: #0b1120; display: grid; place-items: center;
+      font-weight: 800; font-size: 15px;
+    }
+    .title { font-size: 14px; font-weight: 700; }
+    .sub { font-size: 11.5px; color: var(--muted); }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    button, select {
+      background: #0b1324; color: var(--fg);
+      border: 1px solid var(--border); border-radius: 7px;
+      padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    button[data-active="true"] {
+      background: var(--accent); color: var(--accent-fg); border-color: var(--accent);
+    }
+    .workspace {
+      flex: 1; display: grid; grid-template-columns: 1fr 315px;
+      min-height: 0;
+    }
+    @media (max-width: 980px) { .workspace { grid-template-columns: 1fr; } }
+    .stage-col {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 14px; gap: 10px; background: #040811;
+    }
+    .stage-box {
+      width: 100%; max-width: 1120px; aspect-ratio: 16 / 9;
+      border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.68); position: relative;
+      cursor: grab; background: #070d1c;
+    }
+    .stage-box:active { cursor: grabbing; }
+    .stage-box canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+    }
+    #overlayCanvas { pointer-events: none; z-index: 2; }
+    #sheetCanvas { display: none; z-index: 5; background: #060a14; }
+    .dock {
+      width: 100%; max-width: 1120px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 8px; font-size: 12px;
+    }
+    .dock-group {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+      background: var(--card); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 8px;
+    }
+    label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+    aside {
+      border-left: 1px solid var(--border); background: var(--card);
+      padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+      font-size: 12px; max-height: calc(100vh - 56px);
+    }
+    .sec-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); font-weight: 700; margin-bottom: 6px;
+    }
+    .slider-row {
+      display: grid; grid-template-columns: 92px 1fr 42px;
+      align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .slider-row span:first-child { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .slider-row span:last-child { font-family: monospace; text-align: right; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .note {
+      background: #0a1222; border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px; line-height: 1.5; color: #b7c8df; font-size: 11.5px;
+    }
+    body.stage-only header, body.stage-only aside, body.stage-only .dock { display: none !important; }
+    body.stage-only .workspace { grid-template-columns: 1fr !important; }
+    body.stage-only .stage-col { padding: 0 !important; }
+    body.stage-only .stage-box {
+      max-width: 100vw !important; width: 100vw !important; height: 100vh !important;
+      aspect-ratio: auto !important; border: none !important; border-radius: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="badge" id="badgeIcon">3D</div>
+      <div>
+        <div class="title" id="hdrTitle">Paper Studio v2 — 3D Sculpted Diorama</div>
+        <div class="sub" id="hdrSub">Cinema-Grade 3D Sculpted Paper-Cut · 300gsm Cotton PBR · Backlit Subsurface · Seeded GTAO</div>
+      </div>
+    </div>
+    <div class="controls">
+      <select id="selPreset"></select>
+      <button id="btnFront" data-active="true">🎯 Chính diện (0°)</button>
+      <button id="btnOblique" data-active="false">📐 Nghiêng 3D (18°)</button>
+      <button id="btnExplode" data-active="false">🗂️ Tách tầng Z</button>
+      <button id="btnPlay">⏸ Tạm dừng</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <div class="stage-col">
+      <div class="stage-box" id="stageBox">
+        <canvas id="glCanvas" width="1280" height="720"></canvas>
+        <canvas id="overlayCanvas" width="1280" height="720"></canvas>
+        <canvas id="sheetCanvas" width="1920" height="1080"></canvas>
+      </div>
+      <div class="dock">
+        <div class="dock-group">
+          <label><input id="chk12fps" type="checkbox" /> Nhịp 12fps</label>
+          <label><input id="chkBones" type="checkbox" /> Xương &amp; Anchor</label>
+          <label><input id="chkSil" type="checkbox" /> Silhouette</label>
+          <label><input id="chkWire" type="checkbox" /> Wireframe</label>
+        </div>
+        <div class="dock-group" id="timeReadout" style="font-family:monospace; color:#f5c36c;">t = 0.00s</div>
+      </div>
+    </div>
+
+    <aside>
+      <div>
+        <div class="sec-title">Góc nhìn hộp 3D (hoặc kéo trên sân khấu)</div>
+        <div class="slider-row"><span>Nghiêng ngang</span><input id="rngTiltX" type="range" min="-28" max="28" step="1" value="0" /><span id="valTiltX">0°</span></div>
+        <div class="slider-row"><span>Nghiêng dọc</span><input id="rngTiltY" type="range" min="-18" max="18" step="1" value="0" /><span id="valTiltY">0°</span></div>
+        <div class="slider-row"><span>Tách tầng Z</span><input id="rngExplode" type="range" min="0" max="1" step="0.05" value="0" /><span id="valExplode">0%</span></div>
+      </div>
+
+      <div>
+        <div class="sec-title">Quang học giấy cắt &amp; Hộp đèn</div>
+        <div class="slider-row"><span>Đèn chính</span><input id="rngKey" type="range" min="0.2" max="2.0" step="0.05" value="1.0" /><span id="valKey">1.0×</span></div>
+        <div class="slider-row"><span>Đèn hắt ngược</span><input id="rngBack" type="range" min="0.0" max="2.2" step="0.05" value="1.0" /><span id="valBack">1.0×</span></div>
+        <div class="slider-row"><span>Bóng khe GTAO</span><input id="rngAo" type="range" min="0.0" max="2.0" step="0.05" value="1.0" /><span id="valAo">1.0×</span></div>
+      </div>
+
+      <div>
+        <div class="sec-title">Nhân vật &amp; Khớp FK</div>
+        <select id="selRig" style="width:100%; margin-bottom:8px;"></select>
+        <div id="variantControls" style="margin-bottom:6px;"></div>
+        <div id="boneSliders"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const BLUEPRINT = __BLUEPRINT_JSON__;
+    const RIGS = Array.isArray(BLUEPRINT.rigs) && BLUEPRINT.rigs.length > 0 ? BLUEPRINT.rigs : [BLUEPRINT.rig];
+    window.__PAPER_BLUEPRINT__ = BLUEPRINT;
+    window.__SHARED_SVG_DEFS__ = __SHARED_SVG_DEFS_JSON__;
+  </script>
+
+  <script type="module">
+    import { createBlueprint3dStage } from 'sculpted-paper-engine';
+
+    const bp = window.__PAPER_BLUEPRINT__;
+    const sharedDefs = window.__SHARED_SVG_DEFS__ || '';
+    const glCanvas = document.getElementById('glCanvas');
+    const overlayCanvas = document.getElementById('overlayCanvas');
+    const sheetCanvas = document.getElementById('sheetCanvas');
+    const stageBox = document.getElementById('stageBox');
+
+    const VW = bp.scene?.width ?? 960;
+    const VH = bp.scene?.height ?? 540;
+    stageBox.style.aspectRatio = `${VW} / ${VH}`;
+    document.getElementById('badgeIcon').textContent = bp.meta?.icon ?? '3D';
+    document.getElementById('hdrTitle').textContent = bp.meta?.title ?? 'Paper Studio 3D';
+    if (bp.meta?.subtitle) document.getElementById('hdrSub').textContent = bp.meta.subtitle;
+
+    const stage = await createBlueprint3dStage(glCanvas, overlayCanvas, bp, sharedDefs);
+
+    const ui = {
+      playing: true,
+      time: 0,
+      presetId: bp.motions?.[0]?.id ?? 'manual',
+      restPose: false,
+      steppedOverride: null,
+      tiltXDeg: 0,
+      tiltYDeg: 0,
+      explode: 0,
+      keyMul: 1.0,
+      backMul: 1.0,
+      aoMul: 1.0,
+      wireframe: false,
+      silhouette: false,
+      showBones: false,
+      showAnchors: false,
+      cropRig: null,
+      cropPad: 110,
+      stageOnly: false,
+      activeManualRigId: stage.RIGS[0]?.id ?? null,
+      manualAngles: {},
+    };
+
+    // Populate motion presets
+    const selPreset = document.getElementById('selPreset');
+    for (const m of (bp.motions || [])) {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.label || m.name || m.id;
+      selPreset.appendChild(opt);
+    }
+    const manOpt = document.createElement('option');
+    manOpt.value = 'manual';
+    manOpt.textContent = '🎛️ Chỉnh tay FK';
+    selPreset.appendChild(manOpt);
+    selPreset.value = ui.presetId;
+
+    // Populate rig selector & FK sliders
+    const selRig = document.getElementById('selRig');
+    for (const r of stage.RIGS) {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.label;
+      selRig.appendChild(opt);
+    }
+
+    function rebuildBoneSliders() {
+      const r = stage.RIGS.find((x) => x.id === ui.activeManualRigId) || stage.RIGS[0];
+      if (!r) return;
+      ui.manualAngles = { ...stage.rigStates[r.id].angles };
+      const box = document.getElementById('boneSliders');
+      box.innerHTML = '';
+      for (const b of r.bones) {
+        const row = document.createElement('div');
+        row.className = 'slider-row';
+        const val = Math.round(ui.manualAngles[b.id] ?? b.rest ?? 0);
+        row.innerHTML = `<span>${b.label || b.id}</span><input type="range" min="${b.limits.min}" max="${b.limits.max}" step="1" value="${val}" /><span>${val}°</span>`;
+        const inp = row.querySelector('input'), sp = row.querySelectorAll('span')[1];
+        inp.addEventListener('input', () => {
+          ui.presetId = 'manual';
+          selPreset.value = 'manual';
+          ui.manualAngles[b.id] = Number(inp.value);
+          sp.textContent = `${inp.value}°`;
+          renderNow();
+        });
+        box.appendChild(row);
+      }
+
+      const vBox = document.getElementById('variantControls');
+      vBox.innerHTML = '';
+      for (const [vGroup, list] of Object.entries(r.variants || {})) {
+        const sel = document.createElement('select');
+        sel.style.width = '100%';
+        sel.style.marginBottom = '4px';
+        for (const item of list) {
+          const o = document.createElement('option');
+          o.value = item;
+          o.textContent = `${vGroup}: ${item}`;
+          sel.appendChild(o);
+        }
+        sel.addEventListener('change', () => {
+          stage.rigStates[r.id].variants[vGroup] = sel.value;
+          renderNow();
+        });
+        vBox.appendChild(sel);
+      }
+    }
+    rebuildBoneSliders();
+
+    // Parse deterministic URL audit params
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get('stageOnly') === '1' || qs.has('sheet')) {
+      ui.stageOnly = true;
+      document.body.classList.add('stage-only');
+    }
+    if (qs.get('pause') === '1' || qs.has('sheet')) {
+      ui.playing = false;
+      document.getElementById('btnPlay').textContent = '▶ Phát';
+    }
+    if (qs.get('rest') === '1') ui.restPose = true;
+    if (qs.get('silhouette') === '1') { ui.silhouette = true; document.getElementById('chkSil').checked = true; }
+    if (qs.get('showBones') === '1') { ui.showBones = true; document.getElementById('chkBones').checked = true; }
+    if (qs.get('showAnchors') === '1') ui.showAnchors = true;
+    if (qs.get('wireframe') === '1') { ui.wireframe = true; document.getElementById('chkWire').checked = true; }
+    if (qs.has('cropRig')) ui.cropRig = qs.get('cropRig');
+    if (qs.has('cropPad') && Number.isFinite(Number(qs.get('cropPad')))) ui.cropPad = Number(qs.get('cropPad'));
+    if (qs.has('t') && Number.isFinite(Number(qs.get('t')))) ui.time = Number(qs.get('t'));
+    if (qs.has('tiltX') && Number.isFinite(Number(qs.get('tiltX')))) ui.tiltXDeg = Number(qs.get('tiltX'));
+    if (qs.has('tiltY') && Number.isFinite(Number(qs.get('tiltY')))) ui.tiltYDeg = Number(qs.get('tiltY'));
+    if (qs.has('explode') && Number.isFinite(Number(qs.get('explode')))) ui.explode = Number(qs.get('explode'));
+
+    function syncSize() {
+      const w = ui.stageOnly ? window.innerWidth : Math.max(640, Math.round(stageBox.clientWidth));
+      const h = ui.stageOnly ? window.innerHeight : Math.max(360, Math.round(stageBox.clientHeight));
+      stage.resize(w, h);
+    }
+
+    function renderNow() {
+      stage.evaluateAndRender(ui.time, ui);
+      document.getElementById('timeReadout').textContent = `t = ${ui.time.toFixed(2)}s · tilt(${Math.round(ui.tiltXDeg)}°, ${Math.round(ui.tiltYDeg)}°)`;
+    }
+
+    // Single-Context Multi-Shot Composite Sheet Renderer (?sheet=motion6 or ?sheet=modelsheet&rig=<id>)
+    function renderSingleContextSheet(sheetMode) {
+      sheetCanvas.style.display = 'block';
+      glCanvas.style.visibility = 'hidden';
+      overlayCanvas.style.visibility = 'hidden';
+      const sw = window.innerWidth || 1600;
+      const sh = window.innerHeight || 900;
+      sheetCanvas.width = sw;
+      sheetCanvas.height = sh;
+      const sctx = sheetCanvas.getContext('2d');
+      sctx.fillStyle = '#060a14';
+      sctx.fillRect(0, 0, sw, sh);
+
+      const period = bp.motions?.[0]?.period ?? 10;
+      const midT = Number((period * 0.42).toFixed(2));
+
+      if (sheetMode === 'motion6') {
+        const cols = 3, rows = 2, pad = 8;
+        const cellW = Math.floor((sw - pad * (cols + 1)) / cols);
+        const cellH = Math.floor((sh - pad * (rows + 1)) / rows);
+        stage.resize(cellW, cellH);
+        const fracs = [0, 0.17, 0.34, 0.51, 0.68, 0.84];
+        fracs.forEach((f, idx) => {
+          const tv = Number((period * f).toFixed(2));
+          stage.evaluateAndRender(tv, { ...ui, restPose: false, silhouette: false, cropRig: null });
+          const col = idx % cols, row = Math.floor(idx / cols);
+          const x = pad + col * (cellW + pad), y = pad + row * (cellH + pad);
+          sctx.save();
+          sctx.strokeStyle = '#1e2d4a';
+          sctx.lineWidth = 2;
+          sctx.strokeRect(x - 1, y - 1, cellW + 2, cellH + 2);
+          sctx.drawImage(glCanvas, x, y, cellW, cellH);
+          // Tag pill
+          const label = `#${idx + 1} · t=${tv}s (${Math.round(f * 100)}%)`;
+          sctx.font = '600 13px system-ui, sans-serif';
+          const tw = sctx.measureText(label).width + 18;
+          sctx.fillStyle = 'rgba(6, 10, 20, 0.86)';
+          sctx.fillRect(x + 8, y + cellH - 30, tw, 22);
+          sctx.strokeStyle = 'rgba(245, 195, 108, 0.45)';
+          sctx.lineWidth = 1;
+          sctx.strokeRect(x + 8, y + cellH - 30, tw, 22);
+          sctx.fillStyle = '#f8fafc';
+          sctx.fillText(label, x + 17, y + cellH - 14);
+          sctx.restore();
+        });
+      } else if (sheetMode === 'modelsheet') {
+        const rigId = qs.get('rig') || stage.RIGS[0]?.id;
+        const rObj = stage.RIGS.find((x) => x.id === rigId) || stage.RIGS[0];
+        const cols = 2, rows = 2, pad = 8;
+        const cellW = Math.floor((sw - pad * (cols + 1)) / cols);
+        const cellH = Math.floor((sh - pad * (rows + 1)) / rows);
+        stage.resize(cellW, cellH);
+
+        const cells = [
+          { label: `1. Rest Pose (0°) · ${rObj.label}`, opts: { ...ui, restPose: true, cropRig: rObj.id, tiltXDeg: 0, tiltYDeg: 0, showBones: false, silhouette: false }, t: 0 },
+          { label: `2. Active 3D Oblique (18°) · Cardstock & Shadow`, opts: { ...ui, restPose: false, cropRig: rObj.id, tiltXDeg: 18, tiltYDeg: 6, showBones: false, silhouette: false }, t: midT },
+          { label: `3. Skeleton & Anchors · ${rObj.bones.length} Bones`, opts: { ...ui, restPose: true, cropRig: rObj.id, tiltXDeg: 0, tiltYDeg: 0, showBones: true, showAnchors: true, silhouette: false }, t: 0 },
+          { label: `4. Monochrome Silhouette · Readability Check`, opts: { ...ui, restPose: false, cropRig: rObj.id, tiltXDeg: 0, tiltYDeg: 0, showBones: false, silhouette: true }, t: midT },
+        ];
+        cells.forEach((cell, idx) => {
+          stage.evaluateAndRender(cell.t, cell.opts);
+          const col = idx % cols, row = Math.floor(idx / cols);
+          const x = pad + col * (cellW + pad), y = pad + row * (cellH + pad);
+          sctx.drawImage(glCanvas, x, y, cellW, cellH);
+          if (cell.opts.showBones || cell.opts.showAnchors) {
+            sctx.drawImage(overlayCanvas, x, y, cellW, cellH);
+          }
+          sctx.strokeStyle = '#1e2d4a';
+          sctx.lineWidth = 2;
+          sctx.strokeRect(x - 1, y - 1, cellW + 2, cellH + 2);
+          sctx.font = '600 13px system-ui, sans-serif';
+          const tw = sctx.measureText(cell.label).width + 20;
+          sctx.fillStyle = 'rgba(6, 10, 20, 0.86)';
+          sctx.fillRect(x + 10, y + cellH - 32, tw, 24);
+          sctx.strokeStyle = 'rgba(245, 195, 108, 0.45)';
+          sctx.lineWidth = 1;
+          sctx.strokeRect(x + 10, y + cellH - 32, tw, 24);
+          sctx.fillStyle = '#f8fafc';
+          sctx.fillText(cell.label, x + 20, y + cellH - 15);
+        });
+      }
+    }
+
+    // Interactive Controls Wiring
+    function syncSliders() {
+      document.getElementById('rngTiltX').value = ui.tiltXDeg;
+      document.getElementById('valTiltX').textContent = Math.round(ui.tiltXDeg) + '°';
+      document.getElementById('rngTiltY').value = ui.tiltYDeg;
+      document.getElementById('valTiltY').textContent = Math.round(ui.tiltYDeg) + '°';
+      document.getElementById('rngExplode').value = ui.explode;
+      document.getElementById('valExplode').textContent = Math.round(ui.explode * 100) + '%';
+    }
+    function setActiveViewBtn(id) {
+      ['btnFront', 'btnOblique', 'btnExplode'].forEach((b) => {
+        document.getElementById(b).dataset.active = String(b === id);
+      });
+    }
+
+    document.getElementById('btnFront').addEventListener('click', () => {
+      ui.tiltXDeg = 0; ui.tiltYDeg = 0; ui.explode = 0; setActiveViewBtn('btnFront'); syncSliders(); renderNow();
+    });
+    document.getElementById('btnOblique').addEventListener('click', () => {
+      ui.tiltXDeg = 18; ui.tiltYDeg = 6; ui.explode = 0; setActiveViewBtn('btnOblique'); syncSliders(); renderNow();
+    });
+    document.getElementById('btnExplode').addEventListener('click', () => {
+      ui.tiltXDeg = 24; ui.tiltYDeg = 8; ui.explode = 0.72; setActiveViewBtn('btnExplode'); syncSliders(); renderNow();
+    });
+    document.getElementById('btnPlay').addEventListener('click', (e) => {
+      ui.playing = !ui.playing;
+      e.target.textContent = ui.playing ? '⏸ Tạm dừng' : '▶ Phát';
+      if (ui.playing && !rafRunning) { rafRunning = true; lastTs = null; requestAnimationFrame(loop); }
+    });
+    selPreset.addEventListener('change', () => { ui.presetId = selPreset.value; ui.restPose = false; renderNow(); });
+    selRig.addEventListener('change', () => { ui.activeManualRigId = selRig.value; rebuildBoneSliders(); renderNow(); });
+
+    document.getElementById('rngTiltX').addEventListener('input', (e) => { ui.tiltXDeg = Number(e.target.value); syncSliders(); renderNow(); });
+    document.getElementById('rngTiltY').addEventListener('input', (e) => { ui.tiltYDeg = Number(e.target.value); syncSliders(); renderNow(); });
+    document.getElementById('rngExplode').addEventListener('input', (e) => { ui.explode = Number(e.target.value); syncSliders(); renderNow(); });
+    document.getElementById('rngKey').addEventListener('input', (e) => { ui.keyMul = Number(e.target.value); document.getElementById('valKey').textContent = ui.keyMul.toFixed(2) + '×'; renderNow(); });
+    document.getElementById('rngBack').addEventListener('input', (e) => { ui.backMul = Number(e.target.value); document.getElementById('valBack').textContent = ui.backMul.toFixed(2) + '×'; renderNow(); });
+    document.getElementById('rngAo').addEventListener('input', (e) => { ui.aoMul = Number(e.target.value); document.getElementById('valAo').textContent = ui.aoMul.toFixed(2) + '×'; renderNow(); });
+
+    document.getElementById('chk12fps').addEventListener('change', (e) => { ui.steppedOverride = e.target.checked ? 12 : 0; renderNow(); });
+    document.getElementById('chkBones').addEventListener('change', (e) => { ui.showBones = e.target.checked; ui.showAnchors = e.target.checked; renderNow(); });
+    document.getElementById('chkSil').addEventListener('change', (e) => { ui.silhouette = e.target.checked; renderNow(); });
+    document.getElementById('chkWire').addEventListener('change', (e) => { ui.wireframe = e.target.checked; renderNow(); });
+
+    // Drag to orbit 3D shadow-box
+    let dragging = false, lx = 0, ly = 0;
+    stageBox.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; });
+    window.addEventListener('pointerup', () => { dragging = false; });
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      ui.tiltXDeg = Math.max(-28, Math.min(28, ui.tiltXDeg + (e.clientX - lx) * 0.18));
+      ui.tiltYDeg = Math.max(-18, Math.min(18, ui.tiltYDeg - (e.clientY - ly) * 0.14));
+      lx = e.clientX; ly = e.clientY;
+      syncSliders();
+      renderNow();
+    });
+
+    window.addEventListener('resize', () => {
+      if (qs.has('sheet')) renderSingleContextSheet(qs.get('sheet'));
+      else { syncSize(); renderNow(); }
+    });
+
+    // Initial render (supports ?sheet=... and ?seekFrom=... determinism check!)
+    if (qs.has('sheet')) {
+      renderSingleContextSheet(qs.get('sheet'));
+    } else {
+      syncSize();
+      syncSliders();
+      if (qs.has('seekFrom') && Number.isFinite(Number(qs.get('seekFrom')))) {
+        stage.evaluateAndRender(Number(qs.get('seekFrom')), ui);
+      }
+      renderNow();
+    }
+    window.__STUDIO_3D__ = {
+      renderAt(tVal, overrides = {}) {
+        const snap = { ...ui };
+        ui.time = Number(tVal) || 0;
+        if (overrides.tiltXDeg != null) ui.tiltXDeg = Number(overrides.tiltXDeg);
+        if (overrides.tiltYDeg != null) ui.tiltYDeg = Number(overrides.tiltYDeg);
+        if (overrides.explode != null) ui.explode = Number(overrides.explode);
+        if (overrides.steppedOverride !== undefined) ui.steppedOverride = overrides.steppedOverride;
+        if (overrides.keyMul != null) ui.keyMul = Number(overrides.keyMul);
+        if (overrides.backMul != null) ui.backMul = Number(overrides.backMul);
+        if (overrides.aoMul != null) ui.aoMul = Number(overrides.aoMul);
+        stage.evaluateAndRender(ui.time, ui);
+        Object.assign(ui, snap);
+      },
+      resize(w, h) {
+        stage.resize(w, h);
+      },
+      capturePngDataUrl() {
+        return glCanvas.toDataURL('image/png');
+      },
+    };
+    window.__STUDIO_3D_READY__ = true;
+
+    let rafRunning = false, lastTs = null;
+    function loop(now) {
+      if (!ui.playing) { rafRunning = false; return; }
+      const dt = lastTs === null ? 0 : Math.min(0.05, Math.max(0, (now - lastTs) / 1000));
+      lastTs = now;
+      ui.time += dt;
+      renderNow();
+      requestAnimationFrame(loop);
+    }
+    if (ui.playing && !qs.has('sheet')) {
+      rafRunning = true;
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>

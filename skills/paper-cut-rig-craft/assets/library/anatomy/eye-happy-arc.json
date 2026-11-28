@@ -1,0 +1,27 @@
+{
+  "id": "eye-happy-arc",
+  "family": "anatomy",
+  "category": "face",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Joyful smiling curved eye arc with subtle cheek blush, double upper lash ticks, and soft eyelid crease.",
+  "size": [
+    28,
+    22
+  ],
+  "pivot": [
+    14,
+    11
+  ],
+  "anchors": {},
+  "tokens": {
+    "LASH": "#2a1a15",
+    "BROW": "#4e2f22",
+    "BLUSH": "#ef8a7e",
+    "LID": "#d99f7e"
+  },
+  "svg": "<g data-eye=\"1\"><ellipse cx=\"0\" cy=\"4.8\" rx=\"7.6\" ry=\"3.6\" fill=\"{{BLUSH}}\" opacity=\"0.38\"/><path d=\"M-8.5 1.8 C-5.2 -4.8 5.2 -4.8 8.5 1.8\" fill=\"none\" stroke=\"{{LASH}}\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path d=\"M-6.4 -3.6 Q0 -6.4 6.4 -3.6\" fill=\"none\" stroke=\"{{LID}}\" stroke-width=\"1.1\" stroke-linecap=\"round\" opacity=\"0.7\"/><path d=\"M7.6 -0.2 L10.2 -2.0 M8.4 1.6 L10.8 0.8\" fill=\"none\" stroke=\"{{LASH}}\" stroke-width=\"1.35\" stroke-linecap=\"round\"/><path d=\"M-6.8 -6.6 Q0 -9.4 6.8 -6.6\" fill=\"none\" stroke=\"{{BROW}}\" stroke-width=\"1.65\" stroke-linecap=\"round\"/></g>"
+}

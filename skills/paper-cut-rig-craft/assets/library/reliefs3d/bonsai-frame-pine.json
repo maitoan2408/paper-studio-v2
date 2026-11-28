@@ -1,0 +1,38 @@
+{
+  "id": "bonsai-frame-pine",
+  "kind": "procedural-3d",
+  "family": "reliefs3d",
+  "layerKind": "bonsai_calligraphy",
+  "styles": ["shadowbox-moonlit", "lightbox-led", "daylight-sculpted"],
+  "defaults": {
+    "seed": 6101,
+    "trunkThickness": 0.095,
+    "trunkColor": "#ead5ad",
+    "trunkEdgeColor": "#fff9eb",
+    "padColor": "#fbf1da",
+    "padBackColor": "#c9b389",
+    "paperFlex": { "swayDeg": 2.1, "curlDeg": 4.2, "freq": 1.35, "phase": 0 },
+    "branches": [
+      {
+        "pts": [[-6.8, 2.6], [-5.1, 2.2], [-3.8, 1.6], [-2.5, 1.9]],
+        "w0": 0.26,
+        "w1": 0.05,
+        "steps": 20,
+        "z": 0
+      },
+      {
+        "pts": [[-4.9, 2.05], [-4.2, 2.55], [-3.5, 2.75], [-2.85, 2.65]],
+        "w0": 0.13,
+        "w1": 0.035,
+        "steps": 16,
+        "z": 0.03
+      }
+    ],
+    "tufts": [
+      { "x": -2.55, "y": 1.95, "z": 0.08, "radius": 0.82, "height": 0.42, "needleCount": 34, "rotDeg": -6 },
+      { "x": -2.95, "y": 2.68, "z": 0.1, "radius": 0.72, "height": 0.36, "needleCount": 30, "rotDeg": 8 },
+      { "x": -4.65, "y": 2.35, "z": 0.06, "radius": 0.76, "height": 0.38, "needleCount": 32, "rotDeg": -12 }
+    ]
+  },
+  "description": "Sinuous calligraphy cubic-Bezier bonsai pine branch with feathered two-layer needle tufts and gentle paperFlex sway."
+}

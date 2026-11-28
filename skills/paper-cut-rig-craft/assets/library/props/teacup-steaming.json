@@ -1,0 +1,28 @@
+{
+  "id": "teacup-steaming",
+  "family": "props",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Porcelain craft teacup on scalloped saucer with cobalt floral band, warm tea surface, and curling steam ribbons.",
+  "size": [
+    58,
+    56
+  ],
+  "pivot": [
+    29,
+    48
+  ],
+  "anchors": {},
+  "tokens": {
+    "CUP": "#faf5ea",
+    "SHADE": "#d8ccb8",
+    "MOTIF": "#456990",
+    "TEA": "#b56c35",
+    "STEAM": "#fff9ed"
+  },
+  "svg": "<g filter=\"url(#paperBevelSoft)\"><ellipse cx=\"0\" cy=\"0\" rx=\"22\" ry=\"5.5\" fill=\"{{SHADE}}\"/><ellipse cx=\"0\" cy=\"-1.2\" rx=\"20\" ry=\"4.5\" fill=\"{{CUP}}\"/><path d=\"M13 -19 C22 -20 24 -10 14 -7\" fill=\"none\" stroke=\"{{CUP}}\" stroke-width=\"3.2\" stroke-linecap=\"round\"/><path d=\"M-15 -22 H15 C15 -8 10 -1 0 -1 C-10 -1 -15 -8 -15 -22 Z\" fill=\"{{CUP}}\"/><path d=\"M-15 -22 C-14 -10 -10 -2 0 -1 C-7 -4 -10 -11 -10 -22 Z\" fill=\"{{SHADE}}\" opacity=\"0.52\"/><ellipse cx=\"0\" cy=\"-22\" rx=\"15\" ry=\"3.8\" fill=\"{{TEA}}\"/><path d=\"M-13 -13 Q0 -9 13 -13\" fill=\"none\" stroke=\"{{MOTIF}}\" stroke-width=\"1.8\" stroke-dasharray=\"3.2 2.4\"/><path d=\"M-4 -28 C-8 -34 -2 -39 -5 -45 M5 -27 C9 -33 3 -38 6 -44\" fill=\"none\" stroke=\"{{STEAM}}\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\"0.72\"/></g>"
+}

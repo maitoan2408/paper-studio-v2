@@ -1,0 +1,28 @@
+{
+  "id": "pine-bough-layered",
+  "family": "botanicals",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Asymmetric layered evergreen pine bough with serrated needle fans, warm bark stem, and frost/dew highlight tips.",
+  "size": [
+    84,
+    52
+  ],
+  "pivot": [
+    8,
+    28
+  ],
+  "anchors": {},
+  "tokens": {
+    "NEEDLE_DARK": "#1f4438",
+    "NEEDLE_MAIN": "#346653",
+    "NEEDLE_LIGHT": "#5d9178",
+    "BARK": "#5c3c28",
+    "TIP": "#eaf4ee"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M0 0 C22 -6 46 -8 70 -2\" fill=\"none\" stroke=\"{{BARK}}\" stroke-width=\"3.2\" stroke-linecap=\"round\"/><path d=\"M8 -2 C14 -16 26 -22 38 -20 C32 -12 28 -8 24 -4 C34 -14 48 -18 62 -14 C54 -6 46 -2 38 0 C50 -2 62 0 72 6 C58 12 44 10 32 4 C24 14 14 16 4 10 Z\" fill=\"{{NEEDLE_DARK}}\"/><path d=\"M12 -3 C20 -13 30 -16 42 -14 C36 -8 32 -5 28 -3 C38 -9 50 -12 60 -8 C50 -2 40 2 28 2 C22 8 14 10 8 6 Z\" fill=\"{{NEEDLE_MAIN}}\"/><path d=\"M22 -5 C30 -10 40 -10 48 -7 C42 -3 34 -1 24 -1 Z\" fill=\"{{NEEDLE_LIGHT}}\"/><path d=\"M35 -18 L40 -19 M57 -12 L62 -12 M66 4 L71 5\" fill=\"none\" stroke=\"{{TIP}}\" stroke-width=\"1.5\" stroke-linecap=\"round\" opacity=\"0.78\"/></g>"
+}

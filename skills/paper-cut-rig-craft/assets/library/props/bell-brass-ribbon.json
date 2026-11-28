@@ -1,0 +1,32 @@
+{
+  "id": "bell-brass-ribbon",
+  "family": "props",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Festive hanging brass bell with warm specular streak, rounded clapper, and knotted paper ribbon bow.",
+  "size": [
+    54,
+    58
+  ],
+  "pivot": [
+    27,
+    10
+  ],
+  "anchors": {
+    "clapper": [
+      27,
+      46
+    ]
+  },
+  "tokens": {
+    "BRASS": "#e6b84c",
+    "DARK": "#a3711a",
+    "RIM": "#fff3c4",
+    "RIBBON": "#c43e36"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><circle cx=\"0\" cy=\"34\" r=\"4.5\" fill=\"{{DARK}}\"/><path d=\"M-12 6 C-12 -2 12 -2 12 6 C14 18 18 26 22 32 C10 36 -10 36 -22 32 C-18 26 -14 18 -12 6 Z\" fill=\"{{BRASS}}\"/><path d=\"M-12 6 C-14 18 -18 26 -22 32 C-14 34 -8 34 -4 33 C-10 26 -10 16 -8 6 Z\" fill=\"{{DARK}}\" opacity=\"0.48\"/><path d=\"M5 7 C7 16 10 23 13 28\" fill=\"none\" stroke=\"{{RIM}}\" stroke-width=\"2.2\" stroke-linecap=\"round\" opacity=\"0.72\"/><path d=\"M0 0 C-10 -8 -18 -2 -14 5 C-10 8 -3 5 0 2 C3 5 10 8 14 5 C18 -2 10 -8 0 0 Z\" fill=\"{{RIBBON}}\"/><circle cx=\"0\" cy=\"1.5\" r=\"3\" fill=\"{{RIBBON}}\" stroke=\"{{DARK}}\" stroke-width=\"0.9\"/></g>"
+}

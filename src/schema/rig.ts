@@ -3,10 +3,11 @@ import { fail, parseWith } from '../core/errors.ts';
 import { artToLocal, length } from '../core/space.ts';
 import type { ArtPack } from './art-pack.ts';
 import { AnchorName } from './art-pack.ts';
-import { Id, firstDuplicate } from './common.ts';
+import { Id, Vec2, firstDuplicate } from './common.ts';
 
 /** Id xương: tên + hậu tố bên tùy chọn (`forearm.l`). */
 export const BoneId = z.string().regex(/^[a-z][a-z0-9-]*(\.[lr])?$/, 'bone id must match ^[a-z][a-z0-9-]*(\\.[lr])?$');
+const RoleName = z.string().regex(/^[a-zA-Z][a-zA-Z0-9._-]{0,63}$/, 'role name must be valid identifier');
 const Angle = z.number().finite().min(-180).max(180);
 
 const BoneSchema = z
@@ -44,6 +45,26 @@ const GaitSchema = z
     /** Xương đung đưa theo nhịp bước (cùng chiều, ±armSwingDeg) — dữ liệu, không gắn tên trong code. */
     swingBones: z.array(BoneId),
     armSwingDeg: z.number().finite().min(0).max(45),
+    /** Trường mở rộng v5.1 (tùy chọn): bám đường cong sàn & retarget tỷ lệ chân. */
+    lockToTravel: z.boolean().optional(),
+    strideScaleByLegLength: z.boolean().optional(),
+    resetToRest: z.boolean().optional(),
+    groundCurve: z.array(Vec2).min(2).optional(),
+  })
+  .strict();
+
+const HandTransitionSchema = z
+  .object({
+    sequence: z.array(Id).min(1),
+    maxWristDegPerFrame: z.number().finite().positive().max(22.5),
+  })
+  .strict();
+
+const FollowThroughSchema = z
+  .object({
+    chain: z.array(BoneId).min(1),
+    phaseLag: z.number().finite().min(0).max(5),
+    damping: z.number().finite().min(0).max(1),
   })
   .strict();
 
@@ -56,11 +77,14 @@ const RigSchema = z
     schemaVersion: z.literal(1),
     id: Id,
     sides: z.tuple([z.literal('l'), z.literal('r')]),
+    boneMapping: z.record(RoleName, BoneId).optional(),
     bones: z.array(BoneSchema).min(1),
     contacts: z.record(AnchorName, z.object({ bone: BoneId, anchor: AnchorName }).strict()),
     /** Contact chạm mặt đỡ khi đứng (vd. sole.l, sole.r): dùng để đặt nhân vật đúng sàn. */
     ground: z.array(AnchorName).min(1),
     ik: z.record(BoneId, IkChainSchema).optional(),
+    handTransition: HandTransitionSchema.optional(),
+    followThrough: FollowThroughSchema.optional(),
     gait: GaitSchema.optional(),
     characters: z.array(CharacterSchema).min(1),
   })
@@ -109,6 +133,12 @@ export function validateRig(raw: unknown, pack: ArtPack): Rig {
     if (!bones.has(twin)) fail('RIG_SIDE_UNPAIRED', `rig.bones.${b.id}`, `missing mirrored bone "${twin}"`);
   }
 
+  for (const [role, bId] of Object.entries(data.boneMapping ?? {})) {
+    if (!bones.has(bId)) fail('RIG_BONEMAPPING_INVALID', `rig.boneMapping.${role}`, `mapped bone "${bId}" does not exist`);
+  }
+  for (const bId of data.followThrough?.chain ?? []) {
+    if (!bones.has(bId)) fail('RIG_UNKNOWN_PARENT', 'rig.followThrough.chain', `bone "${bId}" does not exist`);
+  }
   for (const [name, c] of Object.entries(data.contacts)) {
     if (!bones.has(c.bone)) fail('RIG_UNKNOWN_PARENT', `rig.contacts.${name}`, `bone "${c.bone}" does not exist`);
   }
@@ -123,6 +153,13 @@ export function validateRig(raw: unknown, pack: ArtPack): Rig {
     if (data.contacts[ch.contact]?.bone !== ch.end) fail('RIG_IK_INVALID', where, `contact "${ch.contact}" must be on bone "${ch.end}"`);
   }
   for (const b of data.gait?.swingBones ?? []) if (!bones.has(b)) fail('RIG_UNKNOWN_PARENT', 'rig.gait.swingBones', `bone "${b}" does not exist`);
+  if (data.gait?.groundCurve) {
+    for (let i = 1; i < data.gait.groundCurve.length; i++) {
+      if (!(data.gait.groundCurve[i]![0] > data.gait.groundCurve[i - 1]![0])) {
+        fail('RIG_SCHEMA', `rig.gait.groundCurve[${i}]`, 'groundCurve X coordinates must be strictly increasing');
+      }
+    }
+  }
 
   const characters = new Map<string, CharacterInfo>();
   for (const ch of data.characters) characters.set(ch.id, validateCharacter(ch, data, bones, order, pack));

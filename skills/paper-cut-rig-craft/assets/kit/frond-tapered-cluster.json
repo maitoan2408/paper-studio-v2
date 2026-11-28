@@ -1,0 +1,17 @@
+{
+  "id": "frond-tapered-cluster",
+  "category": "organic",
+  "description": "Curved tapered multi-frond paper-cut spray with central origami crease and highlight rib (usable for ferns, sea-grass, plumes, wheat, or garlands).",
+  "size": [64, 84],
+  "pivot": [32, 74],
+  "anchors": {
+    "base": [32, 74]
+  },
+  "tokens": {
+    "PRIMARY": "#5c9473",
+    "SECONDARY": "#38634d",
+    "SHADOW": "#214031",
+    "HIGHLIGHT": "#b5e0c2"
+  },
+  "svg": "<g><path d=\"M-2 0 C-14 -16 -24 -34 -26 -54 C-16 -46 -8 -30 -1 -10 Z\" fill=\"{{SHADOW}}\"/><path d=\"M2 0 C15 -15 24 -32 25 -52 C14 -44 7 -28 1 -10 Z\" fill=\"{{SECONDARY}}\"/><path d=\"M0 2 C-9 -18 -11 -42 -2 -68 C8 -46 9 -20 0 2 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M0 2 C0 -20 -1 -44 -2 -68 C7 -46 8 -20 0 2 Z\" fill=\"{{SECONDARY}}\" opacity=\"0.42\"/><path d=\"M-1 -2 C-6 -20 -7 -40 -2 -64\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.55\"/><path d=\"M-2 -8 C-11 -22 -18 -36 -22 -50 M2 -8 C11 -20 17 -34 21 -47\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"0.95\" stroke-linecap=\"round\" opacity=\"0.45\"/></g>"
+}

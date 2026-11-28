@@ -1,0 +1,17 @@
+{
+  "id": "cloud-scalloped-tier",
+  "category": "environment",
+  "description": "3-tier scalloped storybook paper-cut cloud/drift puff with subtle underside tonal shelf and crisp upper rim.",
+  "size": [140, 68],
+  "pivot": [70, 48],
+  "anchors": {
+    "base": [70, 48]
+  },
+  "tokens": {
+    "PRIMARY": "#fff7eb",
+    "SECONDARY": "#e6d8c8",
+    "SHADOW": "#c7b6a8",
+    "HIGHLIGHT": "#ffffff"
+  },
+  "svg": "<g filter=\"url(#paperBevelSoft)\"><path d=\"M-58 8 C-62 -6 -48 -18 -34 -15 C-28 -32 -4 -38 14 -24 C28 -30 48 -20 48 -4 C60 -2 64 10 52 14 C22 18 -30 18 -58 8 Z\" fill=\"{{SECONDARY}}\"/><path d=\"M-48 8 C-50 -4 -36 -14 -24 -11 C-18 -26 2 -30 16 -18 C28 -22 42 -12 40 2 C48 4 50 11 40 14 C14 16 -24 16 -48 8 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M-46 10 C-22 15 18 15 44 10 C42 14 18 17 -46 10 Z\" fill=\"{{SHADOW}}\" opacity=\"0.48\"/><path d=\"M-32 -12 C-24 -26 -2 -30 14 -20 C26 -24 40 -14 42 -2\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\"0.8\"/></g>"
+}

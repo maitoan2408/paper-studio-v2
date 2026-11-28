@@ -1,0 +1,28 @@
+{
+  "id": "ivy-vine-swirl",
+  "family": "botanicals",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox",
+    "shadow-craft"
+  ],
+  "description": "Flowing S-curved ivy vine spray with heart-shaped two-tone leaves and curling botanical tendrils.",
+  "size": [
+    74,
+    62
+  ],
+  "pivot": [
+    8,
+    32
+  ],
+  "anchors": {},
+  "tokens": {
+    "VINE": "#33593a",
+    "LEAF_A": "#4e7e51",
+    "LEAF_B": "#77a86f",
+    "VEIN": "#c9e0bc"
+  },
+  "svg": "<g filter=\"url(#paperBevelSoft)\"><path d=\"M0 0 C16 -14 34 -18 50 -4 C58 2 64 -2 62 -10 C60 -16 52 -15 53 -9\" fill=\"none\" stroke=\"{{VINE}}\" stroke-width=\"2.1\" stroke-linecap=\"round\"/><path d=\"M16 -11 C12 -22 18 -30 24 -26 C28 -22 24 -14 16 -11 Z\" fill=\"{{LEAF_A}}\"/><path d=\"M32 -12 C38 -24 48 -26 48 -18 C48 -12 40 -10 32 -12 Z\" fill=\"{{LEAF_B}}\"/><path d=\"M26 -4 C20 8 28 16 34 10 C38 6 34 -2 26 -4 Z\" fill=\"{{LEAF_A}}\"/><path d=\"M44 -4 C46 8 56 12 58 4 C58 -2 50 -4 44 -4 Z\" fill=\"{{LEAF_B}}\"/><path d=\"M18 -14 L22 -22 M36 -14 L44 -19 M29 -1 L31 7\" fill=\"none\" stroke=\"{{VEIN}}\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\"0.72\"/></g>"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "daylight-sculpted",
+  "name": "3D Daylight Sculpted Origami Relief",
+  "sceneDefaults": {
+    "renderMode": "sculpted3d",
+    "bgColor": "#8ac9e8",
+    "cadence": { "charFps": 0, "cameraDrift": 0.10 },
+    "boxCavity": {
+      "frameShape": "scalloped_arch",
+      "z": 1.28,
+      "depth": 3.8,
+      "plies": 3,
+      "scallops": 10,
+      "scallopAmp": 0.038,
+      "apertureRx": 6.65,
+      "apertureRy": 4.10,
+      "plyColors": ["#eef5fa", "#bcdff2", "#7fb8d9"],
+      "rimHighlightColor": "#ffffff",
+      "frameCastShadow": true
+    },
+    "lighting3d": {
+      "bgColor": "#dceaf5",
+      "fov": 24,
+      "exposure": 1.08,
+      "backlightGain": 0.65,
+      "aoIntensity": 0.85,
+      "aoRadius": 0.36,
+      "bloomStrength": 0.14,
+      "bloomThreshold": 0.92,
+      "moteCount": 20,
+      "moteColor": "#ffffff",
+      "hemiLight": { "sky": "#dff2ff", "ground": "#1c4a5c", "intensity": 0.92 },
+      "keyLight": {
+        "color": "#fff8e8",
+        "intensity": 2.72,
+        "pos": [-6.4, 7.8, 9.8],
+        "shadowMapSize": 2048,
+        "shadowFrustum": 9.2,
+        "shadowBias": -0.00036,
+        "shadowNormalBias": 0.022,
+        "shadowRadius": 2.1
+      },
+      "rimLight": { "color": "#94d4f5", "intensity": 0.75, "pos": [7.2, 3.4, 5.2] },
+      "pointLights": [
+        { "color": "#ffe29c", "intensity": 9.0, "distance": 12.0, "decay": 1.6, "pos": [-3.2, 2.8, -2.0], "pulseAmp": 0.02 }
+      ]
+    }
+  }
+}

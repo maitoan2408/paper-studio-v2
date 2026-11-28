@@ -1,0 +1,29 @@
+{
+  "id": "mushroom-storybook",
+  "family": "botanicals",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Paired woodland toadstools with curved spotted caps, fluted cream gills, tapered stems, and mossy base tuft.",
+  "size": [
+    62,
+    62
+  ],
+  "pivot": [
+    31,
+    56
+  ],
+  "anchors": {},
+  "tokens": {
+    "CAP": "#c84b3b",
+    "CAP_DARK": "#8c2b21",
+    "SPOT": "#fcf3df",
+    "STEM": "#f2e4c9",
+    "GILL": "#cfb895",
+    "MOSS": "#5c824c"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-8 0 C-8 -12 -6 -22 -4 -28 L6 -28 C8 -22 10 -12 10 0 Z\" fill=\"{{STEM}}\"/><ellipse cx=\"1\" cy=\"-26\" rx=\"18\" ry=\"6\" fill=\"{{GILL}}\"/><path d=\"M-22 -26 C-22 -44 -8 -50 2 -50 C14 -50 24 -42 22 -26 C10 -29 -10 -29 -22 -26 Z\" fill=\"{{CAP}}\"/><path d=\"M-22 -26 C-16 -38 -6 -46 2 -50 C-10 -48 -20 -40 -22 -26 Z\" fill=\"{{CAP_DARK}}\" opacity=\"0.45\"/><circle cx=\"-9\" cy=\"-36\" r=\"3.4\" fill=\"{{SPOT}}\"/><circle cx=\"4\" cy=\"-42\" r=\"2.8\" fill=\"{{SPOT}}\"/><circle cx=\"13\" cy=\"-34\" r=\"2.5\" fill=\"{{SPOT}}\"/><path d=\"M14 0 C14 -8 15 -14 17 -18 L22 -18 C23 -14 24 -8 24 0 Z\" fill=\"{{STEM}}\"/><path d=\"M9 -17 C10 -26 16 -30 21 -29 C26 -28 29 -23 28 -17 Z\" fill=\"{{CAP}}\"/><circle cx=\"19\" cy=\"-24\" r=\"1.9\" fill=\"{{SPOT}}\"/><path d=\"M-18 2 C-12 -5 -4 -4 0 1 C5 -4 14 -5 26 2 Z\" fill=\"{{MOSS}}\"/></g>"
+}
