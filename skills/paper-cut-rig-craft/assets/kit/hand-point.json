@@ -1,0 +1,18 @@
+{
+  "id": "hand-point",
+  "category": "hand",
+  "description": "Sculpted paper-cut pointing hand with extended index finger, folded lower fingers, thumb brace, and bevel rim.",
+  "size": [48, 52],
+  "pivot": [24, 10],
+  "anchors": {
+    "grip": [24, 24],
+    "tip": [29, 44]
+  },
+  "tokens": {
+    "PRIMARY": "#f0c7a4",
+    "SHADOW": "#c9956f",
+    "HIGHLIGHT": "#fff1e2",
+    "STROKE": "#7a4d32"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-6 -4 C-9 1 -9 9 -8 16 C-7 22 -2 25 3 24 L5 36 C5 39 9 39 9 35 L9 18 C11 12 10 2 6 -4 C2 -7 -4 -7 -6 -4 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M-7 11 C-4 16 1 18 7 16 L6 23 C0 24 -6 22 -7 16 Z\" fill=\"{{SHADOW}}\" opacity=\"0.4\"/><path d=\"M-6 9 C-10 11 -10 17 -5 19 C-1 20 2 18 2 14 C1 11 -2 8 -6 9 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M-4 13 C-1 14 2 14 4 13 M-3 18 C0 19 3 19 5 18\" fill=\"none\" stroke=\"{{STROKE}}\" stroke-width=\"1.15\" stroke-linecap=\"round\" opacity=\"0.55\"/><path d=\"M7 16 L7 34\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.65\"/></g>"
+}

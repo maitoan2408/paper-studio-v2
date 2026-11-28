@@ -1,0 +1,22 @@
+{
+  "id": "paper-popup",
+  "name": "Paper Pop-Up Book",
+  "surfaceFilter": "cutoutBorder",
+  "sceneDefaults": {
+    "cadence": { "charFps": 0, "cameraDrift": 0.12 },
+    "lighting": {
+      "shadowColor": "#3b2618",
+      "shadowOpacity": 0.65,
+      "chalkShadows": true,
+      "vignetteColor": "#472f1e",
+      "vignetteOpacity": 0.22,
+      "cutoutBorderColor": "#fffdf7",
+      "cutoutEdgeColor": "#b8ab9a",
+      "cutoutBorderWidth": 3.0,
+      "bevelDir": [-1, -1],
+      "bevelWidth": 1.15,
+      "bevelLightColor": "#fffdf5",
+      "bevelLightOpacity": 0.5
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "crate-flour-sack",
+  "family": "props",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Artisan market wooden slatted crate paired with a tied burlap flour sack, twine cord, and stitched corner patch.",
+  "size": [
+    86,
+    68
+  ],
+  "pivot": [
+    43,
+    62
+  ],
+  "anchors": {
+    "top": [
+      43,
+      16
+    ]
+  },
+  "tokens": {
+    "WOOD": "#a97343",
+    "WOOD_DARK": "#6d4524",
+    "SACK": "#ebd8b7",
+    "SACK_SHADOW": "#c2a67d",
+    "TWINE": "#7a4b2a"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><rect x=\"-36\" y=\"-34\" width=\"44\" height=\"34\" rx=\"2.5\" fill=\"{{WOOD}}\"/><path d=\"M-36 -23 H8 M-36 -11 H8\" stroke=\"{{WOOD_DARK}}\" stroke-width=\"1.6\"/><path d=\"M-32 -34 V0 M4 -34 V0\" stroke=\"{{WOOD_DARK}}\" stroke-width=\"2.2\" opacity=\"0.65\"/><path d=\"M-36 -34 L8 0\" stroke=\"{{WOOD_DARK}}\" stroke-width=\"2.2\" opacity=\"0.38\"/><path d=\"M4 0 C2 -16 6 -34 15 -40 L12 -49 C18 -46 24 -46 30 -49 L27 -40 C36 -34 40 -16 36 0 Z\" fill=\"{{SACK}}\"/><path d=\"M4 0 C2 -16 6 -34 15 -40 C12 -28 11 -14 14 0 Z\" fill=\"{{SACK_SHADOW}}\" opacity=\"0.52\"/><path d=\"M13 -39 Q21 -36 29 -39\" fill=\"none\" stroke=\"{{TWINE}}\" stroke-width=\"2.6\" stroke-linecap=\"round\"/><rect x=\"19\" y=\"-22\" width=\"11\" height=\"10\" rx=\"1.5\" fill=\"{{SACK_SHADOW}}\" opacity=\"0.72\"/><path d=\"M19 -22 H30 V-12 H19 Z\" fill=\"none\" stroke=\"{{TWINE}}\" stroke-width=\"1\" stroke-dasharray=\"2.2 1.8\"/></g>"
+}

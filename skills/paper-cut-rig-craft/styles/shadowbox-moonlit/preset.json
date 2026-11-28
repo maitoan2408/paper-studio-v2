@@ -1,0 +1,48 @@
+{
+  "id": "shadowbox-moonlit",
+  "name": "3D Moonlit Oval Shadow-Box",
+  "sceneDefaults": {
+    "renderMode": "sculpted3d",
+    "bgColor": "#0b1326",
+    "cadence": { "charFps": 12, "cameraDrift": 0.14 },
+    "boxCavity": {
+      "frameShape": "oval_scallop_bottom",
+      "z": 1.38,
+      "depth": 5.0,
+      "plies": 3,
+      "apertureRx": 6.35,
+      "apertureRy": 4.05,
+      "plyColors": ["#192133", "#26334d", "#37496b"],
+      "rimHighlightColor": "#9fb6db",
+      "frameCastShadow": false
+    },
+    "lighting3d": {
+      "bgColor": "#111726",
+      "fov": 24,
+      "exposure": 1.16,
+      "backlightGain": 1.25,
+      "aoIntensity": 0.88,
+      "aoRadius": 0.38,
+      "bloomStrength": 0.22,
+      "bloomThreshold": 0.88,
+      "moteCount": 32,
+      "moteColor": "#fff3c4",
+      "hemiLight": { "sky": "#5e80bd", "ground": "#0b1428", "intensity": 0.80 },
+      "keyLight": {
+        "color": "#fff3da",
+        "intensity": 2.50,
+        "pos": [4.8, 6.2, 10.8],
+        "shadowMapSize": 2048,
+        "shadowFrustum": 8.6,
+        "shadowBias": -0.00035,
+        "shadowNormalBias": 0.022,
+        "shadowRadius": 2.5
+      },
+      "rimLight": { "color": "#b4d2fc", "intensity": 0.90, "pos": [-6.2, 3.8, 5.2] },
+      "pointLights": [
+        { "color": "#ffebb8", "intensity": 28.0, "distance": 14.0, "decay": 1.48, "pos": [0.1, 1.85, -1.45], "pulseAmp": 0.05 },
+        { "color": "#ffab4d", "intensity": 10.5, "distance": 6.8, "decay": 1.65, "pos": [2.0, -1.2, -0.75], "pulseAmp": 0.08 }
+      ]
+    }
+  }
+}

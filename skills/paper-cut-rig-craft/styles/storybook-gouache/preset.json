@@ -1,0 +1,15 @@
+{
+  "id": "storybook-gouache",
+  "name": "Storybook Gouache",
+  "surfaceFilter": "gouacheGrain",
+  "sceneDefaults": {
+    "cadence": { "charFps": 0, "cameraDrift": 0.16 },
+    "lighting": {
+      "chalkShadows": true,
+      "bevelDir": [-1, -1],
+      "bevelWidth": 1.25,
+      "bevelLightColor": "#fff8e6",
+      "bevelLightOpacity": 0.48
+    }
+  }
+}

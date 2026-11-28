@@ -1,0 +1,21 @@
+{
+  "id": "paper-lightbox",
+  "name": "Paper-Cut Lightbox",
+  "surfaceFilter": "backlitPulp",
+  "sceneDefaults": {
+    "cadence": { "charFps": 12, "cameraDrift": 0.14 },
+    "lighting": {
+      "shadowColor": "#070d1f",
+      "shadowOpacity": 0.92,
+      "chalkShadows": true,
+      "vignetteColor": "#050914",
+      "vignetteOpacity": 0.42,
+      "bevelDir": [0, -1],
+      "bevelWidth": 1.6,
+      "bevelLightColor": "#ffebc2",
+      "bevelLightOpacity": 0.56,
+      "bevelDarkColor": "#070b18",
+      "bevelDarkOpacity": 0.42
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "paper-washi-translucent",
+  "kind": "pbr-paper",
+  "family": "materials",
+  "gsm": 120,
+  "cardstock": {
+    "thickness": 0.045,
+    "bevel": 0.008,
+    "edgeColor": "#fff8e8",
+    "roughness": 0.82,
+    "normalScale": 0.52,
+    "translucency": 0.62
+  },
+  "styles": ["lightbox-led", "shadowbox-moonlit", "winter-tunnel"],
+  "description": "Thin 120gsm fibrous mulberry washi paper designed for strongly backlit lanterns, petals, and glowing clouds."
+}

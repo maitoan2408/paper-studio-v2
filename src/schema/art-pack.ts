@@ -8,7 +8,43 @@ import { checkSvg } from './svg.ts';
 
 export const MAX_SVG_BYTES = 2 * 1024 * 1024;
 export const AnchorName = z.string().regex(/^[a-z][a-z0-9-]*(\.[lr])?$/, 'anchor name must match ^[a-z][a-z0-9-]*(\\.[lr])?$');
-export const Category = z.enum(['background', 'surface', 'prop', 'body', 'hand', 'head', 'fx']);
+export const Category = z.enum([
+  'background', 'surface', 'prop', 'body', 'hand', 'head', 'fx',
+  'limb', 'foot', 'face', 'tail',
+]);
+
+const PaperFlexSchema = z
+  .object({
+    mode: z.enum(['wing_cup', 'cloth_billow', 'tail_wave', 'branch_sway']).optional(),
+    amp: z.number().finite().optional(),
+    freq: z.number().finite().optional(),
+    phase: z.number().finite().optional(),
+    anchor: z.enum(['edges', 'bottom']).optional(),
+    ampX: z.number().finite().optional(),
+    ampZ: z.number().finite().optional(),
+    swayDeg: z.number().finite().optional(),
+    curlDeg: z.number().finite().optional(),
+  })
+  .strict();
+
+const CardstockSchema = z
+  .object({
+    thickness: z.number().finite().positive().max(2.5).optional(),
+    bevel: z.number().finite().min(0).max(0.5).optional(),
+    edgeColor: z.string().min(1).max(64).optional(),
+    roughness: z.number().finite().min(0).max(1).optional(),
+    normalScale: z.number().finite().min(0).max(4).optional(),
+    translucency: z.number().finite().min(0).max(1).optional(),
+    paperFlex: PaperFlexSchema.optional(),
+  })
+  .strict();
+
+const Scene3dRefSchema = z
+  .object({
+    file: z.string().min(1).max(256),
+    sha256: Sha256,
+  })
+  .strict();
 
 const AssetSchema = z
   .object({
@@ -19,21 +55,34 @@ const AssetSchema = z
     pivot: Vec2,
     anchors: z.record(AnchorName, Vec2),
     category: Category,
+    cardstock: CardstockSchema.optional(),
     sha256: Sha256,
   })
   .strict();
 
 const ManifestSchema = z
-  .object({ schemaVersion: z.literal(1), id: Id, version: Semver, assets: z.array(AssetSchema).min(1) })
+  .object({
+    schemaVersion: z.literal(1),
+    id: Id,
+    version: Semver,
+    scene3d: Scene3dRefSchema.optional(),
+    assets: z.array(AssetSchema).min(1),
+  })
   .strict();
 
 export type Asset = z.output<typeof AssetSchema> & { absPath: string };
+export interface Scene3dRef {
+  file: string;
+  sha256: string;
+  absPath: string;
+}
 export interface ArtPack {
   id: string;
   version: string;
   dir: string;
   /** SHA-256 của manifest dạng JSON canonical (đã gồm sha256 của từng file art). */
   manifestSha256: string;
+  scene3d?: Scene3dRef;
   assets: ReadonlyMap<string, Asset>;
 }
 
@@ -45,10 +94,30 @@ export function loadArtPack(dir: string): ArtPack {
   if (dup) fail('ART_DUPLICATE_ID', `manifest.assets`, `duplicate asset id "${dup}"`);
 
   const root = realpathSync(dir);
+  let scene3d: Scene3dRef | undefined;
+  if (m.scene3d) {
+    const absPath = safePackFilePath(root, m.scene3d.file, '.json', 'manifest.scene3d');
+    const bytes = readFileSync(absPath);
+    const actual = sha256Hex(bytes);
+    if (actual !== m.scene3d.sha256) {
+      fail('ART_HASH_MISMATCH', 'manifest.scene3d', `file ${m.scene3d.file} has sha256 ${actual}, manifest says ${m.scene3d.sha256}`);
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(bytes.toString('utf8'));
+    } catch (e) {
+      fail('ART_SCHEMA', 'manifest.scene3d', `invalid JSON: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    if (!parsed || typeof parsed !== 'object' || (parsed as { schemaVersion?: unknown }).schemaVersion !== 1) {
+      fail('ART_SCHEMA', 'manifest.scene3d.schemaVersion', 'expected schemaVersion === 1');
+    }
+    scene3d = { file: m.scene3d.file, sha256: m.scene3d.sha256, absPath };
+  }
+
   const assets = new Map<string, Asset>();
   m.assets.forEach((a, i) => {
     const where = `manifest.assets[${i}](${a.id})`;
-    const absPath = safeAssetPath(root, a.file, where);
+    const absPath = safePackFilePath(root, a.file, '.svg', where);
     const bytes = readFileSync(absPath);
     const actual = sha256Hex(bytes);
     if (actual !== a.sha256) fail('ART_HASH_MISMATCH', where, `file ${a.file} has sha256 ${actual}, manifest says ${a.sha256}`);
@@ -66,14 +135,21 @@ export function loadArtPack(dir: string): ArtPack {
     assets.set(a.id, { ...a, absPath });
   });
 
-  return { id: m.id, version: m.version, dir: root, manifestSha256: canonicalSha256(m), assets };
+  return {
+    id: m.id,
+    version: m.version,
+    dir: root,
+    manifestSha256: canonicalSha256(m),
+    ...(scene3d ? { scene3d } : {}),
+    assets,
+  };
 }
 
-function safeAssetPath(root: string, file: string, where: string): string {
+function safePackFilePath(root: string, file: string, requiredExt: '.svg' | '.json', where: string): string {
   const unsafe = (d: string): never => fail('ART_PATH_UNSAFE', `${where}.file`, `"${file}": ${d}`);
   if (isAbsolute(file) || file.includes('\\') || file.includes('\0')) unsafe('must be a relative POSIX path');
   if (file.split('/').some((p) => p === '..' || p === '.' || p === '')) unsafe('must not contain "..", "." or empty segments');
-  if (!file.endsWith('.svg')) unsafe('only .svg files are allowed');
+  if (!file.endsWith(requiredExt)) unsafe(`only ${requiredExt} files are allowed`);
   const abs = join(root, file);
   let st;
   try {

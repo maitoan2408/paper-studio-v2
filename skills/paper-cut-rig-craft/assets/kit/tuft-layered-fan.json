@@ -1,0 +1,18 @@
+{
+  "id": "tuft-layered-fan",
+  "category": "organic",
+  "description": "3-tier shingled two-tone paper-cut organic fan (usable for canopies, foliage tufts, coral fans, plumes, or decorative tufts).",
+  "size": [76, 56],
+  "pivot": [38, 44],
+  "anchors": {
+    "base": [38, 44]
+  },
+  "tokens": {
+    "PRIMARY": "#4f7d64",
+    "SECONDARY": "#345946",
+    "SHADOW": "#213c2f",
+    "HIGHLIGHT": "#96c7a8",
+    "ACCENT": "#e7f3e4"
+  },
+  "svg": "<g><path d=\"M-30 2 C-34 -12 -22 -26 -8 -24 C-2 -34 12 -36 18 -24 C30 -24 36 -10 28 2 C16 8 -16 8 -30 2 Z\" fill=\"{{SHADOW}}\"/><path d=\"M-24 2 C-26 -10 -15 -22 -4 -19 C-2 -30 10 -30 14 -18 C24 -18 28 -7 22 2 C10 7 -12 7 -24 2 Z\" fill=\"{{SECONDARY}}\"/><path d=\"M-18 3 C-20 -7 -10 -17 -1 -14 C2 -23 11 -22 13 -12 C21 -12 22 -3 16 3 C6 6 -8 6 -18 3 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M-12 2 C-12 -5 -5 -12 1 -9 C4 -16 10 -14 11 -7 C16 -7 16 -1 11 2 Z\" fill=\"{{HIGHLIGHT}}\" opacity=\"0.42\"/><path d=\"M0 4 L0 -26 M-3 2 L-16 -14 M3 2 L16 -13\" fill=\"none\" stroke=\"{{ACCENT}}\" stroke-width=\"1.05\" stroke-linecap=\"round\" opacity=\"0.42\"/><path d=\"M-17 -5 C-11 -13 -3 -16 4 -19 C11 -16 17 -10 20 -3\" fill=\"none\" stroke=\"{{ACCENT}}\" stroke-width=\"1.1\" stroke-linecap=\"round\" opacity=\"0.35\"/></g>"
+}

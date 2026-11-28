@@ -1,0 +1,48 @@
+{
+  "id": "lightbox-led",
+  "name": "3D Warm LED Backlit Lightbox",
+  "sceneDefaults": {
+    "renderMode": "sculpted3d",
+    "bgColor": "#1c0d06",
+    "cadence": { "charFps": 12, "cameraDrift": 0.12 },
+    "boxCavity": {
+      "frameShape": "pagoda_lantern_window",
+      "z": 1.42,
+      "depth": 5.2,
+      "plies": 3,
+      "apertureRx": 6.15,
+      "apertureRy": 4.02,
+      "plyColors": ["#141622", "#1f2436", "#2c344d"],
+      "rimHighlightColor": "#d8e2f2",
+      "frameCastShadow": false
+    },
+    "lighting3d": {
+      "bgColor": "#121420",
+      "fov": 24,
+      "exposure": 1.18,
+      "backlightGain": 1.65,
+      "aoIntensity": 0.92,
+      "aoRadius": 0.40,
+      "bloomStrength": 0.28,
+      "bloomThreshold": 0.85,
+      "moteCount": 36,
+      "moteColor": "#ffd27d",
+      "hemiLight": { "sky": "#f59e0b", "ground": "#141624", "intensity": 0.68 },
+      "keyLight": {
+        "color": "#ffe8c2",
+        "intensity": 2.15,
+        "pos": [4.2, 5.8, 10.5],
+        "shadowMapSize": 2048,
+        "shadowFrustum": 8.6,
+        "shadowBias": -0.00035,
+        "shadowNormalBias": 0.022,
+        "shadowRadius": 2.6
+      },
+      "rimLight": { "color": "#ffffff", "intensity": 1.15, "pos": [-5.8, 4.5, 6.2] },
+      "pointLights": [
+        { "color": "#ff9f2e", "intensity": 34.0, "distance": 14.5, "decay": 1.42, "pos": [0.0, -0.4, -2.1], "pulseAmp": 0.06 },
+        { "color": "#ffe270", "intensity": 18.0, "distance": 10.0, "decay": 1.55, "pos": [-0.3, 2.1, -2.4], "pulseAmp": 0.04 }
+      ]
+    }
+  }
+}

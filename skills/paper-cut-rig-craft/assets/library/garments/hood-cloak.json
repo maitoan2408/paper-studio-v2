@@ -1,0 +1,33 @@
+{
+  "id": "hood-cloak",
+  "family": "garments",
+  "category": "head",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox",
+    "shadow-craft"
+  ],
+  "description": "Draped storybook cloak hood with pointed back fold, shadowed inner opening, and stitched rolled brim.",
+  "size": [
+    66,
+    62
+  ],
+  "pivot": [
+    36,
+    46
+  ],
+  "anchors": {
+    "peak": [
+      8,
+      12
+    ]
+  },
+  "tokens": {
+    "MAIN": "#7d2e2e",
+    "DARK": "#4a1818",
+    "RIM": "#d87d6b",
+    "STITCH": "#f5dec2"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-28 -8 C-26 -28 -8 -38 12 -36 C24 -34 28 -20 26 -2 C24 8 14 14 0 14 C-14 14 -24 6 -28 -8 Z\" fill=\"{{MAIN}}\"/><path d=\"M4 -32 C18 -30 24 -18 22 -2 C20 6 12 10 4 10 C8 -4 8 -18 4 -32 Z\" fill=\"{{DARK}}\" opacity=\"0.72\"/><path d=\"M-26 -8 C-16 -14 -8 -16 2 -12 C-8 -6 -16 0 -22 6 Z\" fill=\"{{DARK}}\" opacity=\"0.42\"/><path d=\"M10 -35 C22 -32 27 -18 25 -2 C23 7 15 12 6 12\" fill=\"none\" stroke=\"{{STITCH}}\" stroke-width=\"1.35\" stroke-dasharray=\"3.2 2.4\" opacity=\"0.82\"/><path d=\"M-18 -24 C-8 -33 4 -35 14 -32\" fill=\"none\" stroke=\"{{RIM}}\" stroke-width=\"1.8\" stroke-linecap=\"round\" opacity=\"0.58\"/></g>"
+}

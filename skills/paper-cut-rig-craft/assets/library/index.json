@@ -1,0 +1,945 @@
+{
+  "schemaVersion": 1,
+  "version": "5.1.0",
+  "count": 34,
+  "families": [
+    "anatomy",
+    "garments",
+    "botanicals",
+    "props",
+    "frames"
+  ],
+  "components": [
+    {
+      "id": "head-front-storybook",
+      "family": "anatomy",
+      "category": "head",
+      "file": "anatomy/head-front-storybook.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "SKIN",
+        "SKIN_SHADOW",
+        "BLUSH",
+        "HAIR_MAIN",
+        "HAIR_DARK",
+        "HAIR_SHEEN",
+        "IRIS",
+        "LASH",
+        "LIP"
+      ],
+      "primitives": 24,
+      "craftScore": 85,
+      "sha256": "bac981bc172f1355cfb6dcedb0dcfaafa868dfbe3a62c472724f8a59e1759c0c",
+      "description": "Front-facing storybook character head with symmetric ears, sculpted chin, rosy cheeks, dual blinking eyes (data-eye=1), gentle smile, and layered bangs."
+    },
+    {
+      "id": "head-profile-storybook",
+      "family": "anatomy",
+      "category": "head",
+      "file": "anatomy/head-profile-storybook.json",
+      "styles": [
+        "paper-lightbox",
+        "shadow-craft",
+        "paper-popup",
+        "storybook-gouache"
+      ],
+      "tokens": [
+        "SKIN",
+        "SKIN_SHADOW",
+        "BLUSH",
+        "HAIR_MAIN",
+        "HAIR_DARK",
+        "HAIR_SHEEN",
+        "LASH",
+        "LIP"
+      ],
+      "primitives": 16,
+      "craftScore": 85,
+      "sha256": "a0ca6bf9fccf1a672fc9603493c127e42d1fa04b60b72e379ba1285070b5516c",
+      "description": "Classic paper-cut side-profile head (faces +x) with clear nose bridge, chin silhouette, tucked chignon bun, and blinking profile eye."
+    },
+    {
+      "id": "eye-happy-arc",
+      "family": "anatomy",
+      "category": "face",
+      "file": "anatomy/eye-happy-arc.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "LASH",
+        "BROW",
+        "BLUSH",
+        "LID"
+      ],
+      "primitives": 5,
+      "craftScore": 59,
+      "sha256": "769c1ad2179ebff480c15f0a30cdb5d422fa5f552ff4524890183b5d8c8e7085",
+      "description": "Joyful smiling curved eye arc with subtle cheek blush, double upper lash ticks, and soft eyelid crease."
+    },
+    {
+      "id": "eye-wide-wonder",
+      "family": "anatomy",
+      "category": "face",
+      "file": "anatomy/eye-wide-wonder.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "SCLERA",
+        "IRIS",
+        "IRIS_LIGHT",
+        "LASH",
+        "BROW"
+      ],
+      "primitives": 8,
+      "craftScore": 76,
+      "sha256": "7709751dfda23fafa9ff0e98dc1b5ab1a0d2f4e69a3abee9d050bb0be4732ff0",
+      "description": "Luminous wide-open wonder eye with dual star catchlights, deep iris ring, upper lash arch, and raised brow."
+    },
+    {
+      "id": "paw-quadruped",
+      "family": "anatomy",
+      "category": "limb",
+      "file": "anatomy/paw-quadruped.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "FUR",
+        "FUR_DARK",
+        "TIP",
+        "PAD"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "8bec7485760338759cd584b63a682ee5e51f053dfbe49ae9c04644f809c84d5b",
+      "description": "Articulated woodland creature paw with layered ankle ruff, sculpted toe contours, and soft paw-pad shadow."
+    },
+    {
+      "id": "hoof-ungulate",
+      "family": "anatomy",
+      "category": "limb",
+      "file": "anatomy/hoof-ungulate.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "FUR",
+        "FUR_DARK",
+        "HOOF",
+        "HOOF_RIM"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "efec28b5e4c128a1b3090ad557ff0bfe93e159671f36f7b49b7e0cbe505845a6",
+      "description": "Sculpted deer/foal split hoof with fetlock tuft, bevel highlight, and grounded flat sole."
+    },
+    {
+      "id": "wing-feathered-spread",
+      "family": "anatomy",
+      "category": "limb",
+      "file": "anatomy/wing-feathered-spread.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "PRIMARY",
+        "COVERT",
+        "CREAM",
+        "QUILL"
+      ],
+      "primitives": 4,
+      "craftScore": 78,
+      "sha256": "f145605a591b803be34531b38ca33877b6ba60e4624433adb4c8a12db843036a",
+      "description": "Three-tier paper-cut bird/owl/creature wing with overlapping scalloped primaries, covert feathers, and warm quill highlights."
+    },
+    {
+      "id": "ear-pointed-fable",
+      "family": "anatomy",
+      "category": "head",
+      "file": "anatomy/ear-pointed-fable.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "OUTER",
+        "INNER",
+        "DARK",
+        "TUFT"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "06630e3be7e028d5866b556c30a1846ac85004b23bb8d98be3054ba7e87306f0",
+      "description": "Pointed fable/fox/hare ear with curved outer ridge, soft velvet inner hollow, and tufted base fur."
+    },
+    {
+      "id": "tail-plume-layered",
+      "family": "anatomy",
+      "category": "limb",
+      "file": "anatomy/tail-plume-layered.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "MAIN",
+        "DARK",
+        "TIP",
+        "RIM"
+      ],
+      "primitives": 4,
+      "craftScore": 78,
+      "sha256": "f2e767bc23a2c025459c449557a9f1f0cff4915f5f00d27794e1332b2623475d",
+      "description": "Curved plumed woodland tail with contrasting cream brush tip, notched paper fur cuts, and inner shadow fold."
+    },
+    {
+      "id": "torso-tunic-layered",
+      "family": "anatomy",
+      "category": "body",
+      "file": "anatomy/torso-tunic-layered.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "FABRIC",
+        "FABRIC_DARK",
+        "YOKE",
+        "BELT",
+        "BUCKLE"
+      ],
+      "primitives": 8,
+      "craftScore": 100,
+      "sha256": "30737d30e814af6039a7c82f8ae4ae9754bebaf8f4ff61e461ab1a391842d310",
+      "description": "Layered storybook artisan tunic torso with shoulder yoke, stitched hem, leather waist belt, brass buckle, and linen weave."
+    },
+    {
+      "id": "collar-folded",
+      "family": "garments",
+      "category": "body",
+      "file": "garments/collar-folded.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "MAIN",
+        "SHADOW",
+        "TRIM",
+        "BUTTON"
+      ],
+      "primitives": 4,
+      "craftScore": 81,
+      "sha256": "4e42ea50a025e231a0430faba6d3f45167f3387030215809a0bcbf46cb549136",
+      "description": "Crisp folded Peter-Pan / storybook collar with layered wings, shadow crease, and contrasting trim stitch."
+    },
+    {
+      "id": "scarf-draped",
+      "family": "garments",
+      "category": "body",
+      "file": "garments/scarf-draped.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "MAIN",
+        "DARK",
+        "STRIPE",
+        "RIM"
+      ],
+      "primitives": 6,
+      "craftScore": 97,
+      "sha256": "6c3a6008c829cbb073849ce6b4045ed77ac2847c7cec41297eeb9f0782536de4",
+      "description": "Cozy knitted neck scarf wrap with folded knot, ribbed wool stripe bands, and warm shadow depth."
+    },
+    {
+      "id": "cape-layered",
+      "family": "garments",
+      "category": "body",
+      "file": "garments/cape-layered.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "MAIN",
+        "INNER",
+        "TRIM",
+        "CLASP"
+      ],
+      "primitives": 9,
+      "craftScore": 88,
+      "sha256": "22cfdd7fee25838b7ea14116d61e9da5d68880224ebf47050b80a5fdaa740cd5",
+      "description": "Traveller shoulder cape with double scalloped mantle tiers, brass clasp, and deep paper-fold pleats."
+    },
+    {
+      "id": "beret-artisan",
+      "family": "garments",
+      "category": "head",
+      "file": "garments/beret-artisan.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "MAIN",
+        "DARK",
+        "BAND",
+        "SHEEN"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "cc25c0cf59c0d6bef2aa9b0b650c3721b90f19b383c98e290c8ca6c551b998c6",
+      "description": "Tilted wool felt artisan beret with pinched crown stem, stitched rim band, and soft upper highlight."
+    },
+    {
+      "id": "hood-cloak",
+      "family": "garments",
+      "category": "head",
+      "file": "garments/hood-cloak.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "MAIN",
+        "DARK",
+        "RIM",
+        "STITCH"
+      ],
+      "primitives": 5,
+      "craftScore": 77,
+      "sha256": "ed98de68d108baf485138010383f273dcac5dd458675d47694611733fbc8983f",
+      "description": "Draped storybook cloak hood with pointed back fold, shadowed inner opening, and stitched rolled brim."
+    },
+    {
+      "id": "apron-stitched",
+      "family": "garments",
+      "category": "body",
+      "file": "garments/apron-stitched.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "LINEN",
+        "SHADOW",
+        "TIE",
+        "STITCH"
+      ],
+      "primitives": 6,
+      "craftScore": 100,
+      "sha256": "312ff305350563c75a2727bee78b98f3e195efa9a6592294e825889e5bd1be3d",
+      "description": "Craftsperson linen apron with waist tie-band, patch pocket, cross-stitch hem, and soft fabric folds."
+    },
+    {
+      "id": "crown-papercut",
+      "family": "garments",
+      "category": "head",
+      "file": "garments/crown-papercut.json",
+      "styles": [
+        "paper-lightbox",
+        "paper-popup",
+        "storybook-gouache",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "GOLD",
+        "DARK",
+        "GEM",
+        "RIM"
+      ],
+      "primitives": 8,
+      "craftScore": 80,
+      "sha256": "9e456ffb7b5a1aeb1be40cbfd7c578cb56669563b1e54add433a887f20c5477f",
+      "description": "Filigree paper-cut circlet crown with five spires, diamond kirigami cutouts, and pearl-bead tips."
+    },
+    {
+      "id": "blossom-cluster",
+      "family": "botanicals",
+      "category": "prop",
+      "file": "botanicals/blossom-cluster.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "PETAL",
+        "PETAL_SHADE",
+        "CENTER",
+        "LEAF",
+        "LEAF_DARK"
+      ],
+      "primitives": 10,
+      "craftScore": 78,
+      "sha256": "6278b3b67c165912ec6a4030ecd6628c2fd1521693bdd042340f8123ced38366",
+      "description": "Layered 5-petal storybook blossom cluster with golden center stamens, unopened bud, and dual-tone notched leaves."
+    },
+    {
+      "id": "fern-curl",
+      "family": "botanicals",
+      "category": "prop",
+      "file": "botanicals/fern-curl.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "LEAF",
+        "LEAF_LIGHT",
+        "STEM"
+      ],
+      "primitives": 5,
+      "craftScore": 70,
+      "sha256": "db6e227d7ddd7097f697914b8f244725a38d876cac5dc633f668b32bf1f8814b",
+      "description": "Arching woodland fern frond with paired tapered pinnae and an unrolling fiddlehead spiral tip."
+    },
+    {
+      "id": "reed-clump",
+      "family": "botanicals",
+      "category": "prop",
+      "file": "botanicals/reed-clump.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "BLADE",
+        "BLADE_DARK",
+        "HEAD",
+        "HEAD_RIM"
+      ],
+      "primitives": 8,
+      "craftScore": 85,
+      "sha256": "5d38fdd9f2049885b22c05690d8fdeecfe308ebbcfd017df1a0e208d4a7bb1d9",
+      "description": "Waterfront cattail reeds and curved sedge blades with split light/shadow stalks and velvety brown heads."
+    },
+    {
+      "id": "pine-bough-layered",
+      "family": "botanicals",
+      "category": "prop",
+      "file": "botanicals/pine-bough-layered.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "NEEDLE_DARK",
+        "NEEDLE_MAIN",
+        "NEEDLE_LIGHT",
+        "BARK",
+        "TIP"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "07239dcdb38b12dd0b5317172a718680f48e5d3e4553ea2b778d38c0cd3b35a5",
+      "description": "Asymmetric layered evergreen pine bough with serrated needle fans, warm bark stem, and frost/dew highlight tips."
+    },
+    {
+      "id": "mushroom-storybook",
+      "family": "botanicals",
+      "category": "prop",
+      "file": "botanicals/mushroom-storybook.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "CAP",
+        "CAP_DARK",
+        "SPOT",
+        "STEM",
+        "GILL",
+        "MOSS"
+      ],
+      "primitives": 11,
+      "craftScore": 78,
+      "sha256": "ca244130d314dcca74e56d46fc98d0741dceee1bcc60a90d496eec7ea9ca5d30",
+      "description": "Paired woodland toadstools with curved spotted caps, fluted cream gills, tapered stems, and mossy base tuft."
+    },
+    {
+      "id": "ivy-vine-swirl",
+      "family": "botanicals",
+      "category": "prop",
+      "file": "botanicals/ivy-vine-swirl.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "VINE",
+        "LEAF_A",
+        "LEAF_B",
+        "VEIN"
+      ],
+      "primitives": 6,
+      "craftScore": 81,
+      "sha256": "80717ff214101a61aec13c904e18f2520014f366d6db94b60568b37fd9084cdf",
+      "description": "Flowing S-curved ivy vine spray with heart-shaped two-tone leaves and curling botanical tendrils."
+    },
+    {
+      "id": "signpost-timber",
+      "family": "props",
+      "category": "prop",
+      "file": "props/signpost-timber.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "WOOD",
+        "WOOD_DARK",
+        "PLAQUE",
+        "NAIL",
+        "MOSS"
+      ],
+      "primitives": 9,
+      "craftScore": 80,
+      "sha256": "645799bd4091f2a430a9d1b90a3a98246da91449e8323243a7998dfd42454da4",
+      "description": "Weathered timber crossroads signpost with layered arrow plaques, wood-grain strokes, iron nails, and mossy post base."
+    },
+    {
+      "id": "crate-flour-sack",
+      "family": "props",
+      "category": "prop",
+      "file": "props/crate-flour-sack.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "WOOD",
+        "WOOD_DARK",
+        "SACK",
+        "SACK_SHADOW",
+        "TWINE"
+      ],
+      "primitives": 9,
+      "craftScore": 88,
+      "sha256": "12261ebb67b4236b59a87a74f86b225b1de0ffb9cb33aabdce40eb4c691414fc",
+      "description": "Artisan market wooden slatted crate paired with a tied burlap flour sack, twine cord, and stitched corner patch."
+    },
+    {
+      "id": "book-open-storybook",
+      "family": "props",
+      "category": "prop",
+      "file": "props/book-open-storybook.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "COVER",
+        "PAGE",
+        "PAGE_SHADOW",
+        "RIBBON",
+        "INK"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "971c13aa2e84553b4ad6f18c2bf2d03e9254fc433b9e53831fc58154f6656455",
+      "description": "Open illustrated pop-up storybook with fanned cream pages, embossed leather cover, and trailing crimson ribbon bookmark."
+    },
+    {
+      "id": "teacup-steaming",
+      "family": "props",
+      "category": "prop",
+      "file": "props/teacup-steaming.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "CUP",
+        "SHADE",
+        "MOTIF",
+        "TEA",
+        "STEAM"
+      ],
+      "primitives": 8,
+      "craftScore": 88,
+      "sha256": "ebe0901ca637370ba4403407c88474465defaaff3d96cfb7846bc74afabe53c3",
+      "description": "Porcelain craft teacup on scalloped saucer with cobalt floral band, warm tea surface, and curling steam ribbons."
+    },
+    {
+      "id": "compass-brass",
+      "family": "props",
+      "category": "prop",
+      "file": "props/compass-brass.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "BRASS",
+        "BRASS_DARK",
+        "DIAL",
+        "NEEDLE_N",
+        "NEEDLE_S"
+      ],
+      "primitives": 7,
+      "craftScore": 69,
+      "sha256": "df44692be07cf3b5e9ef8a4240a511e1ef80cde29ca9757468a66f1195f2f42b",
+      "description": "Ornate antique brass pocket compass with hanging ring, parchment dial, and crimson-tipped compass rose."
+    },
+    {
+      "id": "bell-brass-ribbon",
+      "family": "props",
+      "category": "prop",
+      "file": "props/bell-brass-ribbon.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "BRASS",
+        "DARK",
+        "RIM",
+        "RIBBON"
+      ],
+      "primitives": 6,
+      "craftScore": 85,
+      "sha256": "264178ebc00ae2682145c1b89b7d5236f83ad779afb97747016c470abff3025b",
+      "description": "Festive hanging brass bell with warm specular streak, rounded clapper, and knotted paper ribbon bow."
+    },
+    {
+      "id": "bridge-arch-stone",
+      "family": "props",
+      "category": "prop",
+      "file": "props/bridge-arch-stone.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "STONE",
+        "STONE_DARK",
+        "CAP",
+        "MOSS"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "efcd7f0ee8613c1d30d679b93459c07b4c614a34de94cf4b930bd0ba01eb29b5",
+      "description": "Cut-paper arched stone footbridge segment with carved voussoir keystones, parapet rail, and hanging ivy moss."
+    },
+    {
+      "id": "corner-kirigami-lace",
+      "family": "frames",
+      "category": "frame",
+      "file": "frames/corner-kirigami-lace.json",
+      "styles": [
+        "paper-lightbox",
+        "shadow-craft",
+        "paper-popup",
+        "storybook-gouache"
+      ],
+      "tokens": [
+        "PAPER",
+        "ACCENT",
+        "RIM"
+      ],
+      "primitives": 6,
+      "craftScore": 76,
+      "sha256": "fdb730ff9a8c1f15a0ec65c6a884b933877b7838d0dc43aa12010ff9c2ce6a76",
+      "description": "Delicate traditional kirigami corner lace ornament with cloud scrolls, beaded corner pins, and openwork teardrop cutouts (evenodd)."
+    },
+    {
+      "id": "corner-botanical-scroll",
+      "family": "frames",
+      "category": "frame",
+      "file": "frames/corner-botanical-scroll.json",
+      "styles": [
+        "storybook-gouache",
+        "paper-popup",
+        "paper-lightbox"
+      ],
+      "tokens": [
+        "LEAF",
+        "LEAF_LIGHT",
+        "BLOSSOM",
+        "STEM"
+      ],
+      "primitives": 7,
+      "craftScore": 85,
+      "sha256": "88e0c471f3bb7e78a4a2ad3d602741f56180d686de18293f63da13ae89691591",
+      "description": "Storybook botanical corner flourish with curving paper acanthus leaves, curl tendrils, and corner rosette blossom."
+    },
+    {
+      "id": "arch-proscenium-top",
+      "family": "frames",
+      "category": "frame",
+      "file": "frames/arch-proscenium-top.json",
+      "styles": [
+        "paper-lightbox",
+        "paper-popup",
+        "storybook-gouache",
+        "shadow-craft"
+      ],
+      "tokens": [
+        "DRAPE",
+        "DARK",
+        "TRIM"
+      ],
+      "primitives": 5,
+      "craftScore": 78,
+      "sha256": "b4e397651b6cd2e7c93bc23783de0fe74f2ea26b85d03b24af66f143e8a6d122",
+      "description": "Ornate theatre proscenium arch header valance with scalloped paper drapery and central gilded medallion."
+    },
+    {
+      "id": "medallion-filigree",
+      "family": "frames",
+      "category": "frame",
+      "file": "frames/medallion-filigree.json",
+      "styles": [
+        "paper-lightbox",
+        "shadow-craft",
+        "paper-popup",
+        "storybook-gouache"
+      ],
+      "tokens": [
+        "PAPER",
+        "RIM",
+        "DARK"
+      ],
+      "primitives": 8,
+      "craftScore": 74,
+      "sha256": "288c356eac67d9e54150382cbcf9d76d8e2c792d9355f0729d0c2935af4f6c50",
+      "description": "Circular openwork kirigami crest medallion with symmetrical carved petals, corner pinpoints, and gilded rim ring."
+    }
+  ],
+  "materials": [
+    {
+      "id": "paper-cotton-300gsm",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-cotton-300gsm.json",
+      "gsm": 300,
+      "styles": [
+        "shadowbox-moonlit",
+        "daylight-sculpted",
+        "lightbox-led",
+        "winter-tunnel"
+      ],
+      "sha256": "a1b4b5244761411537e2775991934b3a9fc624f4ebe78c5255da84f5965ac4a9",
+      "description": "Archival 300gsm warm-cream cotton rag cardstock with crisp beveled cut rim and subtle backlit pulp glow."
+    },
+    {
+      "id": "paper-indigo-ribbed",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-indigo-ribbed.json",
+      "gsm": 320,
+      "styles": [
+        "shadowbox-moonlit",
+        "winter-tunnel"
+      ],
+      "sha256": "7e7384a165a7893207209f1c22edcfc4de40823ec9b82ddb568e6c28b98f5132",
+      "description": "Deep nocturnal 320gsm ribbed cardstock with cool silver-blue bevel catchlights for moonlit shadow-box strata."
+    },
+    {
+      "id": "paper-kraft-warm",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-kraft-warm.json",
+      "gsm": 350,
+      "styles": [
+        "daylight-sculpted",
+        "lightbox-led"
+      ],
+      "sha256": "5ad7be3cc9b3e57edcfe178cc4f223a674c342c2db9010398cc5d68af214127a",
+      "description": "Heavy unbleached 350gsm natural kraft board with matte fiber tooth and opaque warm-tan paper core."
+    },
+    {
+      "id": "paper-washi-translucent",
+      "kind": "pbr-paper",
+      "family": "materials",
+      "file": "materials/paper-washi-translucent.json",
+      "gsm": 120,
+      "styles": [
+        "lightbox-led",
+        "shadowbox-moonlit",
+        "winter-tunnel"
+      ],
+      "sha256": "727fa38a3fb374201412d5fb689205899388afb2eb0181f12130f8770e0cd841",
+      "description": "Thin 120gsm fibrous mulberry washi paper designed for strongly backlit lanterns, petals, and glowing clouds."
+    }
+  ],
+  "reliefs3d": [
+    {
+      "id": "bonsai-frame-pine",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "bonsai_calligraphy",
+      "file": "reliefs3d/bonsai-frame-pine.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted"
+      ],
+      "sha256": "00f1fabf952269fed0e6d472021e676136e0c4b9b0f272f737320091cdb2056c",
+      "description": "Sinuous calligraphy cubic-Bezier bonsai pine branch with feathered two-layer needle tufts and gentle paperFlex sway."
+    },
+    {
+      "id": "clouds-billowing-canopy",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "billowing_clouds",
+      "file": "reliefs3d/clouds-billowing-canopy.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted",
+        "winter-tunnel"
+      ],
+      "sha256": "c861cd7a4987c677c97e310525ec85a87541ce58b0cfcf77351b5571202d6e6d",
+      "description": "Two-tier scalloped backlit paper cloud canopy with opposing slow harmonic drift."
+    },
+    {
+      "id": "cutout-relief-cardstock",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "cutout_relief",
+      "file": "reliefs3d/cutout-relief-cardstock.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted",
+        "winter-tunnel"
+      ],
+      "sha256": "7b7834c9626a8fca6af6fac9f779bec8563a26f680d076dc71045029e3d5a537",
+      "description": "Standard 300gsm Sobel normal-map relief parameters (flipY=true, cream cardstock core slices) for optional cutout_relief layers."
+    },
+    {
+      "id": "peony-botanical-cluster",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "sculpted_peony",
+      "file": "reliefs3d/peony-botanical-cluster.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "lightbox-led",
+        "daylight-sculpted"
+      ],
+      "sha256": "9e63775f25371fb5e5c94a684b8d0b548adefaac467919e935e4d8989a07cfd2",
+      "description": "Multi-ring cupped 3D sculpted peony blooms with recessed gold stamen clusters and swaying botanical fronds."
+    },
+    {
+      "id": "strata-mountain-mist",
+      "kind": "procedural-3d",
+      "family": "reliefs3d",
+      "layerKind": "organic_strata",
+      "file": "reliefs3d/strata-mountain-mist.json",
+      "styles": [
+        "shadowbox-moonlit",
+        "daylight-sculpted",
+        "winter-tunnel"
+      ],
+      "sha256": "f79be2b309cdfd24a5c5857fb1bc0fada85debc6819464e5754550caa7002f11",
+      "description": "3-stratum organic rolling mountain ridge with curved topographic erosion flutes and graduated atmospheric paper tones."
+    }
+  ],
+  "cutouts": [],
+  "archetypes": [
+    {
+      "id": "biped-storybook-base",
+      "kind": "rig-archetype",
+      "family": "archetypes",
+      "file": "archetypes/biped-storybook-base.json",
+      "boneCount": 17,
+      "roles": [
+        "pelvis",
+        "spine",
+        "chest",
+        "head",
+        "face",
+        "armUpperL",
+        "armLowerL",
+        "handL",
+        "armUpperR",
+        "armLowerR",
+        "handR",
+        "legUpperL",
+        "legLowerL",
+        "footL",
+        "legUpperR",
+        "legLowerR",
+        "footR"
+      ],
+      "sha256": "bf0d08f6bc8b575b3ca50e021a4829f3ac6ef248239bd0cc0404a5200d5f819f",
+      "description": "Modular 17-bone Biped storybook archetype aligned with paper-studio-v2 src/schema/rig.ts: overlap-cap joints, 3 torso/head angles, 4 hand states (open/grip/point/relaxed), facial expressions, canonical boneMapping, IK legs/arms with contacts, ground contacts, and cascading followThrough."
+    },
+    {
+      "id": "quadruped-fable-base",
+      "kind": "rig-archetype",
+      "family": "archetypes",
+      "file": "archetypes/quadruped-fable-base.json",
+      "boneCount": 18,
+      "roles": [
+        "pelvis",
+        "chest",
+        "head",
+        "frontLegUpperL",
+        "frontLegLowerL",
+        "frontPawL",
+        "frontLegUpperR",
+        "frontLegLowerR",
+        "frontPawR",
+        "backLegUpperL",
+        "backLegLowerL",
+        "backPawL",
+        "backLegUpperR",
+        "backLegLowerR",
+        "backPawR",
+        "tailBase",
+        "tailMid",
+        "tailTip"
+      ],
+      "sha256": "1888712c67e97cae1145c5f7fe8b8082bfb83a8e92c3d8c46ddd1f0a7f3bce9b",
+      "description": "Modular 18-bone Quadruped creature archetype aligned with paper-studio-v2 src/schema/rig.ts: 3-bone articulated legs with paw contacts, 3-link wave tail, canonical .l/.r bone IDs, boneMapping, ground contacts, and cascading followThrough."
+    }
+  ]
+}

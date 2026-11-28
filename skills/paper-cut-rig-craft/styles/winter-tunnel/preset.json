@@ -1,0 +1,51 @@
+{
+  "id": "winter-tunnel",
+  "name": "3D Concentric Winter Paper Tunnel",
+  "sceneDefaults": {
+    "renderMode": "sculpted3d",
+    "bgColor": "#0c224d",
+    "cadence": { "charFps": 12, "cameraDrift": 0.14 },
+    "boxCavity": {
+      "frameShape": "scalloped_arch",
+      "z": 1.45,
+      "depth": 4.6,
+      "plies": 4,
+      "plyStep": 0.34,
+      "plyZGap": 0.36,
+      "scallops": 12,
+      "scallopAmp": 0.048,
+      "apertureRx": 6.55,
+      "apertureRy": 3.98,
+      "plyColors": ["#eff4fa", "#b8d0ed", "#6c98cf", "#2e5c9a"],
+      "rimHighlightColor": "#ffffff",
+      "frameCastShadow": true
+    },
+    "lighting3d": {
+      "bgColor": "#eaeef4",
+      "fov": 24,
+      "exposure": 1.12,
+      "backlightGain": 1.15,
+      "aoIntensity": 0.95,
+      "aoRadius": 0.42,
+      "bloomStrength": 0.18,
+      "bloomThreshold": 0.90,
+      "moteCount": 44,
+      "moteColor": "#ffffff",
+      "hemiLight": { "sky": "#dcebff", "ground": "#102854", "intensity": 0.88 },
+      "keyLight": {
+        "color": "#ffffff",
+        "intensity": 2.45,
+        "pos": [3.8, 6.8, 11.2],
+        "shadowMapSize": 2048,
+        "shadowFrustum": 8.8,
+        "shadowBias": -0.00035,
+        "shadowNormalBias": 0.022,
+        "shadowRadius": 2.6
+      },
+      "rimLight": { "color": "#cfe4ff", "intensity": 0.85, "pos": [-6.0, 3.5, 6.0] },
+      "pointLights": [
+        { "color": "#d8ecff", "intensity": 20.0, "distance": 13.0, "decay": 1.5, "pos": [0.0, 0.8, -2.4], "pulseAmp": 0.04 }
+      ]
+    }
+  }
+}
