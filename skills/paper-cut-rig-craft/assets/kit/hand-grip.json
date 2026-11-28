@@ -1,0 +1,18 @@
+{
+  "id": "hand-grip",
+  "category": "hand",
+  "description": "Sculpted paper-cut gripping hand with curled finger ridges, thumb lock, palm shading, and grip contact anchor.",
+  "size": [44, 44],
+  "pivot": [22, 10],
+  "anchors": {
+    "grip": [22, 24],
+    "tip": [22, 32]
+  },
+  "tokens": {
+    "PRIMARY": "#f0c7a4",
+    "SHADOW": "#c9956f",
+    "HIGHLIGHT": "#fff1e2",
+    "STROKE": "#7a4d32"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-6 -4 C-9 1 -10 9 -8 17 C-6 23 -1 26 5 25 C11 24 13 18 12 11 C11 4 9 -3 5 -5 C1 -7 -4 -7 -6 -4 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M-7 10 C-6 18 -1 23 5 23 C9 22 11 18 11 13 C6 15 -2 15 -7 10 Z\" fill=\"{{SHADOW}}\" opacity=\"0.42\"/><path d=\"M-6 8 C-10 11 -10 17 -5 19 C-1 20 3 18 3 14 C3 11 -1 7 -6 8 Z\" fill=\"{{PRIMARY}}\"/><path d=\"M-5 10 C-8 12 -8 16 -4 17\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.65\"/><path d=\"M1 12 C5 12 9 11 11 13 M0 16 C4 16 8 15 11 17 M0 20 C4 20 7 19 9 21\" fill=\"none\" stroke=\"{{STROKE}}\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.6\"/><path d=\"M4 -2 C8 2 10 8 10 14\" fill=\"none\" stroke=\"{{HIGHLIGHT}}\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.5\"/></g>"
+}

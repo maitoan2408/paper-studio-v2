@@ -1,0 +1,41 @@
+{
+  "id": "head-front-storybook",
+  "family": "anatomy",
+  "category": "head",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Front-facing storybook character head with symmetric ears, sculpted chin, rosy cheeks, dual blinking eyes (data-eye=1), gentle smile, and layered bangs.",
+  "size": [
+    72,
+    76
+  ],
+  "pivot": [
+    36,
+    60
+  ],
+  "anchors": {
+    "hat": [
+      36,
+      22
+    ],
+    "hairBack": [
+      36,
+      38
+    ]
+  },
+  "tokens": {
+    "SKIN": "#f7d7be",
+    "SKIN_SHADOW": "#dfa887",
+    "BLUSH": "#ef8a7e",
+    "HAIR_MAIN": "#5e3726",
+    "HAIR_DARK": "#3b2016",
+    "HAIR_SHEEN": "#966045",
+    "IRIS": "#352620",
+    "LASH": "#241612",
+    "LIP": "#b85d52"
+  },
+  "svg": "<g filter=\"url(#gouacheGrain)\"><path d=\"M-24 -34 C-28 -18 -26 2 -16 12 C-6 16 6 16 16 12 C26 2 28 -18 24 -34 C16 -46 -16 -46 -24 -34 Z\" fill=\"{{HAIR_DARK}}\"/><path d=\"M-6 -4 L6 -4 L7 9 C3 12 -3 12 -7 9 Z\" fill=\"{{SKIN_SHADOW}}\"/><ellipse cx=\"-19\" cy=\"-12\" rx=\"4.5\" ry=\"6.2\" fill=\"{{SKIN}}\"/><ellipse cx=\"19\" cy=\"-12\" rx=\"4.5\" ry=\"6.2\" fill=\"{{SKIN}}\"/><path d=\"M-19 -28 C-19 -43 19 -43 19 -28 C20 -12 16 4 0 6 C-16 4 -20 -12 -19 -28 Z\" fill=\"{{SKIN}}\"/><path d=\"M-18 -14 C-18 -1 -12 5 0 6 C-9 3 -14 -4 -14 -16 C-14 -26 -10 -34 -3 -38 C-12 -36 -18 -27 -18 -14 Z\" fill=\"{{SKIN_SHADOW}}\" opacity=\"0.48\"/><ellipse cx=\"-10\" cy=\"-6\" rx=\"4.6\" ry=\"2.8\" fill=\"{{BLUSH}}\" opacity=\"0.42\"/><ellipse cx=\"10\" cy=\"-6\" rx=\"4.6\" ry=\"2.8\" fill=\"{{BLUSH}}\" opacity=\"0.42\"/><g data-eye=\"1\" transform=\"translate(-8,-14)\"><ellipse cx=\"0\" cy=\"0.3\" rx=\"3.4\" ry=\"3.2\" fill=\"#fffdf8\"/><circle cx=\"0.2\" cy=\"0.4\" r=\"2.1\" fill=\"{{IRIS}}\"/><circle cx=\"0.2\" cy=\"0.4\" r=\"1.15\" fill=\"#120e10\"/><circle cx=\"-0.6\" cy=\"-0.6\" r=\"0.8\" fill=\"#ffffff\"/><path d=\"M-3.8 -0.6 C-1.8 -3.8 1.8 -3.8 3.8 -0.6\" fill=\"none\" stroke=\"{{LASH}}\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><path d=\"M-3.4 -5.0 Q0 -6.8 3.4 -4.8\" fill=\"none\" stroke=\"{{HAIR_DARK}}\" stroke-width=\"1.15\" stroke-linecap=\"round\"/></g><g data-eye=\"1\" transform=\"translate(8,-14)\"><ellipse cx=\"0\" cy=\"0.3\" rx=\"3.4\" ry=\"3.2\" fill=\"#fffdf8\"/><circle cx=\"-0.2\" cy=\"0.4\" r=\"2.1\" fill=\"{{IRIS}}\"/><circle cx=\"-0.2\" cy=\"0.4\" r=\"1.15\" fill=\"#120e10\"/><circle cx=\"-0.7\" cy=\"-0.6\" r=\"0.8\" fill=\"#ffffff\"/><path d=\"M-3.8 -0.6 C-1.8 -3.8 1.8 -3.8 3.8 -0.6\" fill=\"none\" stroke=\"{{LASH}}\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><path d=\"M-3.4 -4.8 Q0 -6.8 3.4 -5.0\" fill=\"none\" stroke=\"{{HAIR_DARK}}\" stroke-width=\"1.15\" stroke-linecap=\"round\"/></g><path d=\"M-1.2 -10.5 Q0 -7.2 1.8 -8.2\" fill=\"none\" stroke=\"{{SKIN_SHADOW}}\" stroke-width=\"1.35\" stroke-linecap=\"round\"/><path d=\"M-4.6 -2.2 Q0 1.4 4.6 -2.2\" fill=\"none\" stroke=\"{{LIP}}\" stroke-width=\"1.55\" stroke-linecap=\"round\"/><path d=\"M-21 -17 C-22 -36 -10 -46 0 -46 C10 -46 22 -36 21 -17 C16 -24 10 -27 4 -22 C0 -27 -5 -26 -10 -21 C-14 -25 -18 -23 -21 -17 Z\" fill=\"{{HAIR_MAIN}}\"/><path d=\"M-11 -39 C-3 -43 5 -43 13 -37\" fill=\"none\" stroke=\"{{HAIR_SHEEN}}\" stroke-width=\"2.1\" stroke-linecap=\"round\" opacity=\"0.55\"/></g>"
+}

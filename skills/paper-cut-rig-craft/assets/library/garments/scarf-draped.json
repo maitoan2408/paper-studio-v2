@@ -1,0 +1,32 @@
+{
+  "id": "scarf-draped",
+  "family": "garments",
+  "category": "body",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Cozy knitted neck scarf wrap with folded knot, ribbed wool stripe bands, and warm shadow depth.",
+  "size": [
+    56,
+    34
+  ],
+  "pivot": [
+    28,
+    12
+  ],
+  "anchors": {
+    "tail": [
+      18,
+      22
+    ]
+  },
+  "tokens": {
+    "MAIN": "#c94c38",
+    "DARK": "#8e2d20",
+    "STRIPE": "#f7df9c",
+    "RIM": "#ee896a"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-22 -4 C-12 -10 12 -10 22 -4 C24 3 22 10 16 12 C6 15 -6 15 -16 12 C-22 10 -24 3 -22 -4 Z\" fill=\"{{MAIN}}\"/><path d=\"M-22 -4 C-12 -10 12 -10 22 -4 C24 3 22 10 16 12 C6 15 -6 15 -16 12 C-22 10 -24 3 -22 -4 Z\" fill=\"url(#pat-ribbed)\" opacity=\"0.45\"/><path d=\"M-19 5 Q0 12 19 5 C17 11 6 14 -6 14 C-14 14 -19 10 -19 5 Z\" fill=\"{{DARK}}\" opacity=\"0.52\"/><path d=\"M-14 -7 L-10 12 M10 -7 L14 11\" fill=\"none\" stroke=\"{{STRIPE}}\" stroke-width=\"2.6\" opacity=\"0.88\"/><ellipse cx=\"6\" cy=\"11\" rx=\"7.5\" ry=\"6.2\" fill=\"{{MAIN}}\" stroke=\"{{DARK}}\" stroke-width=\"1.1\"/><path d=\"M2 10 Q6 7 10 10\" fill=\"none\" stroke=\"{{RIM}}\" stroke-width=\"1.4\" stroke-linecap=\"round\"/></g>"
+}

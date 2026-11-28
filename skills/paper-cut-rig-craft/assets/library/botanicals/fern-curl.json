@@ -1,0 +1,32 @@
+{
+  "id": "fern-curl",
+  "family": "botanicals",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox",
+    "shadow-craft"
+  ],
+  "description": "Arching woodland fern frond with paired tapered pinnae and an unrolling fiddlehead spiral tip.",
+  "size": [
+    56,
+    84
+  ],
+  "pivot": [
+    16,
+    78
+  ],
+  "anchors": {
+    "tip": [
+      38,
+      12
+    ]
+  },
+  "tokens": {
+    "LEAF": "#4d7f52",
+    "LEAF_LIGHT": "#7fb073",
+    "STEM": "#2d5232"
+  },
+  "svg": "<g filter=\"url(#paperBevelSoft)\"><path d=\"M0 0 C2 -22 8 -46 22 -64 C27 -70 34 -68 33 -61 C32 -56 26 -55 24 -59\" fill=\"none\" stroke=\"{{STEM}}\" stroke-width=\"2.4\" stroke-linecap=\"round\"/><path d=\"M3 -14 C-8 -16 -12 -22 -10 -26 C-2 -24 2 -19 3 -14 Z M4 -16 C15 -18 20 -24 18 -28 C10 -26 6 -21 4 -16 Z\" fill=\"{{LEAF}}\"/><path d=\"M6 -30 C-5 -32 -9 -38 -6 -42 C1 -40 5 -35 6 -30 Z M8 -32 C19 -34 24 -40 22 -44 C14 -42 10 -37 8 -32 Z\" fill=\"{{LEAF_LIGHT}}\"/><path d=\"M12 -46 C2 -48 -1 -54 2 -57 C8 -55 11 -51 12 -46 Z M14 -48 C24 -49 28 -54 26 -58 C19 -56 16 -52 14 -48 Z\" fill=\"{{LEAF}}\"/><circle cx=\"28\" cy=\"-61\" r=\"4.8\" fill=\"{{LEAF_LIGHT}}\" stroke=\"{{STEM}}\" stroke-width=\"1.3\"/></g>"
+}

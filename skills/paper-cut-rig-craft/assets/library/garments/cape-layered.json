@@ -1,0 +1,33 @@
+{
+  "id": "cape-layered",
+  "family": "garments",
+  "category": "body",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox",
+    "shadow-craft"
+  ],
+  "description": "Traveller shoulder cape with double scalloped mantle tiers, brass clasp, and deep paper-fold pleats.",
+  "size": [
+    84,
+    72
+  ],
+  "pivot": [
+    42,
+    12
+  ],
+  "anchors": {
+    "hem": [
+      42,
+      66
+    ]
+  },
+  "tokens": {
+    "MAIN": "#355070",
+    "INNER": "#1f324a",
+    "TRIM": "#e6b85c",
+    "CLASP": "#f2cc7e"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-20 -4 C-28 14 -36 36 -38 54 C-20 58 20 58 38 54 C36 36 28 14 20 -4 Z\" fill=\"{{INNER}}\"/><path d=\"M-18 -4 C-26 12 -32 32 -34 49 C-18 54 18 54 34 49 C32 32 26 12 18 -4 Z\" fill=\"{{MAIN}}\"/><path d=\"M-27 25 C-14 33 14 33 27 25 C27 28 14 35 0 35 C-14 35 -27 28 -27 25 Z\" fill=\"{{INNER}}\" opacity=\"0.45\"/><path d=\"M-19 -4 C-24 6 -28 16 -28 24 C-14 30 14 30 28 24 C28 16 24 6 19 -4 Z\" fill=\"{{MAIN}}\"/><path d=\"M-26 22 Q0 29 26 22 M-32 46 Q0 52 32 46\" fill=\"none\" stroke=\"{{TRIM}}\" stroke-width=\"1.6\" stroke-dasharray=\"4 3\" opacity=\"0.85\"/><path d=\"M-10 6 L-18 48 M10 6 L18 48\" fill=\"none\" stroke=\"{{INNER}}\" stroke-width=\"1.5\" opacity=\"0.5\"/><circle cx=\"-6\" cy=\"2\" r=\"3\" fill=\"{{CLASP}}\"/><circle cx=\"6\" cy=\"2\" r=\"3\" fill=\"{{CLASP}}\"/><path d=\"M-4 2 Q0 5 4 2\" fill=\"none\" stroke=\"{{TRIM}}\" stroke-width=\"1.4\"/></g>"
+}

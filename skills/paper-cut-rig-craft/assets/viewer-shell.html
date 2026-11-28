@@ -32,6 +32,12 @@
     .scroll-thin::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.35); border-radius: 3px; }
     .ik-handle { cursor: grab; }
     .ik-handle:active { cursor: grabbing; }
+    body.stage-only header,
+    body.stage-only aside,
+    body.stage-only #stageControlsDock { display: none !important; }
+    body.stage-only #stageWrap { padding: 0 !important; min-height: 100vh !important; }
+    body.stage-only main { grid-column: 1 / -1 !important; border: none !important; }
+    body.stage-only #stageBox { max-width: 100vw !important; width: 100vw !important; height: 100vh !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
   </style>
 </head>
 <body class="bg-[var(--ps-bg)] text-[var(--ps-fg)] antialiased m-0 p-0">
@@ -62,7 +68,7 @@
     <!-- Main Workspace -->
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12">
       <main class="lg:col-span-8 flex flex-col border-b lg:border-b-0 lg:border-r border-[var(--ps-border)]">
-        <div id="stageWrap" class="relative flex-1 min-h-[520px] bg-[var(--ps-content)] flex items-center justify-center p-3 sm:p-5 overflow-hidden select-none">
+        <div id="stageWrap" class="relative flex-1 min-h-[420px] bg-[var(--ps-content)] flex flex-col items-center justify-center gap-2.5 p-3 sm:p-5 overflow-hidden select-none">
           <div class="w-full max-w-[960px] aspect-[16/9] rounded-xl shadow-2xl border border-[var(--ps-border)] overflow-hidden relative" id="stageBox">
             <svg id="sceneSvg" viewBox="0 0 960 540" class="w-full h-full block">
               <defs id="svgDefs"></defs>
@@ -93,25 +99,26 @@
                 <g id="layerIk"></g>
               </g>
             </svg>
+          </div>
 
-            <!-- Bottom Stage Toggles & Zoom (responsive, zero overlap on narrow viewports) -->
-            <div class="absolute bottom-2.5 inset-x-2.5 flex flex-wrap items-end justify-between gap-2 pointer-events-none">
-              <div class="pointer-events-auto flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] sm:text-xs bg-[var(--ps-card)]/90 backdrop-blur px-2.5 py-1.5 rounded-lg border border-[var(--ps-border)] shadow">
-                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkBones" type="checkbox" class="accent-[var(--ps-primary)]"> Khung xương</label>
-                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAnchors" type="checkbox" class="accent-[var(--ps-primary)]"> Anchors</label>
-                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkParallax" type="checkbox" checked class="accent-[var(--ps-primary)]"> Parallax 3D</label>
-                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAtmos" type="checkbox" checked class="accent-[var(--ps-primary)]"> Ánh sáng</label>
-                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkFrame" type="checkbox" checked class="accent-[var(--ps-primary)]"> Khung hộp</label>
-              </div>
+          <!-- Stage Control Dock (sits cleanly outside #stageBox — 0% canvas obstruction on any viewport) -->
+          <div id="stageControlsDock" class="w-full max-w-[960px] flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 bg-[var(--ps-card)] px-2.5 py-1.5 rounded-lg border border-[var(--ps-border)] shadow-sm">
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkBones" type="checkbox" class="accent-[var(--ps-primary)]"> Khung xương</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAnchors" type="checkbox" class="accent-[var(--ps-primary)]"> Anchors</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkParallax" type="checkbox" checked class="accent-[var(--ps-primary)]"> Parallax 3D</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkAtmos" type="checkbox" checked class="accent-[var(--ps-primary)]"> Ánh sáng</label>
+              <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap"><input id="chkFrame" type="checkbox" checked class="accent-[var(--ps-primary)]"> Khung hộp</label>
+            </div>
 
-              <div class="pointer-events-auto shrink-0 flex items-center gap-1 text-xs bg-[var(--ps-card)]/90 backdrop-blur px-2 py-1 rounded-lg border border-[var(--ps-border)] shadow">
+            <div class="flex items-center gap-2 ml-auto">
+              <div id="phaseBadge" class="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-[var(--ps-card)] border border-[var(--ps-border)] text-[var(--ps-muted)] truncate max-w-[260px] sm:max-w-[340px]"></div>
+              <div class="shrink-0 flex items-center gap-1 bg-[var(--ps-card)] px-2 py-1 rounded-lg border border-[var(--ps-border)] shadow-sm">
                 <button id="btnZoomOut" class="px-1.5 py-0.5 rounded hover:bg-[var(--ps-bg)]">−</button>
                 <span id="zoomLabel" class="font-mono tabular-nums w-10 text-center">100%</span>
                 <button id="btnZoomIn" class="px-1.5 py-0.5 rounded hover:bg-[var(--ps-bg)]">+</button>
               </div>
             </div>
-
-            <div id="phaseBadge" class="absolute top-3 left-3 text-[11px] font-mono px-2.5 py-1 rounded-md bg-[var(--ps-card)]/85 backdrop-blur border border-[var(--ps-border)] text-[var(--ps-muted)]"></div>
           </div>
         </div>
       </main>
@@ -238,6 +245,7 @@
         scale: r.scale ?? 1,
         breath: 0,
         angles: Object.fromEntries(r.bones.map(b => [b.id, b.rest ?? 0])),
+        scales: Object.fromEntries(r.bones.map(b => [b.id, { x: 1, y: 1 }])),
         variants: Object.fromEntries(Object.entries(r.variants ?? {}).map(([k, list]) => [k, list[0]])),
         emote: null,
       };
@@ -252,7 +260,10 @@
       shadowScale: 1, ambientAmp: 1,
       pointer: { x: 0, y: 0 }, smoothPtr: { x: 0, y: 0 },
       draggingIk: null,
-      vfx: { splash: 0, splashX: VW * 0.5, bubbles: 0, glowSpot: 0, glowX: VW * 0.55, glowY: VH * 0.7 },
+      vfx: { glow: null, burst: null, particles: null },
+      silhouette: false,
+      cropRig: null,
+      cropPad: 120,
     };
 
     document.getElementById('badgeIcon').textContent = BLUEPRINT.meta.icon ?? '✂';
@@ -260,7 +271,7 @@
     document.getElementById('hdrSub').textContent = BLUEPRINT.meta.subtitle ?? '';
     stageBox.style.background = BLUEPRINT.scene.bgColor ?? '#0b1326';
 
-    // Universal Cardstock Paper Fibres + 4 Shadow Tiers + Data-Driven Lighting Gradients
+    // Universal Cardstock Paper Fibres + Physical Cut-Paper Edge Bevel + Cardstock Material Patterns + 4 Shadow Tiers
     const lit = BLUEPRINT.scene.lighting ?? {};
     const fg = lit.focalGlow;
     const fgDef = fg ? `<radialGradient id="autoFocalGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${fg.color ?? '#ffe9a3'}" stop-opacity="${fg.opacity ?? 0.65}"/><stop offset="55%" stop-color="${fg.midColor ?? fg.color ?? '#f5a855'}" stop-opacity="${(fg.opacity ?? 0.65) * 0.35}"/><stop offset="100%" stop-color="${fg.color ?? '#f5a855'}" stop-opacity="0"/></radialGradient>` : '';
@@ -268,6 +279,78 @@
     const mstDef = mst ? `<linearGradient id="autoMistGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/><stop offset="52%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="${mst.opacity ?? 0.24}"/><stop offset="100%" stop-color="${mst.color ?? '#f2b880'}" stop-opacity="0"/></linearGradient>` : '';
     const customDefs = BLUEPRINT.scene.defsSvg ?? '';
     const defaultMeteorDef = /id\s*=\s*["']meteorTrail["']/.test(customDefs) ? '' : `<linearGradient id="meteorTrail" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#fff7d6" stop-opacity="0.92"/></linearGradient>`;
+
+    const shCol = lit.shadowColor ?? '#050712';
+    const shOpMul = lit.shadowOpacity ?? 1;
+    const vigCol = lit.vignetteColor ?? '#080510';
+
+    const buildBevelDef = (id, mul) => {
+      const d = Array.isArray(lit.bevelDir) && lit.bevelDir.length === 2 ? lit.bevelDir : [-1, -1];
+      const mag = Math.hypot(d[0], d[1]) || 1;
+      const dx = d[0] / mag, dy = d[1] / mag;
+      const w = (lit.bevelWidth ?? 1.35) * mul;
+      const lCol = lit.bevelLightColor ?? '#ffffff';
+      const dCol = lit.bevelDarkColor ?? shCol;
+      const lOp = lit.bevelLightOpacity ?? 0.44;
+      const dOp = lit.bevelDarkOpacity ?? 0.32;
+      return `<filter id="${id}" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB"><feOffset in="SourceAlpha" dx="${(-dx * w).toFixed(2)}" dy="${(-dy * w).toFixed(2)}" result="offL"/><feComposite in="SourceAlpha" in2="offL" operator="out" result="edgeL"/><feFlood flood-color="${lCol}" flood-opacity="${lOp.toFixed(2)}" result="flL"/><feComposite in="flL" in2="edgeL" operator="in" result="rimL"/><feOffset in="SourceAlpha" dx="${(dx * w).toFixed(2)}" dy="${(dy * w).toFixed(2)}" result="offD"/><feComposite in="SourceAlpha" in2="offD" operator="out" result="edgeD"/><feFlood flood-color="${dCol}" flood-opacity="${dOp.toFixed(2)}" result="flD"/><feComposite in="flD" in2="edgeD" operator="in" result="rimD"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="rimD"/><feMergeNode in="rimL"/></feMerge></filter>`;
+    };
+
+    const buildCutoutBorderDef = () => {
+      const bCol = lit.cutoutBorderColor ?? '#fffdf7';
+      const eCol = lit.cutoutEdgeColor ?? '#b8ab9a';
+      const r = clamp(lit.cutoutBorderWidth ?? 3.0, 1.2, 8);
+      const rEdge = (r + 1.2).toFixed(2);
+      return `<filter id="cutoutBorder" x="-18%" y="-18%" width="136%" height="136%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="${rEdge}" result="edA"/><feOffset in="edA" dx="0.6" dy="1.8" result="edOff"/><feFlood flood-color="${eCol}" flood-opacity="1" result="edFl"/><feComposite in="edFl" in2="edOff" operator="in" result="edgeLayer"/><feMorphology in="SourceAlpha" operator="dilate" radius="${r.toFixed(2)}" result="bdA"/><feFlood flood-color="${bCol}" flood-opacity="1" result="bdFl"/><feComposite in="bdFl" in2="bdA" operator="in" result="borderLayer"/><feMerge><feMergeNode in="edgeLayer"/><feMergeNode in="borderLayer"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+    };
+
+    const buildBacklitPulpDef = () => {
+      const seed = (BLUEPRINT.meta.seed ?? 13) + 11;
+      const rimCol = lit.bevelLightColor ?? '#ffebc2';
+      const rimOp = lit.bevelLightOpacity ?? 0.52;
+      const darkCol = lit.bevelDarkColor ?? '#070b18';
+      const darkOp = lit.bevelDarkOpacity ?? 0.36;
+      return `<filter id="backlitPulp" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.045 0.065" numOctaves="3" seed="${seed}" result="pulp"/><feColorMatrix in="pulp" type="matrix" values="0 0 0 0 1.0  0 0 0 0 0.88  0 0 0 0 0.66  0 0 0 0.22 0" result="pCol"/><feComposite in="pCol" in2="SourceAlpha" operator="in" result="pIn"/><feBlend in="SourceGraphic" in2="pIn" mode="screen" result="litBody"/><feOffset in="SourceAlpha" dx="0" dy="2.2" result="offT"/><feComposite in="SourceAlpha" in2="offT" operator="out" result="eT"/><feFlood flood-color="${rimCol}" flood-opacity="${rimOp.toFixed(2)}" result="fT"/><feComposite in="fT" in2="eT" operator="in" result="rimT"/><feOffset in="SourceAlpha" dx="0" dy="-2.2" result="offB"/><feComposite in="SourceAlpha" in2="offB" operator="out" result="eB"/><feFlood flood-color="${darkCol}" flood-opacity="${darkOp.toFixed(2)}" result="fB"/><feComposite in="fB" in2="eB" operator="in" result="rimB"/><feMerge><feMergeNode in="litBody"/><feMergeNode in="rimB"/><feMergeNode in="rimT"/></feMerge></filter>`;
+    };
+
+    const buildMatPat = (m) => {
+      const col = m.color ?? '#ffffff', alt = m.altColor ?? '#000000', bg = m.bg ?? null;
+      const op = clamp(m.opacity ?? 0.22, 0.02, 1), sc = clamp(m.scale ?? 1, 0.4, 4);
+      const op2 = (op * 0.55).toFixed(2), opS = op.toFixed(2);
+      const p = (n) => (n * sc).toFixed(1);
+      if (m.type === 'linen') {
+        const s = p(10), h = p(5);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<path d="M0 ${h} H${s} M${h} 0 V${s}" stroke="${col}" stroke-width="${(0.8 * sc).toFixed(2)}" opacity="${opS}"/><path d="M0 ${p(2)} H${s} M${p(2)} 0 V${s}" stroke="${alt}" stroke-width="${(0.55 * sc).toFixed(2)}" opacity="${op2}"/></pattern>`;
+      }
+      if (m.type === 'crosshatch') {
+        const s = p(12);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<path d="M0 ${s} L${s} 0 M-${p(3)} ${p(3)} L${p(3)} -${p(3)} M${p(9)} ${p(15)} L${p(15)} ${p(9)}" stroke="${col}" stroke-width="${(0.75 * sc).toFixed(2)}" opacity="${opS}"/><path d="M0 0 L${s} ${s}" stroke="${alt}" stroke-width="${(0.55 * sc).toFixed(2)}" opacity="${op2}"/></pattern>`;
+      }
+      if (m.type === 'kraft') {
+        const s = p(24);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<circle cx="${p(3.5)}" cy="${p(4.2)}" r="${p(0.9)}" fill="${col}" opacity="${opS}"/><circle cx="${p(14.8)}" cy="${p(6.4)}" r="${p(0.7)}" fill="${alt}" opacity="${op2}"/><circle cx="${p(19.2)}" cy="${p(15.6)}" r="${p(1.0)}" fill="${col}" opacity="${opS}"/><circle cx="${p(7.6)}" cy="${p(18.5)}" r="${p(0.8)}" fill="${col}" opacity="${op2}"/><path d="M${p(9)} ${p(11)} L${p(12.5)} ${p(10.2)} M${p(1.5)} ${p(14)} L${p(4.2)} ${p(15.1)} M${p(17)} ${p(3)} L${p(20.4)} ${p(2.4)}" stroke="${col}" stroke-width="${p(0.65)}" stroke-linecap="round" opacity="${opS}"/></pattern>`;
+      }
+      if (m.type === 'ribbed') {
+        const s = p(8);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<line x1="0" y1="${p(2)}" x2="${s}" y2="${p(2)}" stroke="${col}" stroke-width="${(0.9 * sc).toFixed(2)}" opacity="${opS}"/><line x1="0" y1="${p(5.5)}" x2="${s}" y2="${p(5.5)}" stroke="${alt}" stroke-width="${(0.65 * sc).toFixed(2)}" opacity="${op2}"/></pattern>`;
+      }
+      if (m.type === 'dots') {
+        const s = p(12);
+        return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<circle cx="${p(3)}" cy="${p(3)}" r="${p(1.1)}" fill="${col}" opacity="${opS}"/><circle cx="${p(9)}" cy="${p(9)}" r="${p(1.1)}" fill="${col}" opacity="${opS}"/><circle cx="${p(3.4)}" cy="${p(3.4)}" r="${p(0.7)}" fill="${alt}" opacity="${op2}"/></pattern>`;
+      }
+      const s = p(28);
+      return `<pattern id="${m.id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse">${bg ? `<rect width="${s}" height="${s}" fill="${bg}"/>` : ''}<path d="M${p(2)} ${p(7)} Q${p(10)} ${p(4)} ${p(19)} ${p(8)} T${p(27)} ${p(6)}" fill="none" stroke="${col}" stroke-width="${p(0.8)}" opacity="${opS}"/><path d="M${p(0)} ${p(20)} Q${p(9)} ${p(17)} ${p(17)} ${p(22)} T${p(28)} ${p(19)}" fill="none" stroke="${alt}" stroke-width="${p(0.7)}" opacity="${op2}"/></pattern>`;
+    };
+
+    const builtinMats = [
+      { id: 'pat-linen', type: 'linen', color: '#ffffff', altColor: '#000000', opacity: 0.14, scale: 1 },
+      { id: 'pat-crosshatch', type: 'crosshatch', color: '#000000', altColor: '#ffffff', opacity: 0.12, scale: 1 },
+      { id: 'pat-kraft', type: 'kraft', color: '#2b1d12', altColor: '#fff5e4', opacity: 0.15, scale: 1 },
+      { id: 'pat-ribbed', type: 'ribbed', color: '#000000', altColor: '#ffffff', opacity: 0.12, scale: 1 },
+      { id: 'pat-dots', type: 'dots', color: '#ffffff', altColor: '#000000', opacity: 0.16, scale: 1 },
+      { id: 'pat-vellum', type: 'vellum', color: '#ffffff', altColor: '#dbeafe', opacity: 0.14, scale: 1 },
+    ];
+    const materialPatternsDef = [...builtinMats, ...(Array.isArray(BLUEPRINT.scene.materials) ? BLUEPRINT.scene.materials : [])].map(buildMatPat).join('');
 
     document.getElementById('svgDefs').innerHTML = `
       <!-- Fine Cardstock Paper Texture (tactile horizontal fibre + grain, sRGB-synced with pack SVGs) -->
@@ -277,35 +360,60 @@
         <feComposite in="g" in2="SourceGraphic" operator="in" result="gc"/>
         <feBlend in="SourceGraphic" in2="gc" mode="multiply"/>
       </filter>
+      ${buildBevelDef('paperBevel', 1)}
+      ${buildBevelDef('paperBevelSoft', 0.65)}
+      ${buildCutoutBorderDef()}
+      ${buildBacklitPulpDef()}
+      <!-- Edge-gathered Gouache Grain & Chalky Pooled Shadow (adapted from MIT MengTo/Skills) -->
+      <filter id="gouacheGrain" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="2" seed="${(BLUEPRINT.meta.seed ?? 13) + 5}" result="n"/>
+        <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.56  0 0 0 0 0.47  0 0 0 0 0.41  0 -0.34 0 0 0.22" result="dk"/>
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
+        <feComposite in="SourceAlpha" in2="b" operator="arithmetic" k1="0" k2="1.65" k3="-1.45" k4="0" result="w"/>
+        <feComposite in="dk" in2="w" operator="in" result="g"/>
+        <feBlend in="g" in2="SourceGraphic" mode="multiply"/>
+      </filter>
+      <filter id="chalkShadow" x="-15%" y="-80%" width="130%" height="260%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="1.35" numOctaves="2" seed="${(BLUEPRINT.meta.seed ?? 13) + 3}" result="fine"/>
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="b"/>
+        <feDisplacementMap in="b" in2="fine" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.22 0.5" numOctaves="3" seed="${(BLUEPRINT.meta.seed ?? 13) + 12}" result="mott"/>
+        <feColorMatrix in="mott" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.25 0 0 0 0.35" result="ma"/>
+        <feComposite in="d" in2="ma" operator="in"/>
+      </filter>
+      <filter id="silhouetteFilter" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0 0.11  0 0 0 1 0"/>
+      </filter>
+      ${materialPatternsDef}
       <filter id="shadowDeep" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
-        <feDropShadow id="fDeep" dx="0" dy="7" stdDeviation="8" flood-color="#050712" flood-opacity="0.58"/>
+        <feDropShadow id="fDeep" dx="0" dy="7" stdDeviation="8" flood-color="${shCol}" flood-opacity="${(0.58 * shOpMul).toFixed(2)}"/>
       </filter>
       <filter id="shadowMed" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
-        <feDropShadow id="fMed" dx="1.5" dy="4.5" stdDeviation="4.8" flood-color="#060914" flood-opacity="0.42"/>
+        <feDropShadow id="fMed" dx="1.5" dy="4.5" stdDeviation="4.8" flood-color="${shCol}" flood-opacity="${(0.42 * shOpMul).toFixed(2)}"/>
       </filter>
       <filter id="shadowSoft" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
-        <feDropShadow id="fSoft" dx="0" dy="3" stdDeviation="4" flood-color="#0c1020" flood-opacity="0.28"/>
+        <feDropShadow id="fSoft" dx="0" dy="3" stdDeviation="4" flood-color="${shCol}" flood-opacity="${(0.28 * shOpMul).toFixed(2)}"/>
       </filter>
       <filter id="shadowInner" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
-        <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#140a10" flood-opacity="0.16"/>
+        <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="${shCol}" flood-opacity="${(0.16 * shOpMul).toFixed(2)}"/>
       </filter>
-      <filter id="softGlow" x="-45%" y="-45%" width="190%" height="190%" color-interpolation-filters="sRGB">
+      <filter id="softGlow" x="-250%" y="-250%" width="600%" height="600%" color-interpolation-filters="sRGB">
         <feGaussianBlur stdDeviation="9" result="b"/>
         <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
       <radialGradient id="groundShadowGrad" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#120810" stop-opacity="0.42"/>
-        <stop offset="62%" stop-color="#120810" stop-opacity="0.14"/>
-        <stop offset="100%" stop-color="#120810" stop-opacity="0"/>
+        <stop offset="0%" stop-color="${shCol}" stop-opacity="${(0.42 * shOpMul).toFixed(2)}"/>
+        <stop offset="62%" stop-color="${shCol}" stop-opacity="${(0.14 * shOpMul).toFixed(2)}"/>
+        <stop offset="100%" stop-color="${shCol}" stop-opacity="0"/>
       </radialGradient>
-      <radialGradient id="warmMomentGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#fff0ad" stop-opacity="0.44"/>
-        <stop offset="55%" stop-color="#f7a854" stop-opacity="0.15"/>
-        <stop offset="100%" stop-color="#f7a854" stop-opacity="0"/>
+      <radialGradient id="dynVfxGlow" cx="50%" cy="50%" r="50%">
+        <stop id="vfxGlowS0" offset="0%" stop-color="#fff0ad" stop-opacity="0.52"/>
+        <stop id="vfxGlowS1" offset="48%" stop-color="#f7a854" stop-opacity="0.20"/>
+        <stop id="vfxGlowS2" offset="100%" stop-color="#f7a854" stop-opacity="0"/>
       </radialGradient>
       <radialGradient id="autoVignette" cx="50%" cy="52%" r="70%">
-        <stop offset="60%" stop-color="#0a0612" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#080510" stop-opacity="${lit.vignetteOpacity ?? 0.34}"/>
+        <stop offset="60%" stop-color="${vigCol}" stop-opacity="0"/>
+        <stop offset="100%" stop-color="${vigCol}" stop-opacity="${lit.vignetteOpacity ?? 0.34}"/>
       </radialGradient>
       ${defaultMeteorDef}${fgDef}${mstDef}${customDefs}`;
 
@@ -336,46 +444,68 @@
     document.getElementById('layerFrame').innerHTML = buildProsceniumFrame();
     document.getElementById('layerCorners').innerHTML = BLUEPRINT.scene.cornersSvg ?? '';
 
-    // Universal Procedural Botanical / Motif Cluster Builder (100% Theme-Agnostic!)
+    // Universal Procedural Organic Motif Cluster Builder (100% Theme-Agnostic, Multi-Variant!)
     function buildClusters() {
-      const backItems = [], frontItems = [];
+      const backItems = [], midItems = [], frontItems = [];
       for (const cl of BLUEPRINT.scene.clusters ?? []) {
         const cr = makeRng(cl.seed ?? 3011);
         const count = cl.count ?? 24;
-        const pal = cl.palette ?? [['#d94432', '#b53224'], ['#f27a38', '#cf5c24'], ['#f7bd48', '#d9982b']];
-        const shape = cl.shapeSvg ?? '<path d="M0 -12 L3 -4 L11 -6 L5 1 L9 8 L2 5 L0 12 Z" fill="FILL_A"/><path d="M0 -12 L-3 -4 L-11 -6 L-5 1 L-9 8 L-2 5 L0 12 Z" fill="FILL_B"/>';
+        const pal = cl.palette ?? [['#d94432', '#b53224', '#8f2218'], ['#f27a38', '#cf5c24', '#a84418']];
+        const shapeList = Array.isArray(cl.shapesSvg) && cl.shapesSvg.length > 0
+          ? cl.shapesSvg
+          : [cl.shapeSvg ?? '<path d="M0 -12 C5 -8 9 -2 7 6 C4 10 1 11 0 12 Z" fill="FILL_A"/><path d="M0 -12 C-5 -8 -9 -2 -7 6 C-4 10 -1 11 0 12 Z" fill="FILL_B"/>'];
+        const lineAng = cl.mode === 'line' ? Math.atan2((cl.y1 ?? 0) - (cl.y0 ?? 0), (cl.x1 ?? 1) - (cl.x0 ?? 0)) * RAD : 0;
         const items = [];
         for (let i = 0; i < count; i++) {
-          let x, y;
+          let x, y, u = count > 1 ? i / (count - 1) : 0.5, baseRot = 0;
           if (cl.mode === 'arc') {
-            const ang = lerp(cl.a0 ?? -Math.PI, cl.a1 ?? 0, cr());
+            u = cr();
+            const ang = lerp(cl.a0 ?? -Math.PI, cl.a1 ?? 0, u);
             const radX = (cl.rx ?? 140) * (0.35 + 0.65 * Math.sqrt(cr()));
             const radY = (cl.ry ?? 90) * (0.35 + 0.65 * Math.sqrt(cr()));
             x = cl.cx + Math.cos(ang) * radX;
             y = cl.cy + Math.sin(ang) * radY;
+            if (cl.alignToPath) baseRot = ang * RAD + 90;
           } else if (cl.mode === 'line') {
-            const u = cr();
+            u = cr();
             x = lerp(cl.x0, cl.x1, u) + (cr() - 0.5) * (cl.spread ?? 40);
             y = lerp(cl.y0, cl.y1, u) + (cr() - 0.5) * (cl.spread ?? 40);
+            if (cl.alignToPath) baseRot = lineAng;
           } else {
-            // ellipse / box scatter
             const ang = cr() * Math.PI * 2;
             const r = Math.sqrt(cr());
+            u = r;
             x = cl.cx + Math.cos(ang) * (cl.rx ?? 100) * r;
             y = cl.cy + Math.sin(ang) * (cl.ry ?? 70) * r;
+            if (cl.alignToPath) baseRot = ang * RAD + 90;
           }
-          const rot = (cl.rotMin ?? -180) + cr() * ((cl.rotMax ?? 180) - (cl.rotMin ?? -180));
-          const sc = (cl.scaleMin ?? 0.7) + cr() * ((cl.scaleMax ?? 1.3) - (cl.scaleMin ?? 0.7));
+          const rotJitter = (cl.rotMin ?? -180) + cr() * ((cl.rotMax ?? 180) - (cl.rotMin ?? -180));
+          const rot = cl.alignToPath ? (baseRot + rotJitter) : rotJitter;
+          const progScale = Array.isArray(cl.scaleByProgress) ? lerp(cl.scaleByProgress[0], cl.scaleByProgress[1], u) : 1;
+          const sc = ((cl.scaleMin ?? 0.7) + cr() * ((cl.scaleMax ?? 1.3) - (cl.scaleMin ?? 0.7))) * progScale;
           const pair = pal[Math.floor(cr() * pal.length)];
           const cA = Array.isArray(pair) ? pair[0] : pair;
-          const cB = Array.isArray(pair) ? pair[1] : pair;
-          const svg = shape.replace(/FILL_A/g, cA).replace(/FILL_B/g, cB);
+          const cB = Array.isArray(pair) ? (pair[1] ?? cA) : pair;
+          const cC = Array.isArray(pair) ? (pair[2] ?? cB) : pair;
+          const rawShape = shapeList[i % shapeList.length];
+          const svg = rawShape.replace(/FILL_A/g, cA).replace(/FILL_B/g, cB).replace(/FILL_C/g, cC);
           items.push({ x, y, rot, sc, svg, ph: cr() * 6.28 });
         }
-        const entry = { lane: cl.lane ?? 'back', parallax: cl.parallax ?? (cl.lane === 'front' ? 22 : 14), sway: cl.sway ?? 3.5, filter: cl.filter ?? 'shadowSoft', items };
-        if (entry.lane === 'front') frontItems.push(entry); else backItems.push(entry);
+        if (cl.sortY) items.sort((a, b) => a.y - b.y);
+        const lane = cl.lane ?? 'back';
+        const entry = {
+          lane,
+          z: cl.z ?? 0,
+          parallax: cl.parallax ?? (lane === 'front' ? 22 : (lane === 'mid' ? 15 : 14)),
+          sway: cl.sway ?? 3.5,
+          filter: cl.filter ?? 'shadowSoft',
+          items,
+        };
+        if (lane === 'front') frontItems.push(entry);
+        else if (lane === 'mid') midItems.push(entry);
+        else backItems.push(entry);
       }
-      return { backItems, frontItems };
+      return { backItems, midItems, frontItems };
     }
     const CLUSTERS = buildClusters();
 
@@ -394,14 +524,19 @@
     for (const em of (BLUEPRINT.scene.emitters ?? []).filter(e => e.type === 'falling')) {
       const fr = makeRng(em.seed ?? 5511);
       const pal = em.palette ?? (em.colors ?? ['#f27138', '#f7b249']).map(c => [c, c]);
-      const shapes = em.shapesSvg ?? ['<path d="M0 -8 L2 -2 L8 -4 L4 1 L7 6 L1 4 L0 9 Z" fill="FILL_A"/><path d="M0 -8 L-2 -2 L-8 -4 L-4 1 L-7 6 L-1 4 L0 9 Z" fill="FILL_B"/>'];
+      const shapes = em.shapesSvg ?? ['<path d="M0 -8 C3 -4 6 0 4 6 C2 8 0 9 0 9 Z" fill="FILL_A"/><path d="M0 -8 C-3 -4 -6 0 -4 6 C-2 8 0 9 0 9 Z" fill="FILL_B"/>'];
+      const yMin = em.yMin ?? -40;
+      const yMax = em.yMax ?? (VH + 40);
+      const ySpan = Math.max(20, yMax - yMin);
       for (let i = 0; i < (em.count ?? 22); i++) {
         const pair = pal[i % pal.length];
         const cA = Array.isArray(pair) ? pair[0] : pair;
-        const cB = Array.isArray(pair) ? pair[1] : pair;
+        const cB = Array.isArray(pair) ? (pair[1] ?? cA) : pair;
+        const cC = Array.isArray(pair) ? (pair[2] ?? cB) : pair;
         FALLING.push({
           lane: i % 3 === 0 ? 'front' : 'back',
-          x0: fr() * (VW + 140) - 70, y0: fr() * (VH + 80) - 40,
+          x0: fr() * (VW + 140) - 70, y0: fr() * ySpan,
+          yMin, ySpan,
           vy: (em.speedY ?? 28) * (0.65 + fr() * 0.7),
           vx: (em.windX ?? -24) * (0.7 + fr() * 0.6),
           swayAmp: (em.swayAmp ?? 22) * (0.6 + fr() * 0.8),
@@ -410,7 +545,22 @@
           tumbleFreq: 1.4 + fr() * 1.5,
           phase: fr() * 6.28,
           scale: (em.scale ?? 1) * (0.6 + fr() * 0.65),
-          svg: shapes[i % shapes.length].replace(/FILL_A|CURRENT/g, cA).replace(/FILL_B/g, cB),
+          svg: shapes[i % shapes.length].replace(/FILL_A|CURRENT/g, cA).replace(/FILL_B/g, cB).replace(/FILL_C/g, cC),
+        });
+      }
+    }
+
+    const FIREFLIES = [];
+    for (const em of (BLUEPRINT.scene.emitters ?? []).filter(e => e.type === 'fireflies')) {
+      const fr = makeRng(em.seed ?? 901);
+      const xMin = em.xMin ?? 60, xMax = em.xMax ?? (VW - 60);
+      const yMin = em.yMin ?? (VH * 0.35), yMax = em.yMax ?? (VH * 0.92);
+      for (let i = 0; i < (em.count ?? 18); i++) {
+        FIREFLIES.push({
+          bx: xMin + fr() * (xMax - xMin),
+          by: yMin + fr() * (yMax - yMin),
+          ph: fr() * 6.28,
+          color: em.color ?? '#ffe985',
         });
       }
     }
@@ -434,12 +584,32 @@
           const pp = PART_BY_ID[resolvePartId(rigObj, pb)];
           const anc = pp?.anchors?.[b.attach] ?? pp?.pivot ?? [0, 0];
           const piv = pp?.pivot ?? [0, 0];
-          const lx = (anc[0] - piv[0]) * rs.scale, ly = (anc[1] - piv[1]) * rs.scale;
+          const psc = rs.scales?.[b.parent] ?? { x: 1, y: 1 };
+          const lx = (anc[0] - piv[0]) * rs.scale * psc.x;
+          const ly = (anc[1] - piv[1]) * rs.scale * psc.y;
           const r = pw.deg * DEG, c = Math.cos(r), s = Math.sin(r);
           world[b.id] = { x: pw.x + lx * c - ly * s, y: pw.y + lx * s + ly * c, deg: pw.deg + localDeg };
         }
       }
       return world;
+    }
+
+    // Precompute rest-pose world offsets relative to rootPos for analytic IK gait & ground-lock
+    const REST_WORLD = {};
+    for (const r of RIGS) {
+      const w = computeWorld(r);
+      const rx = rigStates[r.id].rootX, ry = rigStates[r.id].rootY;
+      REST_WORLD[r.id] = {};
+      for (const b of r.bones) {
+        REST_WORLD[r.id][b.id] = { dx: w[b.id].x - rx, dy: w[b.id].y - ry, deg: w[b.id].deg };
+      }
+    }
+
+    function wrapDeg180(d) {
+      let x = d;
+      while (x > 180) x -= 360;
+      while (x < -180) x += 360;
+      return x;
     }
 
     function solveIk(rigObj, chain, target) {
@@ -458,10 +628,95 @@
       const a = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
       const b = Math.acos(clamp((L1 * L1 + L2 * L2 - d * d) / (2 * L1 * L2), -1, 1));
       const bend = chain.bend ?? 1;
-      let uLocal = (aim + bend * a - off) * RAD - pDeg;
-      while (uLocal > 180) uLocal -= 360; while (uLocal < -180) uLocal += 360;
+      const uLocal = wrapDeg180((aim + bend * a - off) * RAD - pDeg);
       rs.angles[chain.upper] = clamp(uLocal, uB.limits.min, uB.limits.max);
       rs.angles[chain.lower] = clamp(-bend * (Math.PI - b) * RAD, lB.limits.min, lB.limits.max);
+    }
+
+    function computeBoneScale(sw, t) {
+      if (!sw) return { x: 1, y: 1 };
+      const s = Math.sin(t * (sw.freq ?? 2) + (sw.phase ?? 0));
+      const ax = sw.ampX ?? sw.amp ?? 0;
+      const ay = sw.ampY ?? (sw.amp != null ? -sw.amp : 0);
+      return { x: clamp(1 + s * ax, 0.55, 1.55), y: clamp(1 + s * ay, 0.55, 1.55) };
+    }
+
+    function computeSpinAngle(sp, baseDeg, t) {
+      const speed = typeof sp === 'number' ? sp : (sp.speed ?? 90);
+      const off = (typeof sp === 'object' && sp.offset != null) ? sp.offset : baseDeg;
+      return (((off + t * speed) % 360) + 540) % 360 - 180;
+    }
+
+    // Analytic 2-bone IK Gait (adapted from MIT K-ulucay/spine_anim_mcp):
+    // 2x vertical hip bob + 60% ground-locked stance + 40% lifted swing arc + heel/toe foot leveling
+    function applyGaitToRig(rigObj, gait, sampleT, travelDir) {
+      if (!gait) return;
+      const rs = rigStates[rigObj.id];
+      const yBase = rs.rootY;
+      const freq = gait.freq ?? 1.0;
+      const stride = gait.stride ?? 34;
+      const lift = gait.lift ?? 16;
+      const bob = gait.bob ?? 5;
+      const stanceFrac = clamp(gait.stanceFrac ?? 0.6, 0.25, 0.85);
+      const omegaT = 2 * Math.PI * sampleT * freq + (gait.phase ?? 0);
+
+      // 2x vertical hip bob per full stride cycle (contact low at u=0, 0.5; passing high at u=0.25, 0.75)
+      rs.rootY = yBase - bob * Math.abs(Math.sin(omegaT));
+      if (gait.swayX) rs.rootX += Math.sin(omegaT) * gait.swayX;
+
+      if (gait.spineBone && rigObj.boneById[gait.spineBone]) {
+        const sb = rigObj.boneById[gait.spineBone];
+        rs.angles[sb.id] = clamp((rs.angles[sb.id] ?? 0) + Math.sin(omegaT) * (gait.spineSway ?? 3.2), sb.limits.min, sb.limits.max);
+      }
+      if (gait.headBone && rigObj.boneById[gait.headBone]) {
+        const hb = rigObj.boneById[gait.headBone];
+        rs.angles[hb.id] = clamp((rs.angles[hb.id] ?? 0) - Math.sin(omegaT * 2 - 0.45) * (gait.headBob ?? 2.4), hb.limits.min, hb.limits.max);
+      }
+      for (const swArm of gait.swingBones ?? []) {
+        const ab = rigObj.boneById[swArm.bone];
+        if (!ab) continue;
+        const aPh = 2 * Math.PI * (sampleT * freq + (swArm.phase ?? 0));
+        rs.angles[ab.id] = clamp((rs.angles[ab.id] ?? 0) + Math.sin(aPh) * (swArm.amp ?? 18), ab.limits.min, ab.limits.max);
+      }
+
+      const scaleRatio = rs.scale / (rigObj.scale ?? 1);
+      for (const chSpec of gait.chains ?? []) {
+        const chain = rigObj.ik?.[chSpec.ik];
+        const restEnd = chain ? REST_WORLD[rigObj.id]?.[chain.end] : null;
+        if (!chain || !restEnd) continue;
+        const u = (((sampleT * freq + (chSpec.phase ?? 0)) % 1) + 1) % 1;
+        const chStride = chSpec.stride ?? stride;
+        const chLift = chSpec.lift ?? lift;
+        const dir = chSpec.dir ?? gait.dir ?? travelDir ?? 1;
+        const baseEndX = rs.rootX + restEnd.dx * scaleRatio + (chSpec.offsetX ?? 0);
+        const groundEndY = chSpec.groundY ?? gait.groundY ?? (yBase + restEnd.dy * scaleRatio + (chSpec.offsetY ?? 0));
+        const toeOff = chSpec.toeOff ?? 12;
+        const heelStrike = chSpec.heelStrike ?? -8;
+
+        let dxStride = 0, dyLift = 0, footPitch = 0;
+        if (u < stanceFrac) {
+          const su = u / stanceFrac;
+          dxStride = dir * lerp(chStride * 0.5, -chStride * 0.5, su);
+          dyLift = 0;
+          footPitch = su < 0.2 ? lerp(heelStrike, 0, su / 0.2) : (su > 0.72 ? lerp(0, toeOff, (su - 0.72) / 0.28) : 0);
+        } else {
+          const wu = (u - stanceFrac) / (1 - stanceFrac);
+          const easeW = 0.5 - 0.5 * Math.cos(wu * Math.PI);
+          dxStride = dir * lerp(-chStride * 0.5, chStride * 0.5, easeW);
+          dyLift = -Math.sin(wu * Math.PI) * chLift;
+          footPitch = lerp(toeOff, heelStrike, smoothstep(wu));
+        }
+
+        solveIk(rigObj, chain, { x: baseEndX + dxStride, y: groundEndY + dyLift });
+        const footId = chSpec.footBone ?? chain.end;
+        const fBone = footId ? rigObj.boneById[footId] : null;
+        if (fBone && fBone.parent && REST_WORLD[rigObj.id]?.[footId]) {
+          const wNow = computeWorld(rigObj);
+          const restFootDeg = REST_WORLD[rigObj.id][footId].deg;
+          const targetLocal = wrapDeg180((restFootDeg + dir * footPitch) - wNow[fBone.parent].deg);
+          rs.angles[footId] = clamp(targetLocal, fBone.limits.min, fBone.limits.max);
+        }
+      }
     }
 
     function applyPhaseToRig(rigObj, spec, localT, t) {
@@ -475,10 +730,13 @@
         rs.rootY = baseY;
         rs.facing = baseFacing * rs.userFlip;
         rs.emote = null;
-        for (const b of rigObj.bones) rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+        for (const b of rigObj.bones) {
+          rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+          rs.scales[b.id] = { x: 1, y: 1 };
+        }
         return;
       }
-      const e = spec.ease === 'back' ? easeOutBack(localT) : smoothstep(localT);
+      const e = spec.ease === 'back' ? easeOutBack(localT) : (spec.ease === 'linear' ? localT : smoothstep(localT));
       rs.rootX = Array.isArray(spec.rootX)
         ? lerp(spec.rootX[0], spec.rootX[1], e)
         : (typeof spec.rootX === 'number' ? spec.rootX : baseX);
@@ -491,67 +749,232 @@
       for (const b of rigObj.bones) {
         const k = spec.bones?.[b.id];
         let deg = Array.isArray(k) ? lerp(k[0], k[1], e) : (typeof k === 'number' ? k : (b.rest ?? 0));
+        const sp = spec.spins?.[b.id];
+        if (sp != null) deg = computeSpinAngle(sp, deg, t);
         const wv = spec.waves?.[b.id];
         if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
         rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
+        rs.scales[b.id] = computeBoneScale(spec.scaleWaves?.[b.id], t);
+      }
+      if (spec.gait) {
+        let travelDir = 1;
+        if (Array.isArray(spec.rootX) && Math.abs(spec.rootX[1] - spec.rootX[0]) > 1) {
+          travelDir = Math.sign((spec.rootX[1] - spec.rootX[0]) * (spec.facing ?? baseFacing)) || 1;
+        }
+        applyGaitToRig(rigObj, spec.gait, t, travelDir);
+      }
+    }
+
+    function applyHarmonicToRig(r, hm, t) {
+      const rs = rigStates[r.id];
+      rs.breath = Math.sin(t * 2.2 + r.id.length * 0.5) * 0.016;
+      if (!hm) {
+        rs.rootX = r.rootPos?.x ?? VW * 0.5;
+        rs.rootY = r.rootPos?.y ?? VH * 0.7;
+        rs.facing = (r.facing ?? 1) * rs.userFlip;
+        rs.emote = null;
+        for (const b of r.bones) {
+          rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
+          rs.scales[b.id] = { x: 1, y: 1 };
+        }
+        return;
+      }
+      rs.rootX = (r.rootPos?.x ?? VW * 0.5) + (hm.rootWaveX ? Math.sin(t * hm.rootWaveX.freq + (hm.rootWaveX.phase ?? 0)) * hm.rootWaveX.amp : 0);
+      rs.rootY = (r.rootPos?.y ?? VH * 0.7) + (hm.rootWaveY ? Math.sin(t * hm.rootWaveY.freq + (hm.rootWaveY.phase ?? 0)) * hm.rootWaveY.amp : 0);
+      rs.facing = (hm.facing ?? r.facing ?? 1) * rs.userFlip;
+      rs.emote = hm.emote ?? null;
+      for (const b of r.bones) {
+        let deg = hm.base?.[b.id] ?? b.rest ?? 0;
+        const sp = hm.spins?.[b.id];
+        if (sp != null) deg = computeSpinAngle(sp, deg, t);
+        const wv = hm.waves?.[b.id];
+        if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
+        rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
+        rs.scales[b.id] = computeBoneScale(hm.scaleWaves?.[b.id], t);
+      }
+      if (hm.gait) applyGaitToRig(r, hm.gait, t, 1);
+    }
+
+    function evalSingleRigAt(m, r, sampleT) {
+      if (m.type === 'cycle' && Array.isArray(m.phases) && m.phases.length > 0) {
+        const period = m.period ?? 10;
+        const u = ((sampleT % period) + period) % period / period;
+        let phase = m.phases[m.phases.length - 1], lt = 0;
+        for (const ph of m.phases) {
+          if (u >= ph.from && u <= ph.to) { phase = ph; lt = (u - ph.from) / Math.max(0.0001, ph.to - ph.from); break; }
+        }
+        const spec = phase.rigs ? phase.rigs[r.id] : (r.id === RIGS[0].id ? phase : null);
+        applyPhaseToRig(r, spec, lt, sampleT);
+      } else if (m.type === 'harmonic') {
+        const hm = m.rigs ? m.rigs[r.id] : (r.id === RIGS[0].id ? m : null);
+        applyHarmonicToRig(r, hm, sampleT);
+      }
+    }
+
+    // Stateless closed-form secondary motion (followThrough): samples t - lag vs t with zero mutable state!
+    function applyFollowThroughToRig(m, r, t) {
+      const ftBones = r.bones.filter(b => b.followThrough);
+      if (ftBones.length === 0) return;
+      const rs = rigStates[r.id];
+      const snapNow = {
+        rootX: rs.rootX,
+        rootY: rs.rootY,
+        facing: rs.facing,
+        breath: rs.breath,
+        emote: rs.emote,
+        angles: { ...rs.angles },
+        scales: Object.fromEntries(Object.entries(rs.scales).map(([k, v]) => [k, { ...v }])),
+      };
+      const worldNow = computeWorld(r);
+      const deltas = {};
+      for (const b of ftBones) {
+        const ft = b.followThrough;
+        const lag = clamp(ft.lag ?? 0.14, 0.02, 0.6);
+        evalSingleRigAt(m, r, t - lag);
+        const worldLag = computeWorld(r);
+        const dx = snapNow.rootX - rs.rootX;
+        const dy = snapNow.rootY - rs.rootY;
+        const vx = Math.abs(dx) < 160 ? (dx / lag) * snapNow.facing : 0;
+        const vy = Math.abs(dy) < 120 ? (dy / lag) : 0;
+        const pDegNow = b.parent && worldNow[b.parent] ? worldNow[b.parent].deg : snapNow.angles[b.id];
+        const pDegLag = b.parent && worldLag[b.parent] ? worldLag[b.parent].deg : rs.angles[b.id];
+        const dParent = wrapDeg180(pDegLag - pDegNow);
+        const velGain = ft.velGain ?? 0.16;
+        const vertGain = ft.vertGain ?? (velGain * 0.35);
+        const rotGain = ft.rotGain ?? 0.45;
+        deltas[b.id] = -vx * velGain + vy * vertGain + dParent * rotGain;
+      }
+      rs.rootX = snapNow.rootX;
+      rs.rootY = snapNow.rootY;
+      rs.facing = snapNow.facing;
+      rs.breath = snapNow.breath;
+      rs.emote = snapNow.emote;
+      rs.scales = snapNow.scales;
+      rs.angles = snapNow.angles;
+      for (const b of ftBones) {
+        rs.angles[b.id] = clamp((rs.angles[b.id] ?? 0) + (deltas[b.id] ?? 0), b.limits.min, b.limits.max);
+      }
+    }
+
+    function quantizeCharTime(t) {
+      const charFps = Number(BLUEPRINT.scene?.cadence?.charFps ?? 0);
+      return charFps > 0 ? Math.floor(t * charFps) / charFps : t;
+    }
+
+    // Deterministic hand-held paper/rod tremor (zero mutable state, pure function of quantized evalT)
+    function applyTremorToRig(r, evalT) {
+      if (!r.tremor) return;
+      const rs = rigStates[r.id];
+      const seedOff = r.id.length * 1.37;
+      const ax = r.tremor.ampX ?? 0;
+      const ay = r.tremor.ampY ?? 0;
+      const ad = r.tremor.ampDeg ?? 0;
+      if (ax > 0) rs.rootX += Math.sin(evalT * 7.3 + seedOff) * ax;
+      if (ay > 0) rs.rootY += Math.cos(evalT * 5.9 + seedOff * 1.4) * ay;
+      if (ad > 0 && r.bones.length > 0) {
+        const rb = r.bones[0];
+        rs.angles[rb.id] = clamp((rs.angles[rb.id] ?? 0) + Math.sin(evalT * 6.4 + seedOff * 0.8) * ad, rb.limits.min, rb.limits.max);
       }
     }
 
     function evalMotion(t) {
       const m = (BLUEPRINT.motions ?? []).find(x => x.id === state.preset);
       if (!m) return;
-      state.vfx.splash = 0; state.vfx.bubbles = 0; state.vfx.glowSpot = 0;
+      const evalT = quantizeCharTime(t);
+      state.vfx.glow = null; state.vfx.burst = null; state.vfx.particles = null;
       if (m.type === 'cycle' && Array.isArray(m.phases) && m.phases.length > 0) {
         const period = m.period ?? 10;
-        const u = ((t % period) + period) % period / period;
+        const u = ((evalT % period) + period) % period / period;
         let phase = m.phases[m.phases.length - 1], lt = 0;
         for (const ph of m.phases) {
           if (u >= ph.from && u <= ph.to) { phase = ph; lt = (u - ph.from) / Math.max(0.0001, ph.to - ph.from); break; }
         }
         if (phase.label) document.getElementById('phaseBadge').textContent = phase.label;
-        if (phase.rigs) for (const r of RIGS) applyPhaseToRig(r, phase.rigs[r.id], lt, t);
+        if (phase.rigs) for (const r of RIGS) applyPhaseToRig(r, phase.rigs[r.id], lt, evalT);
         else {
-          applyPhaseToRig(RIGS[0], phase, lt, t);
-          for (let i = 1; i < RIGS.length; i++) applyPhaseToRig(RIGS[i], null, lt, t);
+          applyPhaseToRig(RIGS[0], phase, lt, evalT);
+          for (let i = 1; i < RIGS.length; i++) applyPhaseToRig(RIGS[i], null, lt, evalT);
         }
-        if (phase.vfx?.splashAtY != null) {
-          const r0 = rigStates[RIGS[0].id], d = Math.abs(r0.rootY - phase.vfx.splashAtY);
-          if (d < 90) { state.vfx.splash = 1 - d / 90; state.vfx.splashX = r0.rootX; }
+        for (const r of RIGS) {
+          applyFollowThroughToRig(m, r, evalT);
+          applyTremorToRig(r, evalT);
         }
-        if (phase.vfx?.bubbles) state.vfx.bubbles = Math.sin(lt * Math.PI) * phase.vfx.bubbles;
-        if (phase.vfx?.warmGlow) {
-          state.vfx.glowSpot = Math.sin(lt * Math.PI) * (phase.vfx.warmGlow.intensity ?? 1);
-          state.vfx.glowX = phase.vfx.warmGlow.x ?? VW * 0.55;
-          state.vfx.glowY = phase.vfx.warmGlow.y ?? VH * 0.72;
+        const v = phase.vfx;
+        if (v) {
+          const glowSpec = v.glow ?? v.warmGlow;
+          if (glowSpec) {
+            const intensity = Math.sin(lt * Math.PI) * (glowSpec.intensity ?? 1);
+            if (intensity > 0.04) {
+              state.vfx.glow = {
+                intensity,
+                x: glowSpec.x ?? VW * 0.55,
+                y: glowSpec.y ?? VH * 0.72,
+                r: glowSpec.r ?? 120,
+                color: glowSpec.color ?? BLUEPRINT.scene.lighting?.focalGlow?.color ?? '#fff0ad',
+                midColor: glowSpec.midColor ?? glowSpec.color ?? BLUEPRINT.scene.lighting?.focalGlow?.midColor ?? '#f7a854',
+              };
+            }
+          }
+          const burstSpec = v.burst ?? (v.splashAtY != null ? { y: v.splashAtY, type: 'splash' } : null);
+          if (burstSpec) {
+            const targetRig = rigStates[burstSpec.rigId] ?? rigStates[RIGS[0].id];
+            const bMode = burstSpec.mode ?? ((burstSpec.y != null || burstSpec.triggerY != null || BLUEPRINT.scene.waterlineY != null) ? 'proximity' : 'phase');
+            let bIntensity = 0;
+            const bx = burstSpec.x ?? targetRig.rootX;
+            let by = burstSpec.y ?? targetRig.rootY;
+            if (bMode === 'phase') {
+              bIntensity = Math.sin(lt * Math.PI) * (burstSpec.intensity ?? 1);
+            } else {
+              const triggerY = burstSpec.triggerY ?? burstSpec.y ?? BLUEPRINT.scene.waterlineY ?? VH * 0.74;
+              const radius = burstSpec.radius ?? 90;
+              const d = Math.abs(targetRig.rootY - triggerY);
+              if (d < radius) bIntensity = (1 - d / radius) * (burstSpec.intensity ?? 1);
+              by = burstSpec.y ?? triggerY;
+            }
+            if (bIntensity > 0.04) {
+              state.vfx.burst = {
+                intensity: bIntensity,
+                x: bx,
+                y: by,
+                type: burstSpec.type ?? 'splash',
+                svg: burstSpec.svg ?? null,
+                color: burstSpec.color ?? '#d4f1ff',
+                highlightColor: burstSpec.highlightColor ?? '#ffffff',
+                scale: burstSpec.scale ?? 1,
+              };
+            }
+          }
+          const partSpec = v.particles ?? (v.bubbles ? { intensity: v.bubbles } : null);
+          if (partSpec) {
+            const pObj = typeof partSpec === 'number' ? { intensity: partSpec } : partSpec;
+            const targetRig = rigStates[pObj.rigId] ?? rigStates[RIGS[0].id];
+            const intensity = Math.sin(lt * Math.PI) * (pObj.intensity ?? 1);
+            if (intensity > 0.05) {
+              state.vfx.particles = {
+                intensity,
+                x: pObj.x ?? targetRig.rootX,
+                baseY: pObj.baseY ?? (BLUEPRINT.scene.waterlineY != null ? BLUEPRINT.scene.waterlineY + 32 : targetRig.rootY),
+                count: pObj.count ?? 6,
+                color: pObj.color ?? '#c8efff',
+                highlightColor: pObj.highlightColor ?? '#ffffff',
+                shapeSvg: pObj.shapeSvg ?? null,
+                dir: pObj.dir ?? -1,
+                spreadX: pObj.spreadX ?? 13,
+                riseHeight: pObj.riseHeight ?? 85,
+              };
+            }
+          }
         }
       } else if (m.type === 'harmonic') {
         if (m.label) document.getElementById('phaseBadge').textContent = m.label;
-        const applyH = (r, hm) => {
-          const rs = rigStates[r.id];
-          rs.breath = Math.sin(t * 2.2 + r.id.length * 0.5) * 0.016;
-          if (!hm) {
-            rs.rootX = r.rootPos?.x ?? VW * 0.5;
-            rs.rootY = r.rootPos?.y ?? VH * 0.7;
-            rs.facing = (r.facing ?? 1) * rs.userFlip;
-            rs.emote = null;
-            for (const b of r.bones) rs.angles[b.id] = clamp(b.rest ?? 0, b.limits.min, b.limits.max);
-            return;
-          }
-          rs.rootX = (r.rootPos?.x ?? VW * 0.5) + (hm.rootWaveX ? Math.sin(t * hm.rootWaveX.freq + (hm.rootWaveX.phase ?? 0)) * hm.rootWaveX.amp : 0);
-          rs.rootY = (r.rootPos?.y ?? VH * 0.7) + (hm.rootWaveY ? Math.sin(t * hm.rootWaveY.freq + (hm.rootWaveY.phase ?? 0)) * hm.rootWaveY.amp : 0);
-          rs.facing = (hm.facing ?? r.facing ?? 1) * rs.userFlip;
-          rs.emote = hm.emote ?? null;
-          for (const b of r.bones) {
-            let deg = hm.base?.[b.id] ?? b.rest ?? 0;
-            const wv = hm.waves?.[b.id];
-            if (wv) deg += Math.sin(t * wv.freq + (wv.phase ?? 0)) * wv.amp;
-            rs.angles[b.id] = clamp(deg, b.limits.min, b.limits.max);
-          }
-        };
-        if (m.rigs) for (const r of RIGS) applyH(r, m.rigs[r.id]);
+        if (m.rigs) for (const r of RIGS) applyHarmonicToRig(r, m.rigs[r.id], evalT);
         else {
-          applyH(RIGS[0], m);
-          for (let i = 1; i < RIGS.length; i++) applyH(RIGS[i], null);
+          applyHarmonicToRig(RIGS[0], m, evalT);
+          for (let i = 1; i < RIGS.length; i++) applyHarmonicToRig(RIGS[i], null, evalT);
+        }
+        for (const r of RIGS) {
+          applyFollowThroughToRig(m, r, evalT);
+          applyTremorToRig(r, evalT);
         }
       }
     }
@@ -570,208 +993,532 @@
 
     function renderAll(t, px, py) {
       const sc = BLUEPRINT.scene;
-      const epx = px + (state.camBreath ? Math.sin(t * 0.42) * 0.16 : 0);
-      const epy = py + (state.camBreath ? Math.cos(t * 0.34) * 0.10 : 0);
+      const driftAmp = sc.cadence?.cameraDrift ?? 0.16;
+      const epx = px + (state.camBreath ? Math.sin(t * 0.42) * driftAmp : 0);
+      const epy = py + (state.camBreath ? Math.cos(t * 0.34) * (driftAmp * 0.625) : 0);
 
-      // 1. Sky + stars
-      let sky = sc.skySvg ?? `<rect x="-40" y="-40" width="${VW + 80}" height="${VH + 80}" fill="${sc.bgColor ?? '#0b1326'}"/>`;
-      if (STARS.length) {
-        sky += `<g transform="translate(${(epx * 4).toFixed(1)},${(epy * 4).toFixed(1)})">`;
-        for (const s of STARS) sky += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${s.r.toFixed(2)}" fill="${sc.stars.color ?? '#fff'}" opacity="${clamp(s.op + Math.sin(t * s.freq + s.phase) * 0.25, 0.12, 1).toFixed(2)}"/>`;
-        sky += '</g>';
-      }
-      document.getElementById('layerSky').innerHTML = sky;
+      // 1. Sky + stars (or clean high-contrast paper backdrop in silhouette audit mode)
+      if (state.silhouette) {
+        document.getElementById('layerSky').innerHTML = `<rect x="-40" y="-40" width="${VW + 80}" height="${VH + 80}" fill="#f4efe6"/>`;
+        for (const id of ['layerFocalGlow', 'layerAmbientBack', 'layerCelestial', 'layerLightShafts', 'layerMistMid', 'layerAtmosphereFore', 'layerBackScenery', 'layerFrontScenery', 'layerClustersBack', 'layerClustersFront', 'layerSwarmBack', 'layerSwarmFront', 'layerFallingBack', 'layerFallingFront', 'layerGroundShadows', 'layerVfx', 'layerOverlayProps']) {
+          document.getElementById(id).innerHTML = '';
+        }
+        const fEl = document.getElementById('layerFrame');
+        const cEl = document.getElementById('layerCorners');
+        if (fEl) fEl.style.display = 'none';
+        if (cEl) cEl.style.display = 'none';
+      } else {
+        let sky = sc.skySvg ?? `<rect x="-40" y="-40" width="${VW + 80}" height="${VH + 80}" fill="${sc.bgColor ?? '#0b1326'}"/>`;
+        if (STARS.length) {
+          sky += `<g transform="translate(${(epx * 4).toFixed(1)},${(epy * 4).toFixed(1)})">`;
+          for (const s of STARS) sky += `<circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="${s.r.toFixed(2)}" fill="${sc.stars.color ?? '#fff'}" opacity="${clamp(s.op + Math.sin(t * s.freq + s.phase) * 0.25, 0.12, 1).toFixed(2)}"/>`;
+          sky += '</g>';
+        }
+        document.getElementById('layerSky').innerHTML = sky;
 
-      // 2. Data-driven Backlit Focal Glow (Shadow-Box Light-Box Heart!)
-      document.getElementById('layerFocalGlow').innerHTML = (state.showAtmos && fg)
-        ? `<circle cx="${(fg.x + epx * 6).toFixed(1)}" cy="${(fg.y + epy * 5).toFixed(1)}" r="${(fg.r ?? 260) * (1 + Math.sin(t * 1.1) * 0.03)}" fill="url(#autoFocalGlow)"/>` : '';
+        // 2. Data-driven Backlit Focal Glow (Shadow-Box Light-Box Heart!)
+        document.getElementById('layerFocalGlow').innerHTML = (state.showAtmos && fg)
+          ? `<circle cx="${(fg.x + epx * 6).toFixed(1)}" cy="${(fg.y + epy * 5).toFixed(1)}" r="${(fg.r ?? 260) * (1 + Math.sin(t * 1.1) * 0.03)}" fill="url(#autoFocalGlow)"/>` : '';
 
-      // 3. Ambient emitters (meteor & fireflies)
-      let amb = '';
-      if (state.showAmbient && Array.isArray(sc.emitters)) {
-        for (const em of sc.emitters) {
-          if (em.type === 'meteor') {
-            const loc = (t * state.ambientAmp + (em.offset ?? 0)) % (em.period ?? 6);
-            if (loc <= (em.dur ?? 1)) {
-              const p = loc / (em.dur ?? 1), ease = 1 - Math.pow(1 - p, 2);
-              const hx = em.x0 + em.dx * ease + epx * 6, hy = em.y0 + em.dy * ease + epy * 6;
-              const ang = Math.atan2(em.dy, em.dx) * RAD;
-              const fade = p < 0.2 ? p / 0.2 : (p > 0.72 ? (1 - p) / 0.28 : 1);
-              const len = (em.len ?? 110) * Math.sin(p * Math.PI);
-              amb += `<g transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${fade.toFixed(2)}"><polygon points="${(-len).toFixed(1)},0 0,-2.4 0,2.4" fill="url(#${em.gradId ?? 'meteorTrail'})"/><path d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" fill="${em.color ?? '#fff7c2'}" filter="url(#softGlow)"/></g>`;
-            }
-          } else if (em.type === 'fireflies') {
-            const fr = makeRng(em.seed ?? 901);
-            for (let i = 0; i < (em.count ?? 18); i++) {
-              const bx = (em.xMin ?? 60) + fr() * ((em.xMax ?? VW - 60) - (em.xMin ?? 60));
-              const by = (em.yMin ?? VH * 0.35) + fr() * ((em.yMax ?? VH * 0.92) - (em.yMin ?? VH * 0.35));
-              const ph = fr() * 6.28;
-              const fx = bx + Math.sin(t * 0.7 * state.ambientAmp + ph) * 24 + epx * 13;
-              const fy = by + Math.cos(t * 1.0 * state.ambientAmp + ph) * 14 + epy * 9;
-              const g = 0.22 + 0.78 * Math.pow((Math.sin(t * 2.1 + ph) + 1) * 0.5, 2);
-              amb += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(1.8 + g * 2.4).toFixed(1)}" fill="${em.color ?? '#ffe985'}" opacity="${g.toFixed(2)}" filter="url(#softGlow)"/>`;
+        // 3. Ambient emitters (meteor & pre-computed fireflies)
+        let amb = '';
+        if (state.showAmbient) {
+          for (const em of (sc.emitters ?? [])) {
+            if (em.type === 'meteor') {
+              const loc = (t * state.ambientAmp + (em.offset ?? 0)) % (em.period ?? 6);
+              if (loc <= (em.dur ?? 1)) {
+                const p = loc / (em.dur ?? 1), ease = 1 - Math.pow(1 - p, 2);
+                const hx = em.x0 + em.dx * ease + epx * 6, hy = em.y0 + em.dy * ease + epy * 6;
+                const ang = Math.atan2(em.dy, em.dx) * RAD;
+                const fade = p < 0.2 ? p / 0.2 : (p > 0.72 ? (1 - p) / 0.28 : 1);
+                const len = (em.len ?? 110) * Math.sin(p * Math.PI);
+                amb += `<g transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${fade.toFixed(2)}"><polygon points="${(-len).toFixed(1)},0 0,-2.4 0,2.4" fill="url(#${em.gradId ?? 'meteorTrail'})"/><path d="M0 -7 L2 -2 L7 0 L2 2 L0 7 L-2 2 L-7 0 L-2 -2 Z" fill="${em.color ?? '#fff7c2'}" filter="url(#softGlow)"/></g>`;
+              }
             }
           }
+          for (const f of FIREFLIES) {
+            const fx = f.bx + Math.sin(t * 0.7 * state.ambientAmp + f.ph) * 24 + epx * 13;
+            const fy = f.by + Math.cos(t * 1.0 * state.ambientAmp + f.ph) * 14 + epy * 9;
+            const g = 0.22 + 0.78 * Math.pow((Math.sin(t * 2.1 + f.ph) + 1) * 0.5, 2);
+            const r = 1.6 + g * 2.0;
+            amb += `<circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(r * 3.1).toFixed(1)}" fill="${f.color}" opacity="${(g * 0.16).toFixed(2)}"/><circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${(r * 1.7).toFixed(1)}" fill="${f.color}" opacity="${(g * 0.34).toFixed(2)}"/><circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="${r.toFixed(1)}" fill="#ffffff" opacity="${(g * 0.92).toFixed(2)}"/>`;
+          }
         }
+        document.getElementById('layerAmbientBack').innerHTML = amb;
+
+        // 4. Celestial Rig (Concentric Moon/Sun + Optional Crescent!)
+        let cel = '';
+        if (sc.celestial) {
+          const c = sc.celestial, pulse = Math.sin(t * 1.2 * state.ambientAmp) * 0.028;
+          cel += `<g transform="translate(${(c.x + epx * 7).toFixed(1)},${(c.y + epy * 6).toFixed(1)})">`;
+          (c.rings ?? []).forEach((rg, i) => {
+            cel += `<circle cx="${(epx * i * 1.2).toFixed(1)}" cy="${(epy * i * 1.2).toFixed(1)}" r="${(rg.r * (1 + pulse * (0.6 + i * 0.14))).toFixed(1)}" fill="${rg.fill}" filter="url(#shadowMed)"/>`;
+          });
+          cel += `<g transform="translate(${(epx * 7).toFixed(1)},${(epy * 6).toFixed(1)})">${c.coreSvg ?? ''}</g>`;
+          if (c.orbitSvg) cel += `<g transform="rotate(${(t * (c.orbitSpeed ?? 10) * state.ambientAmp).toFixed(1)})">${c.orbitSvg}</g>`;
+          cel += '</g>';
+        }
+        document.getElementById('layerCelestial').innerHTML = cel;
+
+        // 5. Atmosphere (Shafts, Mist, Vignette)
+        const atm = sc.atmosphere ?? {};
+        document.getElementById('layerLightShafts').innerHTML = state.showAtmos && atm.lightShaftsSvg
+          ? `<g transform="translate(${(epx * 8).toFixed(1)},${(epy * 5).toFixed(1)})" opacity="${(0.84 + Math.sin(t * 0.9) * 0.12).toFixed(2)}">${atm.lightShaftsSvg}</g>` : '';
+        document.getElementById('layerMistMid').innerHTML = state.showAtmos
+          ? (atm.midMistSvg ?? (mst ? `<rect x="-40" y="${mst.y ?? VH * 0.52}" width="${VW + 80}" height="${mst.height ?? VH * 0.32}" fill="url(#autoMistGrad)"/>` : '')) : '';
+        document.getElementById('layerAtmosphereFore').innerHTML = state.showAtmos
+          ? (atm.foregroundGlowSvg ?? `<rect x="0" y="0" width="${VW}" height="${VH}" fill="url(#autoVignette)" pointer-events="none"/>`) : '';
+
+        // 6. Back & Front Multiplane Scenery + Procedural Botanical/Motif Clusters!
+        const renderPlanes = (list) => (list ?? []).map(pl => {
+          const dx = epx * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.4) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
+          const dy = epy * ((pl.parallax ?? 12) * 0.7);
+          return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
+        }).join('');
+        document.getElementById('layerBackScenery').innerHTML = renderPlanes(sc.backLayers);
+        document.getElementById('layerFrontScenery').innerHTML = renderPlanes(sc.frontLayers);
+        document.getElementById('layerClustersBack').innerHTML = renderClusters(CLUSTERS.backItems, t, epx, epy);
+        document.getElementById('layerClustersFront').innerHTML = renderClusters(CLUSTERS.frontItems, t, epx, epy);
+
+        // 7. Perspective Swarms
+        let swB = '', swF = '';
+        if (state.showSwarm && Array.isArray(sc.swarms)) {
+          const span = VW + 120;
+          for (const sw of sc.swarms) {
+            const rawX = (sw.x0 + (sw.dir ?? 1) * t * (sw.speed ?? 50) * state.ambientAmp) % span;
+            const x = (rawX < -60 ? rawX + span : rawX) - 60;
+            let y = sw.y0 + Math.sin(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * (sw.amp ?? 12);
+            let pitch = Math.cos(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * 10;
+            if (sw.jump) {
+              const jt = (t * state.ambientAmp + (sw.jumpOffset ?? 0)) % (sw.jumpPeriod ?? 6);
+              if (jt < 1.4) { const u = jt / 1.4; y -= Math.sin(u * Math.PI) * (sw.jumpHeight ?? 70); pitch = -Math.cos(u * Math.PI) * 40; }
+            }
+            const wag = Math.sin(t * (sw.wagFreq ?? 12) * state.ambientAmp + (sw.phase ?? 0)) * (sw.wagAmp ?? 28);
+            const ox = epx * (sw.lane === 'front' ? 19 : 12), oy = epy * (sw.lane === 'front' ? 12 : 8);
+            const item = `<g transform="translate(${(x + ox).toFixed(1)},${(y + oy).toFixed(1)}) scale(${(sw.dir ?? 1) * (sw.scale ?? 1)},${sw.scale ?? 1}) rotate(${pitch.toFixed(1)})" filter="url(#shadowSoft)"><g transform="translate(${sw.tailPivotX ?? -12},${sw.tailPivotY ?? 0}) rotate(${wag.toFixed(1)})">${sw.tailSvg}</g>${sw.bodySvg}</g>`;
+            if (sw.lane === 'front') swF += item; else swB += item;
+          }
+        }
+        document.getElementById('layerSwarmBack').innerHTML = swB;
+        document.getElementById('layerSwarmFront').innerHTML = swF;
+
+        // 8. Falling / Rising Particles (Leaves, Petals, Snow, Rising Bubbles with optional yMin/yMax zone!)
+        let fB = '', fF = '';
+        if (state.showAmbient && FALLING.length > 0) {
+          const sX = VW + 140;
+          for (const p of FALLING) {
+            const rY = ((p.y0 + t * p.vy * state.ambientAmp) % p.ySpan + p.ySpan) % p.ySpan;
+            const y = p.yMin + rY;
+            const rX = ((p.x0 + t * p.vx * state.ambientAmp + Math.sin(t * p.swayFreq + p.phase) * p.swayAmp) % sX + sX) % sX;
+            const x = rX - 70;
+            const rot = (t * p.spinFreq * 42 + p.phase * 40) % 360;
+            const fx = 0.45 + 0.55 * Math.cos(t * p.tumbleFreq + p.phase);
+            const pm = p.lane === 'front' ? 21 : 12;
+            const item = `<g transform="translate(${(x + epx * pm).toFixed(1)},${(y + epy * pm * 0.7).toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(p.scale * fx).toFixed(2)},${p.scale.toFixed(2)})" filter="url(#shadowSoft)">${p.svg}</g>`;
+            if (p.lane === 'front') fF += item; else fB += item;
+          }
+        }
+        document.getElementById('layerFallingBack').innerHTML = fB;
+        document.getElementById('layerFallingFront').innerHTML = fF;
       }
-      document.getElementById('layerAmbientBack').innerHTML = amb;
 
-      // 4. Celestial Rig (Concentric Moon/Sun + Optional Crescent!)
-      let cel = '';
-      if (sc.celestial) {
-        const c = sc.celestial, pulse = Math.sin(t * 1.2 * state.ambientAmp) * 0.028;
-        cel += `<g transform="translate(${(c.x + epx * 7).toFixed(1)},${(c.y + epy * 6).toFixed(1)})">`;
-        (c.rings ?? []).forEach((rg, i) => {
-          cel += `<circle cx="${(epx * i * 1.2).toFixed(1)}" cy="${(epy * i * 1.2).toFixed(1)}" r="${(rg.r * (1 + pulse * (0.6 + i * 0.14))).toFixed(1)}" fill="${rg.fill}" filter="url(#shadowMed)"/>`;
-        });
-        cel += `<g transform="translate(${(epx * 7).toFixed(1)},${(epy * 6).toFixed(1)})">${c.coreSvg ?? ''}</g>`;
-        if (c.orbitSvg) cel += `<g transform="rotate(${(t * (c.orbitSpeed ?? 10) * state.ambientAmp).toFixed(1)})">${c.orbitSvg}</g>`;
-        cel += '</g>';
-      }
-      document.getElementById('layerCelestial').innerHTML = cel;
-
-      // 5. Atmosphere (Shafts, Mist, Vignette)
-      const atm = sc.atmosphere ?? {};
-      document.getElementById('layerLightShafts').innerHTML = state.showAtmos && atm.lightShaftsSvg
-        ? `<g transform="translate(${(epx * 8).toFixed(1)},${(epy * 5).toFixed(1)})" opacity="${(0.84 + Math.sin(t * 0.9) * 0.12).toFixed(2)}">${atm.lightShaftsSvg}</g>` : '';
-      document.getElementById('layerMistMid').innerHTML = state.showAtmos
-        ? (atm.midMistSvg ?? (mst ? `<rect x="-40" y="${mst.y ?? VH * 0.52}" width="${VW + 80}" height="${mst.height ?? VH * 0.32}" fill="url(#autoMistGrad)"/>` : '')) : '';
-      document.getElementById('layerAtmosphereFore').innerHTML = state.showAtmos
-        ? (atm.foregroundGlowSvg ?? `<rect x="0" y="0" width="${VW}" height="${VH}" fill="url(#autoVignette)" pointer-events="none"/>`) : '';
-
-      // 6. Back & Front Multiplane Scenery + Procedural Botanical/Motif Clusters!
-      const renderPlanes = (list) => (list ?? []).map(pl => {
+      // 9. Ground Contact Shadows + Unified Z-Interleaved Mid-Stage (Rigs + midLayers + mid Clusters + mid Props)
+      const renderPlanesMid = (list) => (list ?? []).map(pl => {
         const dx = epx * (pl.parallax ?? 12) + (pl.swayAmp ? Math.sin(t * (pl.swayFreq ?? 1.4) * state.ambientAmp + (pl.phase ?? 0)) * pl.swayAmp : 0);
         const dy = epy * ((pl.parallax ?? 12) * 0.7);
         return `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)})" ${pl.filter ? `filter="url(#${pl.filter})"` : ''}>${pl.svg}</g>`;
       }).join('');
-      document.getElementById('layerBackScenery').innerHTML = renderPlanes(sc.backLayers);
-      document.getElementById('layerFrontScenery').innerHTML = renderPlanes(sc.frontLayers);
-      document.getElementById('layerClustersBack').innerHTML = renderClusters(CLUSTERS.backItems, t, epx, epy);
-      document.getElementById('layerClustersFront').innerHTML = renderClusters(CLUSTERS.frontItems, t, epx, epy);
-
-      // 7. Perspective Swarms
-      let swB = '', swF = '';
-      if (state.showSwarm && Array.isArray(sc.swarms)) {
-        const span = VW + 120;
-        for (const sw of sc.swarms) {
-          const rawX = (sw.x0 + (sw.dir ?? 1) * t * (sw.speed ?? 50) * state.ambientAmp) % span;
-          const x = (rawX < -60 ? rawX + span : rawX) - 60;
-          let y = sw.y0 + Math.sin(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * (sw.amp ?? 12);
-          let pitch = Math.cos(t * 2.3 * state.ambientAmp + (sw.phase ?? 0)) * 10;
-          if (sw.jump) {
-            const jt = (t * state.ambientAmp + (sw.jumpOffset ?? 0)) % (sw.jumpPeriod ?? 6);
-            if (jt < 1.4) { const u = jt / 1.4; y -= Math.sin(u * Math.PI) * (sw.jumpHeight ?? 70); pitch = -Math.cos(u * Math.PI) * 40; }
-          }
-          const wag = Math.sin(t * (sw.wagFreq ?? 12) * state.ambientAmp + (sw.phase ?? 0)) * (sw.wagAmp ?? 28);
-          const ox = epx * (sw.lane === 'front' ? 19 : 12), oy = epy * (sw.lane === 'front' ? 12 : 8);
-          const item = `<g transform="translate(${(x + ox).toFixed(1)},${(y + oy).toFixed(1)}) scale(${(sw.dir ?? 1) * (sw.scale ?? 1)},${sw.scale ?? 1}) rotate(${pitch.toFixed(1)})" filter="url(#shadowSoft)"><g transform="translate(${sw.tailPivotX ?? -12},${sw.tailPivotY ?? 0}) rotate(${wag.toFixed(1)})">${sw.tailSvg}</g>${sw.bodySvg}</g>`;
-          if (sw.lane === 'front') swF += item; else swB += item;
-        }
-      }
-      document.getElementById('layerSwarmBack').innerHTML = swB;
-      document.getElementById('layerSwarmFront').innerHTML = swF;
-
-      // 8. Falling / Rising Particles (Leaves, Petals, Snow, Rising Bubbles!)
-      let fB = '', fF = '';
-      if (state.showAmbient && FALLING.length > 0) {
-        const sY = VH + 80, sX = VW + 140;
-        for (const p of FALLING) {
-          const rY = ((p.y0 + t * p.vy * state.ambientAmp) % sY + sY) % sY;
-          const y = rY - 40;
-          const rX = ((p.x0 + t * p.vx * state.ambientAmp + Math.sin(t * p.swayFreq + p.phase) * p.swayAmp) % sX + sX) % sX;
-          const x = rX - 70;
-          const rot = (t * p.spinFreq * 42 + p.phase * 40) % 360;
-          const fx = 0.45 + 0.55 * Math.cos(t * p.tumbleFreq + p.phase);
-          const pm = p.lane === 'front' ? 21 : 12;
-          const item = `<g transform="translate(${(x + epx * pm).toFixed(1)},${(y + epy * pm * 0.7).toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(p.scale * fx).toFixed(2)},${p.scale.toFixed(2)})" filter="url(#shadowSoft)">${p.svg}</g>`;
-          if (p.lane === 'front') fF += item; else fB += item;
-        }
-      }
-      document.getElementById('layerFallingBack').innerHTML = fB;
-      document.getElementById('layerFallingFront').innerHTML = fF;
-
-      // 9. Ground Contact Shadows + Cohesive Hero Rigs (with optional Paper Brad Pins!)
-      let gs = '', heroes = '', diag = '', ik = '';
-      for (const rigObj of [...RIGS].sort((a, b) => (a.z ?? 0) - (b.z ?? 0))) {
-        const rs = rigStates[rigObj.id], world = computeWorld(rigObj);
-        const hox = epx * (rigObj.parallax ?? 15), hoy = epy * ((rigObj.parallax ?? 15) * 0.75);
-
-        if (rigObj.groundY != null) {
-          const lift = Math.max(0, (rigObj.rootPos?.y ?? rigObj.groundY - 50) - rs.rootY);
-          const scS = clamp(1 - lift / 220, 0.35, 1.05), opS = clamp(1 - lift / 240, 0.22, 1);
-          gs += `<ellipse cx="${(rs.rootX + hox + (rigObj.shadowOffsetX ?? 0)).toFixed(1)}" cy="${(rigObj.groundY + hoy).toFixed(1)}" rx="${((rigObj.shadowRx ?? 54) * scS).toFixed(1)}" ry="${((rigObj.shadowRy ?? 10) * scS).toFixed(1)}" fill="url(#groundShadowGrad)" opacity="${opS.toFixed(2)}"/>`;
-        }
-
-        const gSh = rigObj.groupShadow === false ? '' : `filter="url(#${rigObj.groupShadow ?? 'shadowDeep'})"`;
-        const brY = 1 + rs.breath, brX = 1 - rs.breath * 0.5;
-        heroes += `<g ${gSh}><g transform="translate(${(rs.rootX + hox).toFixed(1)},${(rs.rootY + hoy).toFixed(1)}) scale(${(rs.facing * brX).toFixed(3)},${brY.toFixed(3)}) translate(${(-rs.rootX).toFixed(1)},${(-rs.rootY).toFixed(1)})" filter="url(#paperTex)">`;
-        for (const b of [...rigObj.bones].sort((a, c) => (a.z ?? 0) - (c.z ?? 0))) {
-          const w = world[b.id], part = PART_BY_ID[resolvePartId(rigObj, b)];
-          if (!part) continue;
-          const bSh = b.shadow && b.shadow !== 'none' ? `filter="url(#${b.shadow})"` : '';
-          const brad = b.brad ? `<circle cx="0" cy="0" r="${b.brad.r ?? 4.2}" fill="${b.brad.fill ?? '#e8c49a'}" stroke="${b.brad.stroke ?? '#6e3a1f'}" stroke-width="1.3"/><circle cx="-0.8" cy="-0.8" r="${(b.brad.r ?? 4.2) * 0.35}" fill="#ffffff" opacity="0.5"/>` : '';
-          heroes += `<g transform="translate(${w.x.toFixed(2)},${w.y.toFixed(2)}) scale(${rs.scale}) rotate(${w.deg.toFixed(2)})" ${bSh}>${part.svg}${brad}</g>`;
-        }
-        heroes += '</g></g>';
-
-        if (rs.emote === 'warm' || rs.emote === 'heart') {
-          const ex = rs.rootX + hox + rs.facing * 26, ey = rs.rootY + hoy - 60 - Math.sin(t * 3.1) * 7;
-          heroes += `<g transform="translate(${ex.toFixed(1)},${ey.toFixed(1)})" opacity="${(0.65 + Math.sin(t * 3.8) * 0.3).toFixed(2)}" filter="url(#softGlow)">${rs.emote === 'heart' ? '<path d="M0 5 C-8 -2 -10 -10 -4 -12 C-1 -13 0 -9 0 -9 C0 -9 1 -13 4 -12 C10 -10 8 -2 0 5 Z" fill="#ffb38a"/>' : '<path d="M0 -7.5 L2 -2 L7.5 0 L2 2 L0 7.5 L-2 2 L-7.5 0 L-2 -2 Z" fill="#ffe98a"/>'}</g>`;
-        }
-
-        if (state.showBones || state.showAnchors) {
-          diag += `<g transform="translate(${(rs.rootX + hox).toFixed(1)},${hoy.toFixed(1)}) scale(${rs.facing},1) translate(${(-rs.rootX).toFixed(1)},0)">`;
-          if (state.showBones) {
-            const col = rigObj.id === state.activeRigId ? '#38bdf8' : '#c084fc';
-            for (const b of rigObj.bones) if (b.parent) diag += `<line x1="${world[b.parent].x.toFixed(1)}" y1="${world[b.parent].y.toFixed(1)}" x2="${world[b.id].x.toFixed(1)}" y2="${world[b.id].y.toFixed(1)}" stroke="${col}" stroke-width="2" opacity="0.9"/>`;
-            for (const b of rigObj.bones) diag += `<circle cx="${world[b.id].x.toFixed(1)}" cy="${world[b.id].y.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/><text x="${(world[b.id].x + 5).toFixed(1)}" y="${(world[b.id].y - 3).toFixed(1)}" font-size="9" font-family="monospace" fill="#e0f2fe" font-weight="bold">${b.id}</text>`;
-          }
-          if (state.showAnchors) {
-            for (const b of rigObj.bones) {
-              const p = PART_BY_ID[resolvePartId(rigObj, b)], w = world[b.id], rd = w.deg * DEG, cs = Math.cos(rd), sn = Math.sin(rd);
-              for (const pt of Object.values(p?.anchors ?? {})) {
-                const lx = (pt[0] - p.pivot[0]) * rs.scale, ly = (pt[1] - p.pivot[1]) * rs.scale;
-                diag += `<circle cx="${(w.x + lx * cs - ly * sn).toFixed(1)}" cy="${(w.y + lx * sn + ly * cs).toFixed(1)}" r="2.8" fill="#f97316" stroke="#fff" stroke-width="1"/>`;
-              }
-            }
-          }
-          diag += '</g>';
-        }
-        if (rigObj.id === state.activeRigId && rigObj.ik) {
-          for (const [ikId, ch] of Object.entries(rigObj.ik)) {
-            const ew = world[ch.end];
-            ik += `<g class="ik-handle" data-rig="${rigObj.id}" data-ik="${ikId}"><circle cx="${(rs.rootX + (ew.x - rs.rootX) * rs.facing + hox).toFixed(1)}" cy="${(ew.y + hoy).toFixed(1)}" r="8" fill="#ef4444" fill-opacity="0.32" stroke="#ef4444" stroke-width="2"/><circle cx="${(rs.rootX + (ew.x - rs.rootX) * rs.facing + hox).toFixed(1)}" cy="${(ew.y + hoy).toFixed(1)}" r="2.5" fill="#fff"/></g>`;
-          }
-        }
-      }
-      document.getElementById('layerGroundShadows').innerHTML = gs;
-      document.getElementById('layerHeroes').innerHTML = heroes;
-      document.getElementById('layerDiag').innerHTML = diag;
-      document.getElementById('layerIk').innerHTML = ik;
-
-      // 10. Dynamic VFX + Overlay Props
-      let vfx = '';
-      if (state.vfx.glowSpot > 0.04 && state.showAtmos) vfx += `<circle cx="${(state.vfx.glowX + epx * 15).toFixed(1)}" cy="${(state.vfx.glowY + epy * 11).toFixed(1)}" r="120" fill="url(#warmMomentGlow)" opacity="${state.vfx.glowSpot.toFixed(2)}"/>`;
-      if (state.vfx.splash > 0.04) {
-        const s = state.vfx.splash, sy = sc.waterlineY ?? VH * 0.74;
-        vfx += `<g transform="translate(${(state.vfx.splashX + epx * 15).toFixed(1)},${(sy + epy * 11).toFixed(1)})" opacity="${Math.min(1, s * 1.15).toFixed(2)}"><circle cx="${(-42 * s).toFixed(1)}" cy="${(-40 * s).toFixed(1)}" r="4.5" fill="#e6f7ff"/><circle cx="${(20 * s).toFixed(1)}" cy="${(-56 * s).toFixed(1)}" r="5" fill="#ffffff"/><path d="M${(-58 * s).toFixed(1)} 4 Q0 ${(-22 * s).toFixed(1)} ${(58 * s).toFixed(1)} 4 Q0 ${(-7 * s).toFixed(1)} ${(-58 * s).toFixed(1)} 4 Z" fill="#d4f1ff" opacity="0.85"/></g>`;
-      }
-      if (state.vfx.bubbles > 0.05) {
-        const r0 = rigStates[RIGS[0].id];
-        for (let i = 0; i < 6; i++) {
-          const rise = (t * 46 + i * 22) % 85;
-          vfx += `<circle cx="${(r0.rootX - 24 + i * 13 + Math.sin(t * 4 + i) * 5 + epx * 15).toFixed(1)}" cy="${((sc.waterlineY ?? VH * 0.74) + 32 - rise + epy * 11).toFixed(1)}" r="${(2.4 + (i % 3) * 1.2).toFixed(1)}" fill="#c8efff" opacity="${(state.vfx.bubbles * (1 - rise / 90) * 0.75).toFixed(2)}"/>`;
-        }
-      }
-      document.getElementById('layerVfx').innerHTML = vfx;
-
-      document.getElementById('layerOverlayProps').innerHTML = (sc.overlayProps ?? []).map(op => {
+      const renderOverlayProp = (op) => {
         const ox = op.x + epx * (op.parallax ?? 18) + Math.sin(t * (op.freqX ?? 0.85) * state.ambientAmp) * (op.ampX ?? 4);
         const oy = op.y + epy * ((op.parallax ?? 18) * 0.75) + Math.cos(t * (op.freqY ?? 1.05) * state.ambientAmp) * (op.ampY ?? 3);
         const tilt = Math.sin(t * (op.freqX ?? 0.9) * state.ambientAmp) * (op.tiltAmp ?? 3.4);
         return `<g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)}) scale(${op.scale ?? 1}) rotate(${tilt.toFixed(2)})" filter="url(#shadowDeep)">${op.svg}</g>`;
-      }).join('');
+      };
+
+      let gs = '', diag = '', ik = '';
+      const stageItems = [];
+      if (!state.silhouette) {
+        for (const pl of sc.midLayers ?? []) {
+          stageItems.push({ z: pl.z ?? 0, html: renderPlanesMid([pl]) });
+        }
+        for (const cl of CLUSTERS.midItems ?? []) {
+          stageItems.push({ z: cl.z ?? 0, html: renderClusters([cl], t, epx, epy) });
+        }
+        for (const op of (sc.overlayProps ?? []).filter(o => o.lane === 'mid')) {
+          stageItems.push({ z: op.z ?? 0, html: renderOverlayProp(op) });
+        }
+      }
+
+      const computeBlinkScaleY = (rigObj, sampleT) => {
+        if (rigObj.blink === false) return 1;
+        const bl = typeof rigObj.blink === 'object' && rigObj.blink ? rigObj.blink : null;
+        const period = Math.max(0.6, bl?.period ?? 3.8);
+        const dur = clamp(bl?.duration ?? 0.18, 0.06, period * 0.5);
+        const phase = bl?.phase ?? (rigObj.id.length * 0.67);
+        const loc = (((sampleT + phase) % period) + period) % period;
+        if (loc >= dur) return 1;
+        return clamp(1 - 0.92 * Math.sin((loc / dur) * Math.PI), 0.08, 1);
+      };
+
+      const applyBlinkToSvg = (svg, sy) => {
+        if (sy >= 0.995 || !svg.includes('data-eye')) return svg;
+        const syStr = sy.toFixed(3);
+        return svg.replace(/<g([^>]*\bdata-eye\s*=\s*["']1["'][^>]*)>/g, (_m, attrs) => {
+          if (/\btransform\s*=\s*["']/.test(attrs)) {
+            return `<g${attrs.replace(/\btransform\s*=\s*(["'])([^"']*)\1/, `transform=$1$2 scale(1,${syStr})$1`)}>`;
+          }
+          return `<g${attrs} transform="scale(1,${syStr})">`;
+        });
+      };
+
+      const renderHoseSvg = (h, world, scale, silhouette) => {
+        const w0 = world[h.upper], w1 = world[h.lower], w2 = world[h.end];
+        if (!w0 || !w1 || !w2) return '';
+        const mx = (w0.x + w2.x) * 0.5, my = (w0.y + w2.y) * 0.5;
+        const roundness = clamp(h.roundness ?? 0.85, 0.25, 1.0);
+        const kx = lerp(mx, w1.x, roundness), ky = lerp(my, w1.y, roundness);
+        const cx = 2 * kx - mx, cy = 2 * ky - my;
+        const r0 = 0.5 * (h.widthStart ?? 14) * scale;
+        const r2 = 0.5 * (h.widthEnd ?? 8) * scale;
+        const r1 = 0.5 * (h.widthMid ?? ((h.widthStart ?? 14) + (h.widthEnd ?? 8)) * 0.5) * scale;
+        const rc = 2 * r1 - 0.5 * (r0 + r2);
+        const sampleAt = (s) => {
+          const om = 1 - s;
+          const x = om * om * w0.x + 2 * om * s * cx + s * s * w2.x;
+          const y = om * om * w0.y + 2 * om * s * cy + s * s * w2.y;
+          const tx = 2 * om * (cx - w0.x) + 2 * s * (w2.x - cx);
+          const ty = 2 * om * (cy - w0.y) + 2 * s * (w2.y - cy);
+          const tl = Math.hypot(tx, ty) || 1;
+          const r = Math.max(1.1, om * om * r0 + 2 * om * s * rc + s * s * r2);
+          return { x, y, nx: -ty / tl, ny: tx / tl, r };
+        };
+        const buildRibbon = (s0, s1, extraR, capStart, capEnd) => {
+          const steps = 8, pts = [];
+          for (let i = 0; i <= steps; i++) pts.push(sampleAt(lerp(s0, s1, i / steps)));
+          const L = pts.map(p => [p.x + p.nx * (p.r + extraR), p.y + p.ny * (p.r + extraR)]);
+          const R = pts.map(p => [p.x - p.nx * (p.r + extraR), p.y - p.ny * (p.r + extraR)]);
+          let d = `M${L[0][0].toFixed(2)} ${L[0][1].toFixed(2)}`;
+          for (let i = 1; i <= steps; i++) d += ` L${L[i][0].toFixed(2)} ${L[i][1].toFixed(2)}`;
+          const re = (pts[steps].r + extraR).toFixed(2);
+          if (capEnd) d += ` A${re} ${re} 0 0 0 ${R[steps][0].toFixed(2)} ${R[steps][1].toFixed(2)}`;
+          else d += ` L${R[steps][0].toFixed(2)} ${R[steps][1].toFixed(2)}`;
+          for (let i = steps - 1; i >= 0; i--) d += ` L${R[i][0].toFixed(2)} ${R[i][1].toFixed(2)}`;
+          const rs0 = (pts[0].r + extraR).toFixed(2);
+          if (capStart) d += ` A${rs0} ${rs0} 0 0 0 ${L[0][0].toFixed(2)} ${L[0][1].toFixed(2)}`;
+          d += ' Z';
+          return { d, L };
+        };
+        const hasSplit = Boolean(h.lowerFill && h.cuffAt != null);
+        const mainEnd = hasSplit ? clamp(h.cuffAt, 0.1, 0.92) : 1;
+        const mainRib = buildRibbon(0, mainEnd, 0, true, !hasSplit);
+        let inner = `<path d="${mainRib.d}" fill="${h.fill ?? '#888'}"/>`;
+        if (hasSplit) {
+          const lowRib = buildRibbon(mainEnd, 1, 0, false, true);
+          inner += `<path d="${lowRib.d}" fill="${h.lowerFill}"/>`;
+        }
+        if (!silhouette && h.rimColor) {
+          const fullL = buildRibbon(0.06, 0.94, -0.6 * scale, false, false).L;
+          let rd = `M${fullL[0][0].toFixed(2)} ${fullL[0][1].toFixed(2)}`;
+          for (let i = 1; i < fullL.length; i++) rd += ` L${fullL[i][0].toFixed(2)} ${fullL[i][1].toFixed(2)}`;
+          inner += `<path d="${rd}" fill="none" stroke="${h.rimColor}" stroke-width="${(1.25 * scale).toFixed(2)}" stroke-linecap="round" opacity="0.4"/>`;
+        }
+        if (h.cuffAt != null && h.cuffFill) {
+          const c0 = clamp(h.cuffAt - 0.045, 0.02, 0.94);
+          const c1 = clamp(h.cuffAt + 0.045, 0.06, 0.98);
+          const cuffRib = buildRibbon(c0, c1, 1.8 * scale, false, false);
+          inner += `<path d="${cuffRib.d}" fill="${h.cuffFill}"/>`;
+        }
+        const hFilt = (!silhouette && !h.seamGroup && h.filter && h.filter !== 'none') ? `filter="url(#${h.filter})"` : '';
+        return `<g data-hose="${h.id}" ${hFilt}>${inner}</g>`;
+      };
+
+      // Deterministic multi-link ribbon / flowing hair / scarf / tail strands[] (inspired by MIT papermotion Strand.ts)
+      const renderStrandSvg = (st, rigObj, world, scale, sampleT, silhouette) => {
+        const w = world[st.bone];
+        const b = rigObj.boneById[st.bone];
+        if (!w || !b) return '';
+        let sx = w.x, sy = w.y;
+        const part = PART_BY_ID[resolvePartId(rigObj, b)];
+        if (st.anchor && part?.anchors?.[st.anchor]) {
+          const anc = part.anchors[st.anchor], piv = part.pivot ?? [0, 0];
+          const bsc = rigStates[rigObj.id].scales?.[b.id] ?? { x: 1, y: 1 };
+          const lx = (anc[0] - piv[0]) * scale * bsc.x;
+          const ly = (anc[1] - piv[1]) * scale * bsc.y;
+          const rad = w.deg * DEG, cs = Math.cos(rad), sn = Math.sin(rad);
+          sx = w.x + lx * cs - ly * sn;
+          sy = w.y + lx * sn + ly * cs;
+        }
+        const segs = Math.round(clamp(st.segments ?? 5, 2, 12));
+        const totalLen = (st.length ?? 46) * scale;
+        const baseDir = ((st.dirDeg ?? 175) + (st.inheritRot ? w.deg * (st.inheritRotWeight ?? 0.45) : 0)) * DEG;
+        const dx = Math.cos(baseDir), dy = Math.sin(baseDir);
+        const nx = -dy, ny = dx;
+        const waveAmp = (st.waveAmp ?? 7.5) * scale;
+        const waveFreq = st.waveFreq ?? 3.0;
+        const phase = st.phase ?? (st.id.length * 0.73);
+        const sag = (st.sag ?? 6) * scale;
+        const rStart = 0.5 * (st.widthStart ?? 9) * scale;
+        const rEnd = 0.5 * (st.widthEnd ?? 2.4) * scale;
+
+        const pts = [];
+        for (let i = 0; i <= segs; i++) {
+          const u = i / segs;
+          const sway = Math.sin(sampleT * waveFreq - u * 3.4 + phase) * waveAmp * Math.pow(u, 1.15);
+          const pxS = sx + dx * totalLen * u + nx * sway;
+          const pyS = sy + dy * totalLen * u + ny * sway + sag * u * u;
+          pts.push({ x: pxS, y: pyS, r: Math.max(0.8, lerp(rStart, rEnd, u)) });
+        }
+        const left = [], right = [];
+        for (let i = 0; i <= segs; i++) {
+          const p0 = pts[Math.max(0, i - 1)], p1 = pts[Math.min(segs, i + 1)];
+          const tx = p1.x - p0.x, ty = p1.y - p0.y, tl = Math.hypot(tx, ty) || 1;
+          const pnx = -ty / tl, pny = tx / tl;
+          left.push([pts[i].x + pnx * pts[i].r, pts[i].y + pny * pts[i].r]);
+          right.push([pts[i].x - pnx * pts[i].r, pts[i].y - pny * pts[i].r]);
+        }
+        let d = `M${left[0][0].toFixed(2)} ${left[0][1].toFixed(2)}`;
+        for (let i = 1; i <= segs; i++) {
+          const mx = (left[i - 1][0] + left[i][0]) * 0.5, my = (left[i - 1][1] + left[i][1]) * 0.5;
+          d += ` Q${left[i - 1][0].toFixed(2)} ${left[i - 1][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+        }
+        d += ` L${left[segs][0].toFixed(2)} ${left[segs][1].toFixed(2)} L${right[segs][0].toFixed(2)} ${right[segs][1].toFixed(2)}`;
+        for (let i = segs - 1; i >= 0; i--) {
+          const mx = (right[i + 1][0] + right[i][0]) * 0.5, my = (right[i + 1][1] + right[i][1]) * 0.5;
+          d += ` Q${right[i + 1][0].toFixed(2)} ${right[i + 1][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+        }
+        d += ` L${right[0][0].toFixed(2)} ${right[0][1].toFixed(2)} Z`;
+
+        let inner = `<path d="${d}" fill="${st.fill ?? '#d97706'}"/>`;
+        if (!silhouette && st.stripeColor) {
+          let sd = `M${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+          for (let i = 1; i <= segs; i++) sd += ` L${pts[i].x.toFixed(2)} ${pts[i].y.toFixed(2)}`;
+          inner += `<path d="${sd}" fill="none" stroke="${st.stripeColor}" stroke-width="${Math.max(1.1, rStart * 0.42).toFixed(2)}" stroke-linecap="round" stroke-dasharray="${(3.5 * scale).toFixed(1)} ${(3.0 * scale).toFixed(1)}" opacity="0.72"/>`;
+        }
+        if (!silhouette && st.rimColor) {
+          let rd = `M${left[0][0].toFixed(2)} ${left[0][1].toFixed(2)}`;
+          for (let i = 1; i <= segs; i++) rd += ` L${left[i][0].toFixed(2)} ${left[i][1].toFixed(2)}`;
+          inner += `<path d="${rd}" fill="none" stroke="${st.rimColor}" stroke-width="${(1.1 * scale).toFixed(2)}" stroke-linecap="round" opacity="0.48"/>`;
+        }
+        const sFilt = (!silhouette && !st.seamGroup && st.filter && st.filter !== 'none') ? `filter="url(#${st.filter})"` : '';
+        return `<g data-strand="${st.id}" ${sFilt}>${inner}</g>`;
+      };
+
+      let cropBox = null;
+      const charRenderT = quantizeCharTime(t);
+      for (const rigObj of RIGS) {
+        const rs = rigStates[rigObj.id], world = computeWorld(rigObj);
+        const hox = epx * (rigObj.parallax ?? 15), hoy = epy * ((rigObj.parallax ?? 15) * 0.75);
+
+        if (!state.silhouette && rigObj.groundY != null) {
+          const lift = Math.max(0, (rigObj.rootPos?.y ?? rigObj.groundY - 50) - rs.rootY);
+          const scS = clamp(1 - lift / 220, 0.35, 1.05), opS = clamp(1 - lift / 240, 0.22, 1);
+          const gsFilt = (rigObj.shadowStyle === 'chalk' || sc.lighting?.chalkShadows) ? 'filter="url(#chalkShadow)"' : '';
+          gs += `<ellipse cx="${(rs.rootX + hox + (rigObj.shadowOffsetX ?? 0)).toFixed(1)}" cy="${(rigObj.groundY + hoy).toFixed(1)}" rx="${((rigObj.shadowRx ?? 54) * scS).toFixed(1)}" ry="${((rigObj.shadowRy ?? 10) * scS).toFixed(1)}" fill="url(#groundShadowGrad)" opacity="${opS.toFixed(2)}" ${gsFilt}/>`;
+        }
+
+        const gSh = state.silhouette
+          ? 'filter="url(#silhouetteFilter)"'
+          : (rigObj.groupShadow === false ? '' : `filter="url(#${rigObj.groupShadow ?? 'shadowDeep'})"`);
+        const innerTex = state.silhouette ? '' : 'filter="url(#paperTex)"';
+        const brY = 1 + rs.breath, brX = 1 - rs.breath * 0.5;
+        let rigHtml = `<g ${gSh}><g transform="translate(${(rs.rootX + hox).toFixed(1)},${(rs.rootY + hoy).toFixed(1)}) scale(${(rs.facing * brX).toFixed(3)},${brY.toFixed(3)}) translate(${(-rs.rootX).toFixed(1)},${(-rs.rootY).toFixed(1)})" ${innerTex}>`;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        const blinkSy = computeBlinkScaleY(rigObj, charRenderT);
+        const seamFilterByGroup = {};
+        for (const b of rigObj.bones) {
+          if (b.seamGroup && b.seamFilter && !seamFilterByGroup[b.seamGroup]) seamFilterByGroup[b.seamGroup] = b.seamFilter;
+        }
+        for (const h of rigObj.hoses ?? []) {
+          if (h.seamGroup && h.seamFilter && !seamFilterByGroup[h.seamGroup]) seamFilterByGroup[h.seamGroup] = h.seamFilter;
+        }
+        for (const st of rigObj.strands ?? []) {
+          if (st.seamGroup && st.seamFilter && !seamFilterByGroup[st.seamGroup]) seamFilterByGroup[st.seamGroup] = st.seamFilter;
+        }
+
+        const drawables = [];
+        for (const b of rigObj.bones) {
+          const w = world[b.id], part = PART_BY_ID[resolvePartId(rigObj, b)];
+          if (!part) continue;
+          if (state.cropRig === rigObj.id) {
+            const sx = rs.rootX + (w.x - rs.rootX) * rs.facing + hox;
+            const sy = w.y + hoy;
+            const pr = Math.max(part.size?.[0] ?? 40, part.size?.[1] ?? 40) * 0.5 * rs.scale;
+            if (sx - pr < minX) minX = sx - pr;
+            if (sx + pr > maxX) maxX = sx + pr;
+            if (sy - pr < minY) minY = sy - pr;
+            if (sy + pr > maxY) maxY = sy + pr;
+          }
+          if (b.hiddenInViewer) continue;
+          const bsc = rs.scales?.[b.id] ?? { x: 1, y: 1 };
+          const bSh = (!state.silhouette && !b.seamGroup && b.shadow && b.shadow !== 'none') ? `filter="url(#${b.shadow})"` : '';
+          const brad = b.brad ? `<circle cx="0" cy="0" r="${b.brad.r ?? 4.2}" fill="${b.brad.fill ?? '#e8c49a'}" stroke="${b.brad.stroke ?? '#6e3a1f'}" stroke-width="1.3"/><circle cx="-0.8" cy="-0.8" r="${(b.brad.r ?? 4.2) * 0.35}" fill="#ffffff" opacity="0.5"/>` : '';
+          const partSvgBlinked = applyBlinkToSvg(part.svg, blinkSy);
+          const partSvg = b.seamGroup
+            ? partSvgBlinked.replace(/\s*filter\s*=\s*["']url\(#(?:paperBevel|paperBevelSoft)\)["']/g, '')
+            : partSvgBlinked;
+          drawables.push({
+            z: b.z ?? 0,
+            seamGroup: b.seamGroup ?? null,
+            html: `<g transform="translate(${w.x.toFixed(2)},${w.y.toFixed(2)}) rotate(${w.deg.toFixed(2)}) scale(${(rs.scale * bsc.x).toFixed(3)},${(rs.scale * bsc.y).toFixed(3)})" ${bSh}>${partSvg}${brad}</g>`,
+          });
+        }
+        for (const h of rigObj.hoses ?? []) {
+          const hHtml = renderHoseSvg(h, world, rs.scale, state.silhouette);
+          if (hHtml) drawables.push({ z: h.z ?? 0, seamGroup: h.seamGroup ?? null, html: hHtml });
+        }
+        for (const st of rigObj.strands ?? []) {
+          const sHtml = renderStrandSvg(st, rigObj, world, rs.scale, charRenderT, state.silhouette);
+          if (sHtml) drawables.push({ z: st.z ?? 0, seamGroup: st.seamGroup ?? null, html: sHtml });
+        }
+        drawables.sort((a, c) => a.z - c.z);
+
+        let di = 0;
+        while (di < drawables.length) {
+          const grp = drawables[di].seamGroup;
+          if (!grp) {
+            rigHtml += drawables[di].html;
+            di++;
+          } else {
+            let grpHtml = '';
+            while (di < drawables.length && drawables[di].seamGroup === grp) {
+              grpHtml += drawables[di].html;
+              di++;
+            }
+            const sf = seamFilterByGroup[grp] ?? 'paperBevelSoft';
+            const sfAttr = (!state.silhouette && sf !== 'none') ? `filter="url(#${sf})"` : '';
+            rigHtml += `<g data-seam-group="${grp}" ${sfAttr}>${grpHtml}</g>`;
+          }
+        }
+        rigHtml += '</g></g>';
+        if (state.cropRig === rigObj.id && Number.isFinite(minX)) {
+          cropBox = { minX, maxX, minY, maxY };
+        }
+
+        if (!state.silhouette && rs.emote) {
+          const emObj = typeof rs.emote === 'string' ? { type: rs.emote } : rs.emote;
+          const ex = rs.rootX + hox + rs.facing * (emObj.offsetX ?? 26);
+          const ey = rs.rootY + hoy + (emObj.offsetY ?? -60) - Math.sin(t * 3.1) * 7;
+          const esc = emObj.scale ?? 1;
+          const eCol = emObj.color ?? '#ffe98a';
+          const eType = emObj.type ?? 'spark';
+          let emSvg = emObj.svg;
+          if (!emSvg) {
+            if (eType === 'heart') {
+              emSvg = `<path data-emote="heart" d="M0 5 C-8 -2 -10 -10 -4 -12 C-1 -13 0 -9 0 -9 C0 -9 1 -13 4 -12 C10 -10 8 -2 0 5 Z" fill="${emObj.color ?? '#ffb38a'}"/>`;
+            } else if (eType === 'music') {
+              emSvg = `<g data-emote="music" fill="${eCol}"><ellipse cx="-4" cy="4" rx="3.4" ry="2.5" transform="rotate(-18 -4 4)"/><ellipse cx="5" cy="2" rx="3.4" ry="2.5" transform="rotate(-18 5 2)"/><path d="M-1.2 4 V-8 L8 -10 V2 H6 V-7.4 L0.8 -6.2 V4 Z"/></g>`;
+            } else if (eType === 'exclamation') {
+              emSvg = `<g data-emote="exclamation" fill="${eCol}"><path d="M-2.2 -11 H2.2 L1.4 1 H-1.4 Z"/><circle cx="0" cy="5.5" r="2"/></g>`;
+            } else if (eType === 'question') {
+              emSvg = `<g data-emote="question" fill="none" stroke="${eCol}" stroke-width="2.4" stroke-linecap="round"><path d="M-3.5 -7.5 C-3.5 -11 3.5 -11 3.5 -7 C3.5 -4.5 0 -4 0 -1"/><circle cx="0" cy="4.5" r="1.3" fill="${eCol}" stroke="none"/></g>`;
+            } else if (eType === 'zzz') {
+              emSvg = `<path data-emote="zzz" d="M-6 -6 H1 L-5 1 H2 M1 -11 H6 L2 -6 H7" fill="none" stroke="${eCol}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;
+            } else {
+              emSvg = `<path data-emote="spark" d="M0 -7.5 L2 -2 L7.5 0 L2 2 L0 7.5 L-2 2 L-7.5 0 L-2 -2 Z" fill="${eCol}"/>`;
+            }
+          }
+          rigHtml += `<g transform="translate(${ex.toFixed(1)},${ey.toFixed(1)}) scale(${esc})" opacity="${(0.65 + Math.sin(t * 3.8) * 0.3).toFixed(2)}" filter="url(#softGlow)">${emSvg}</g>`;
+        }
+        stageItems.push({ z: rigObj.z ?? 0, html: rigHtml });
+
+        const toScrX = (wx) => rs.rootX + (wx - rs.rootX) * rs.facing + hox;
+        const toScrY = (wy) => wy + hoy;
+        if (!state.silhouette && (state.showBones || state.showAnchors)) {
+          if (state.showBones) {
+            const col = rigObj.id === state.activeRigId ? '#38bdf8' : '#c084fc';
+            for (const b of rigObj.bones) if (b.parent) diag += `<line x1="${toScrX(world[b.parent].x).toFixed(1)}" y1="${toScrY(world[b.parent].y).toFixed(1)}" x2="${toScrX(world[b.id].x).toFixed(1)}" y2="${toScrY(world[b.id].y).toFixed(1)}" stroke="${col}" stroke-width="2" opacity="0.9"/>`;
+            for (const b of rigObj.bones) {
+              const bx = toScrX(world[b.id].x), by = toScrY(world[b.id].y);
+              diag += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="3.4" fill="#fff" stroke="${col}" stroke-width="1.6"/><text x="${(bx + 5).toFixed(1)}" y="${(by - 3).toFixed(1)}" font-size="9" font-family="monospace" fill="#e0f2fe" stroke="#090d16" stroke-width="2.2" paint-order="stroke" font-weight="bold">${b.id}</text>`;
+            }
+          }
+          if (state.showAnchors) {
+            for (const b of rigObj.bones) {
+              const p = PART_BY_ID[resolvePartId(rigObj, b)], w = world[b.id], rd = w.deg * DEG, cs = Math.cos(rd), sn = Math.sin(rd);
+              const bsc = rs.scales?.[b.id] ?? { x: 1, y: 1 };
+              for (const pt of Object.values(p?.anchors ?? {})) {
+                const lx = (pt[0] - p.pivot[0]) * rs.scale * bsc.x, ly = (pt[1] - p.pivot[1]) * rs.scale * bsc.y;
+                diag += `<circle cx="${toScrX(w.x + lx * cs - ly * sn).toFixed(1)}" cy="${toScrY(w.y + lx * sn + ly * cs).toFixed(1)}" r="2.8" fill="#f97316" stroke="#fff" stroke-width="1"/>`;
+              }
+            }
+          }
+        }
+        if (!state.silhouette && rigObj.id === state.activeRigId && rigObj.ik && ((!state.stageOnly && state.preset === 'manual') || state.showBones || state.showAnchors)) {
+          for (const [ikId, ch] of Object.entries(rigObj.ik)) {
+            const ew = world[ch.end];
+            ik += `<g class="ik-handle" data-rig="${rigObj.id}" data-ik="${ikId}"><circle cx="${toScrX(ew.x).toFixed(1)}" cy="${toScrY(ew.y).toFixed(1)}" r="8" fill="#ef4444" fill-opacity="0.32" stroke="#ef4444" stroke-width="2"/><circle cx="${toScrX(ew.x).toFixed(1)}" cy="${toScrY(ew.y).toFixed(1)}" r="2.5" fill="#fff"/></g>`;
+          }
+        }
+      }
+      stageItems.sort((a, b) => a.z - b.z);
+      if (!state.silhouette) document.getElementById('layerGroundShadows').innerHTML = gs;
+      document.getElementById('layerHeroes').innerHTML = stageItems.map(it => it.html).join('');
+      document.getElementById('layerDiag').innerHTML = diag;
+      document.getElementById('layerIk').innerHTML = ik;
+
+      if (cropBox) {
+        const aspect = VW / VH;
+        const pad = state.cropPad ?? 120;
+        let cw = Math.max(180, (cropBox.maxX - cropBox.minX) + pad);
+        let ch = Math.max(120, (cropBox.maxY - cropBox.minY) + pad);
+        if (cw / ch < aspect) cw = ch * aspect; else ch = cw / aspect;
+        cw = Math.min(VW, cw); ch = Math.min(VH, ch);
+        const cx = (cropBox.minX + cropBox.maxX) * 0.5;
+        const cy = (cropBox.minY + cropBox.maxY) * 0.5;
+        const vx = clamp(cx - cw * 0.5, 0, VW - cw);
+        const vy = clamp(cy - ch * 0.5, 0, VH - ch);
+        sceneSvg.setAttribute('viewBox', `${vx.toFixed(1)} ${vy.toFixed(1)} ${cw.toFixed(1)} ${ch.toFixed(1)}`);
+      }
+
+      if (state.silhouette) return;
+
+      // 10. 100% Data-Driven Universal Dynamic VFX + Overlay Props
+      let vfx = '';
+      if (state.vfx.glow && state.showAtmos) {
+        const g = state.vfx.glow;
+        const gx = (g.x + epx * 15).toFixed(1), gy = (g.y + epy * 11).toFixed(1);
+        document.getElementById('vfxGlowS0')?.setAttribute('stop-color', g.color);
+        document.getElementById('vfxGlowS1')?.setAttribute('stop-color', g.midColor);
+        document.getElementById('vfxGlowS2')?.setAttribute('stop-color', g.midColor);
+        vfx += `<circle cx="${gx}" cy="${gy}" r="${g.r.toFixed(1)}" fill="url(#dynVfxGlow)" opacity="${g.intensity.toFixed(2)}"/>`;
+      }
+      if (state.vfx.burst) {
+        const b = state.vfx.burst, s = Math.max(0.25, b.intensity * b.scale);
+        let bInner = '';
+        if (b.svg) {
+          bInner = `<g transform="scale(${s.toFixed(2)})">${b.svg.replace(/FILL_A/g, b.color).replace(/FILL_B/g, b.highlightColor)}</g>`;
+        } else if (b.type === 'ring') {
+          bInner = `<circle cx="0" cy="0" r="${(36 * s).toFixed(1)}" fill="none" stroke="${b.color}" stroke-width="2.6" opacity="0.82"/><circle cx="0" cy="0" r="${(20 * s).toFixed(1)}" fill="none" stroke="${b.highlightColor}" stroke-width="1.6" opacity="0.7"/>`;
+        } else if (b.type === 'sparks') {
+          bInner = `<g fill="${b.color}"><path d="M0 ${(-34 * s).toFixed(1)} L3 ${(-12 * s).toFixed(1)} L-3 ${(-12 * s).toFixed(1)} Z"/><path d="M${(28 * s).toFixed(1)} ${(-22 * s).toFixed(1)} L${(12 * s).toFixed(1)} ${(-8 * s).toFixed(1)} L${(8 * s).toFixed(1)} ${(-13 * s).toFixed(1)} Z"/><path d="M${(-28 * s).toFixed(1)} ${(-22 * s).toFixed(1)} L${(-8 * s).toFixed(1)} ${(-13 * s).toFixed(1)} L${(-12 * s).toFixed(1)} ${(-8 * s).toFixed(1)} Z"/><circle cx="${(18 * s).toFixed(1)}" cy="${(-30 * s).toFixed(1)}" r="2.8" fill="${b.highlightColor}"/><circle cx="${(-20 * s).toFixed(1)}" cy="${(-28 * s).toFixed(1)}" r="2.4" fill="${b.highlightColor}"/></g>`;
+        } else if (b.type === 'dust') {
+          bInner = `<g fill="${b.color}" opacity="0.72"><circle cx="${(-24 * s).toFixed(1)}" cy="${(-6 * s).toFixed(1)}" r="${(9 * s).toFixed(1)}"/><circle cx="${(-12 * s).toFixed(1)}" cy="${(-11 * s).toFixed(1)}" r="${(7 * s).toFixed(1)}" fill="${b.highlightColor}"/><circle cx="${(24 * s).toFixed(1)}" cy="${(-6 * s).toFixed(1)}" r="${(9 * s).toFixed(1)}"/><circle cx="${(12 * s).toFixed(1)}" cy="${(-11 * s).toFixed(1)}" r="${(7 * s).toFixed(1)}" fill="${b.highlightColor}"/></g>`;
+        } else {
+          bInner = `<circle cx="${(-42 * s).toFixed(1)}" cy="${(-40 * s).toFixed(1)}" r="4.5" fill="${b.color}"/><circle cx="${(20 * s).toFixed(1)}" cy="${(-56 * s).toFixed(1)}" r="5" fill="${b.highlightColor}"/><path d="M${(-58 * s).toFixed(1)} 4 Q0 ${(-22 * s).toFixed(1)} ${(58 * s).toFixed(1)} 4 Q0 ${(-7 * s).toFixed(1)} ${(-58 * s).toFixed(1)} 4 Z" fill="${b.color}" opacity="0.85"/>`;
+        }
+        vfx += `<g data-burst="${b.type}" transform="translate(${(b.x + epx * 15).toFixed(1)},${(b.y + epy * 11).toFixed(1)})" opacity="${Math.min(1, b.intensity * 1.15).toFixed(2)}">${bInner}</g>`;
+      }
+      if (state.vfx.particles) {
+        const p = state.vfx.particles;
+        const half = (p.count - 1) * 0.5;
+        for (let i = 0; i < p.count; i++) {
+          const travel = (t * 46 + i * 22) % p.riseHeight;
+          const pyOff = p.dir < 0 ? -travel : travel;
+          const pxPos = p.x + (i - half) * p.spreadX + Math.sin(t * 4 + i) * 5 + epx * 15;
+          const pyPos = p.baseY + pyOff + epy * 11;
+          const op = (p.intensity * (1 - travel / (p.riseHeight + 5)) * 0.82).toFixed(2);
+          if (p.shapeSvg) {
+            const pSc = (0.75 + (i % 3) * 0.2).toFixed(2);
+            const pSvg = p.shapeSvg.replace(/FILL_A/g, p.color).replace(/FILL_B/g, p.highlightColor);
+            vfx += `<g transform="translate(${pxPos.toFixed(1)},${pyPos.toFixed(1)}) scale(${pSc})" opacity="${op}">${pSvg}</g>`;
+          } else {
+            vfx += `<circle cx="${pxPos.toFixed(1)}" cy="${pyPos.toFixed(1)}" r="${(2.4 + (i % 3) * 1.2).toFixed(1)}" fill="${p.color}" opacity="${op}"/>`;
+          }
+        }
+      }
+      document.getElementById('layerVfx').innerHTML = vfx;
+
+      document.getElementById('layerOverlayProps').innerHTML = (sc.overlayProps ?? []).filter(o => o.lane !== 'mid').map(renderOverlayProp).join('');
     }
 
     // Inspector UI
@@ -885,7 +1632,7 @@
     document.getElementById('btnRest').addEventListener('click', () => {
       state.preset = 'manual';
       const r = RIG_BY_ID[state.activeRigId], rs = rigStates[r.id];
-      for (const b of r.bones) rs.angles[b.id] = b.rest ?? 0;
+      for (const b of r.bones) { rs.angles[b.id] = b.rest ?? 0; rs.scales[b.id] = { x: 1, y: 1 }; }
       rs.rootX = r.rootPos?.x ?? VW * 0.5; rs.rootY = r.rootPos?.y ?? VH * 0.72;
       rs.userFlip = 1; rs.facing = r.facing ?? 1;
       syncSliders();
@@ -905,6 +1652,7 @@
       document.getElementById('fDeep').setAttribute('stdDeviation', (8 * v).toFixed(1));
       document.getElementById('fDeep').setAttribute('dy', (7 * v).toFixed(1));
       document.getElementById('fMed').setAttribute('stdDeviation', (4.8 * v).toFixed(1));
+      document.getElementById('fSoft').setAttribute('stdDeviation', (4 * v).toFixed(1));
     });
 
     const setZoom = (d) => {
@@ -933,9 +1681,59 @@
     stageWrap.addEventListener('pointerleave', () => { state.pointer.x = 0; state.pointer.y = 0; });
 
     rebuildRigInspector();
-    let last = performance.now();
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      if (qs.get('rest') === '1') {
+        state.preset = 'manual';
+        for (const r of RIGS) {
+          const rs = rigStates[r.id];
+          for (const b of r.bones) { rs.angles[b.id] = b.rest ?? 0; rs.scales[b.id] = { x: 1, y: 1 }; }
+          rs.rootX = r.rootPos?.x ?? VW * 0.5; rs.rootY = r.rootPos?.y ?? VH * 0.72;
+          rs.userFlip = 1; rs.facing = r.facing ?? 1; rs.breath = 0; rs.emote = null;
+        }
+        syncSliders();
+      } else {
+        const qT = qs.get('t');
+        if (qT !== null && qT !== '' && Number.isFinite(Number(qT))) {
+          state.time = Math.max(0, Number(qT));
+          if (state.preset !== 'manual') { evalMotion(state.time); syncSliders(); }
+        }
+      }
+      if (qs.get('pause') === '1') {
+        state.playing = false;
+        const bp = document.getElementById('btnPlay');
+        if (bp) bp.textContent = '▶ Phát';
+      }
+      if (qs.get('showBones') === '1') {
+        state.showBones = true;
+        const cb = document.getElementById('chkBones');
+        if (cb) cb.checked = true;
+      }
+      if (qs.get('showAnchors') === '1') {
+        state.showAnchors = true;
+        const ca = document.getElementById('chkAnchors');
+        if (ca) ca.checked = true;
+      }
+      if (qs.get('stageOnly') === '1') {
+        state.stageOnly = true;
+        document.body?.classList?.add('stage-only');
+      }
+      if (qs.get('silhouette') === '1') {
+        state.silhouette = true;
+      }
+      const qCrop = qs.get('cropRig');
+      if (qCrop && RIG_BY_ID[qCrop]) {
+        state.cropRig = qCrop;
+      }
+      const qPad = qs.get('cropPad');
+      if (qPad !== null && qPad !== '' && Number.isFinite(Number(qPad))) {
+        state.cropPad = clamp(Number(qPad), 20, 400);
+      }
+    } catch (_) {}
+    let last = null;
     function tick(now) {
-      const dt = Math.min((now - last) / 1000, 0.05); last = now;
+      const dt = last === null ? 0 : clamp((now - last) / 1000, 0, 0.05);
+      last = now;
       if (state.playing) {
         state.time += dt * state.speed;
         if (state.preset !== 'manual') { evalMotion(state.time); syncSliders(); }

@@ -1,0 +1,27 @@
+{
+  "id": "corner-botanical-scroll",
+  "family": "frames",
+  "category": "frame",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Storybook botanical corner flourish with curving paper acanthus leaves, curl tendrils, and corner rosette blossom.",
+  "size": [
+    112,
+    112
+  ],
+  "pivot": [
+    0,
+    0
+  ],
+  "anchors": {},
+  "tokens": {
+    "LEAF": "#345947",
+    "LEAF_LIGHT": "#5d8a6e",
+    "BLOSSOM": "#f2c166",
+    "STEM": "#1e382b"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M0 0 H98 C82 14 60 12 44 20 C28 28 20 46 14 72 C10 86 6 92 0 98 Z\" fill=\"{{LEAF}}\"/><path d=\"M6 6 C26 6 46 10 66 6 C50 18 32 18 18 32 C16 48 12 62 6 76 Z\" fill=\"{{LEAF_LIGHT}}\" opacity=\"0.72\"/><path d=\"M10 10 C32 12 56 10 80 4 M10 10 C12 32 10 56 4 80\" fill=\"none\" stroke=\"{{STEM}}\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><circle cx=\"18\" cy=\"18\" r=\"6.5\" fill=\"{{BLOSSOM}}\"/><circle cx=\"18\" cy=\"18\" r=\"2.6\" fill=\"{{STEM}}\"/><circle cx=\"44\" cy=\"12\" r=\"2.5\" fill=\"{{BLOSSOM}}\"/><circle cx=\"12\" cy=\"44\" r=\"2.5\" fill=\"{{BLOSSOM}}\"/></g>"
+}

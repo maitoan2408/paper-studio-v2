@@ -9,17 +9,19 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { checkSvgDocument } from './lib/svg-guard.mjs';
+import { auditPartsCraft } from './lib/craft-audit.mjs';
 
 function printHelp() {
   console.log(`Usage: node scripts/validate_pack.mjs [OPTIONS] <PACK_DIR>
 
 Validate a paper-cut rig pack (manifest.json, rig.json, rigs/*.json, and all SVGs)
-against paper-studio-v2 safety, integrity, <defs> completeness, and kinematic contracts.
+against paper-studio-v2 safety, integrity, <defs> completeness, kinematic, and craft contracts.
 
 Options:
-  --json       Emit machine-readable JSON report to stdout (default)
-  --pretty     Emit human-readable summary to stderr in addition to JSON
-  --help, -h   Show this help message
+  --json          Emit machine-readable JSON report to stdout (default)
+  --pretty        Emit human-readable summary to stderr in addition to JSON
+  --strict-craft  Fail closed if any hero rig part triggers CRAFT_TOO_SIMPLE warnings
+  --help, -h      Show this help message
 
 Exit codes:
   0  PASS (all checks succeeded)
@@ -197,6 +199,7 @@ function validatePack(packDir) {
   }
 
   const assetsById = new Map();
+  const svgEntries = [];
   for (const a of manifest.assets) {
     const where = `manifest.assets.${a.id ?? '?'}`;
     if (!a.id || typeof a.id !== 'string') { pushErr('MANIFEST_SCHEMA', where, 'missing string id'); continue; }
@@ -211,7 +214,13 @@ function validatePack(packDir) {
       pushErr('ART_FILE_MISSING', `${where}.file`, `referenced file "${a.file}" does not exist`);
       continue;
     }
+    if (a.cardstock != null) {
+      if (typeof a.cardstock !== 'object' || Array.isArray(a.cardstock) || (a.cardstock.thickness != null && !(a.cardstock.thickness > 0))) {
+        pushErr('MANIFEST_SCHEMA', `${where}.cardstock`, 'invalid cardstock metadata on asset');
+      }
+    }
     const rawSvg = readFileSync(filePath, 'utf8');
+    svgEntries.push({ id: a.id, svg: rawSvg });
     const actualSha = createHash('sha256').update(rawSvg).digest('hex');
     if (a.sha256 !== actualSha) {
       pushErr('ART_SHA_MISMATCH', `${where}.sha256`, `expected ${a.sha256}, computed ${actualSha}`);
@@ -219,11 +228,52 @@ function validatePack(packDir) {
     checkSvgText(rawSvg, `${where} (${a.file})`, pushErr);
   }
 
+  if (manifest.scene3d != null) {
+    if (typeof manifest.scene3d !== 'object' || typeof manifest.scene3d.file !== 'string' || typeof manifest.scene3d.sha256 !== 'string') {
+      pushErr('SCENE3D_SCHEMA', 'manifest.scene3d', 'manifest.scene3d must specify { file, sha256 }');
+    } else {
+      const s3dPath = join(packDir, manifest.scene3d.file);
+      if (!existsSync(s3dPath)) {
+        pushErr('SCENE3D_MISSING', 'manifest.scene3d.file', `referenced "${manifest.scene3d.file}" does not exist`);
+      } else {
+        const rawS3d = readFileSync(s3dPath, 'utf8');
+        const actualS3dSha = createHash('sha256').update(rawS3d).digest('hex');
+        if (actualS3dSha !== manifest.scene3d.sha256) {
+          pushErr('SCENE3D_SHA_MISMATCH', 'manifest.scene3d.sha256', `expected ${manifest.scene3d.sha256}, computed ${actualS3dSha}`);
+        }
+        try {
+          const s3dDoc = JSON.parse(rawS3d);
+          if (s3dDoc.schemaVersion !== 1) {
+            pushErr('SCENE3D_SCHEMA', `${manifest.scene3d.file}.schemaVersion`, 'expected schemaVersion === 1');
+          }
+        } catch (e) {
+          pushErr('SCENE3D_JSON_INVALID', manifest.scene3d.file, `invalid JSON: ${e.message}`);
+        }
+      }
+    }
+  }
+
   const rigStats = [];
+  const heroPartIds = new Set();
+  const collectHeroParts = (rigPath) => {
+    try {
+      const doc = JSON.parse(readFileSync(rigPath, 'utf8'));
+      for (const ch of doc.characters ?? []) {
+        for (const sk of Object.values(ch.skin ?? {})) {
+          if (sk?.default) heroPartIds.add(sk.default);
+          for (const vId of Object.values(sk?.variants ?? {})) heroPartIds.add(vId);
+        }
+      }
+    } catch {
+      // handled by validateRigFile
+    }
+  };
+
   const primaryRigPath = join(packDir, 'rig.json');
   if (existsSync(primaryRigPath)) {
     const st = validateRigFile(primaryRigPath, 'rig.json', assetsById, pushErr);
     if (st) rigStats.push(st);
+    collectHeroParts(primaryRigPath);
   } else {
     warnings.push('rig.json not present (manifest-only prop/scene pack)');
   }
@@ -231,8 +281,18 @@ function validatePack(packDir) {
   const extraDir = join(packDir, 'rigs');
   if (existsSync(extraDir)) {
     for (const fname of readdirSync(extraDir).filter((f) => f.endsWith('.json')).sort()) {
-      const st = validateRigFile(join(extraDir, fname), `rigs/${fname}`, assetsById, pushErr);
+      const fp = join(extraDir, fname);
+      const st = validateRigFile(fp, `rigs/${fname}`, assetsById, pushErr);
       if (st) rigStats.push(st);
+      collectHeroParts(fp);
+    }
+  }
+
+  const craftAudit = auditPartsCraft(svgEntries, heroPartIds);
+  const craftWarnings = craftAudit.craftWarnings;
+  if (strictCraft) {
+    for (const cw of craftWarnings) {
+      pushErr(cw.code, cw.where, cw.detail);
     }
   }
 
@@ -240,9 +300,18 @@ function validatePack(packDir) {
     status: errors.length === 0 ? 'PASS' : 'FAIL',
     packDir,
     stats: { assets: assetsById.size, rigs: rigStats },
+    craftAudit: {
+      overallCraftScore: craftAudit.overallCraftScore,
+      grade: craftAudit.grade,
+      heroPartCount: craftAudit.heroPartCount,
+      flaggedHeroParts: craftAudit.flaggedHeroParts,
+      bevelCoverage: craftAudit.bevelCoverage,
+      materialCoverage: craftAudit.materialCoverage,
+    },
     errorCount: errors.length,
     errors,
     warnings,
+    craftWarnings,
   };
 }
 
@@ -252,6 +321,7 @@ if (args.includes('--help') || args.includes('-h') || args.length === 0) {
   process.exit(args.length === 0 ? 2 : 0);
 }
 const pretty = args.includes('--pretty');
+const strictCraft = args.includes('--strict-craft');
 const target = args.find((a) => !a.startsWith('-'));
 if (!target) {
   console.error('Error: missing <PACK_DIR> argument. Run with --help for usage.');
@@ -268,6 +338,6 @@ const report = validatePack(resolved);
 console.log(JSON.stringify(report, null, 2));
 if (pretty) {
   const icon = report.status === 'PASS' ? 'PASS' : 'FAIL';
-  console.error(`[${icon}] ${report.packDir} — ${report.stats.assets ?? 0} assets, ${report.stats.rigs?.length ?? 0} rig(s), ${report.errorCount} errors`);
+  console.error(`[${icon}] ${report.packDir} — ${report.stats.assets ?? 0} assets, ${report.stats.rigs?.length ?? 0} rig(s), craft=${report.craftAudit?.overallCraftScore ?? 0}/100 (${report.craftAudit?.grade ?? 'N/A'}), ${report.errorCount} errors`);
 }
 process.exit(report.status === 'PASS' ? 0 : 1);

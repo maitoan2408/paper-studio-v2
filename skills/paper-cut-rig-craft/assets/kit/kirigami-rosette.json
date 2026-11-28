@@ -1,0 +1,17 @@
+{
+  "id": "kirigami-rosette",
+  "category": "ornament",
+  "description": "Precision cut-paper 8-petal kirigami rosette medallion with negative-space diamond perforations and layered center boss.",
+  "size": [68, 68],
+  "pivot": [34, 34],
+  "anchors": {
+    "center": [34, 34]
+  },
+  "tokens": {
+    "PRIMARY": "#ebd4a9",
+    "SHADOW": "#9e7742",
+    "CUTOUT": "#181421",
+    "ACCENT": "#fff7e2"
+  },
+  "svg": "<g><path d=\"M20 0 Q27 11 14 14 Q11 27 0 20 Q-11 27 -14 14 Q-27 11 -20 0 Q-27 -11 -14 -14 Q-11 -27 0 -20 Q11 -27 14 -14 Q27 -11 20 0 Z\" fill=\"{{PRIMARY}}\"/><circle cx=\"0\" cy=\"0\" r=\"16.5\" fill=\"none\" stroke=\"{{SHADOW}}\" stroke-width=\"1.2\" opacity=\"0.65\"/><g fill=\"{{CUTOUT}}\" opacity=\"0.85\"><path d=\"M9 0 L14 -3 L19 0 L14 3 Z\"/><path d=\"M-9 0 L-14 -3 L-19 0 L-14 3 Z\"/><path d=\"M0 9 L3 14 L0 19 L-3 14 Z\"/><path d=\"M0 -9 L3 -14 L0 -19 L-3 -14 Z\"/><path d=\"M6.4 6.4 L11.5 7.5 L13.4 13.4 L7.5 11.5 Z\"/><path d=\"M-6.4 6.4 L-7.5 11.5 L-13.4 13.4 L-11.5 7.5 Z\"/><path d=\"M6.4 -6.4 L7.5 -11.5 L13.4 -13.4 L11.5 -7.5 Z\"/><path d=\"M-6.4 -6.4 L-11.5 -7.5 L-13.4 -13.4 L-7.5 -11.5 Z\"/></g><circle cx=\"0\" cy=\"0\" r=\"7.2\" fill=\"{{SHADOW}}\"/><circle cx=\"0\" cy=\"0\" r=\"4.2\" fill=\"{{ACCENT}}\"/><circle cx=\"0\" cy=\"0\" r=\"1.6\" fill=\"{{SHADOW}}\"/></g>"
+}

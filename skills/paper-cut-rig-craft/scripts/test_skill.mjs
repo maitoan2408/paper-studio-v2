@@ -391,8 +391,9 @@ function createDomStub() {
         remove() {},
         toggle() {},
       },
-      setAttribute() {},
-      getAttribute() { return ''; },
+      _attrs: {},
+      setAttribute(k, v) { this._attrs[k] = String(v); },
+      getAttribute(k) { return this._attrs[k] ?? ''; },
       appendChild(child) {
         this.children.push(child);
         this.lastChild = child;
@@ -450,10 +451,21 @@ function test(name, fn) {
 
 try {
   test('Hygiene: zero Math.random() across viewer and scripts', () => {
-    const files = [VIEWER_HTML, COMPILE_SCRIPT, VALIDATE_SCRIPT];
-    const guardPath = join(__dirname, 'lib', 'svg-guard.mjs');
-    if (existsSync(guardPath)) files.push(guardPath);
+    const files = [
+      VIEWER_HTML,
+      COMPILE_SCRIPT,
+      VALIDATE_SCRIPT,
+      join(__dirname, 'render_audit.mjs'),
+      join(__dirname, 'library_cli.mjs'),
+      join(__dirname, 'lib', 'svg-guard.mjs'),
+      join(__dirname, 'lib', 'craft-primitives.mjs'),
+      join(__dirname, 'lib', 'kit-resolver.mjs'),
+      join(__dirname, 'lib', 'craft-audit.mjs'),
+      join(__dirname, 'lib', 'scene-craft.mjs'),
+      join(__dirname, 'lib', 'style-loader.mjs'),
+    ];
     for (const f of files) {
+      assert.ok(existsSync(f), `Expected script file to exist: ${f}`);
       const txt = readFileSync(f, 'utf8');
       assert.equal(/Math\.random\s*\(/.test(txt), false, `Found Math.random() in ${f}`);
     }
@@ -697,6 +709,1317 @@ try {
     assert.doesNotThrow(() => {
       solveIk(rig, { upper: 'root', lower: 'arm.u', end: 'arm.l', bend: 1 }, { x: 520, y: 310 });
     }, 'solveIk threw when upper bone has parent === null');
+  });
+
+  test('Batch 2 negative compile: unsafe SVG in clusters.shapesSvg[], midLayers[], and emote.svg fails closed', () => {
+    const bp1 = makeBlueprintA();
+    bp1.scene.clusters[0].shapesSvg = ['<circle cx="0" cy="0" r="5" fill="FILL_A"/><script>bad()</script>'];
+    const p1 = join(workDir, 'neg-b2-cluster.json');
+    writeFileSync(p1, JSON.stringify(bp1));
+    const r1 = runNode(COMPILE_SCRIPT, ['--spec', p1, '--check']);
+    assert.equal(r1.status, 1);
+    assert.ok(r1.json?.errors?.some((e) => e.code === 'BP_SVG_UNSAFE'), `expected BP_SVG_UNSAFE on clusters.shapesSvg: ${r1.stdout}`);
+
+    const bp2 = makeBlueprintA();
+    bp2.scene.midLayers = [{ z: 1.5, svg: '<rect x="0" y="0" width="10" height="10" fill="url(#missingMidGrad)"/>' }];
+    const p2 = join(workDir, 'neg-b2-mid.json');
+    writeFileSync(p2, JSON.stringify(bp2));
+    const r2 = runNode(COMPILE_SCRIPT, ['--spec', p2, '--check']);
+    assert.equal(r2.status, 1);
+    assert.ok(r2.json?.errors?.some((e) => e.code === 'BP_MISSING_DEF'), `expected BP_MISSING_DEF on midLayers: ${r2.stdout}`);
+
+    const bp3 = makeBlueprintA();
+    bp3.motions[0].phases[0].rigs.hero.emote = { type: 'custom', svg: '<path d="M0 0" onclick="evil()"/>' };
+    const p3 = join(workDir, 'neg-b2-emote.json');
+    writeFileSync(p3, JSON.stringify(bp3));
+    const r3 = runNode(COMPILE_SCRIPT, ['--spec', p3, '--check']);
+    assert.equal(r3.status, 1);
+    assert.ok(r3.json?.errors?.some((e) => e.code === 'BP_SVG_UNSAFE'), `expected BP_SVG_UNSAFE on emote.svg: ${r3.stdout}`);
+  });
+
+  test('Batch 2 clusters: shapesSvg[] multi-variant + FILL_C + alignToPath + scaleByProgress', () => {
+    const bp = makeBlueprintA();
+    bp.scene.clusters = [
+      {
+        lane: 'back',
+        mode: 'line',
+        x0: 100,
+        y0: 400,
+        x1: 300,
+        y1: 300,
+        count: 8,
+        seed: 707,
+        alignToPath: true,
+        scaleByProgress: [1.4, 0.6],
+        palette: [['#112233', '#445566', '#778899']],
+        shapesSvg: [
+          '<path data-v="v1" d="M0 0 C2 -8 6 -10 8 -14" fill="FILL_A" stroke="FILL_C"/>',
+          '<path data-v="v2" d="M0 0 C-3 -6 4 -12 0 -16" fill="FILL_B" stroke="FILL_C"/>',
+        ],
+      },
+    ];
+    const bpPath = join(workDir, 'b2-clusters.json');
+    const htmlPath = join(workDir, 'b2-clusters.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { CLUSTERS, renderAll };`, ctx);
+    const items = ctx.__TEST__.CLUSTERS.backItems[0].items;
+    assert.equal(items.length, 8);
+    assert.ok(items.some((it) => it.svg.includes('data-v="v1"')), 'missing variant v1 from shapesSvg[]');
+    assert.ok(items.some((it) => it.svg.includes('data-v="v2"')), 'missing variant v2 from shapesSvg[]');
+    assert.ok(items.every((it) => it.svg.includes('#778899') && !it.svg.includes('FILL_C')), 'FILL_C was not substituted');
+  });
+
+  test('Batch 2 scaleWaves: pure t -> scaleX/scaleY elastic deformation with zero state leakage', () => {
+    const bp = makeBlueprintA();
+    bp.motions[0].phases[0].rigs.hero.scaleWaves = {
+      root: { freq: 4.0, ampX: 0.14, ampY: -0.12, phase: 0 },
+    };
+    const bpPath = join(workDir, 'b2-scalewaves.json');
+    const htmlPath = join(workDir, 'b2-scalewaves.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const ctx = vm.createContext(createDomStub());
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, rigStates, state };`, ctx);
+    const { evalMotion, rigStates, state } = ctx.__TEST__;
+
+    state.preset = 'story';
+    // At t = Math.PI / 8 (~0.3927, inside phase 1 [0..5s]), sin(4 * t) === 1
+    evalMotion(Math.PI / 8);
+    assert.ok(rigStates.hero.scales?.root, 'rigStates.hero.scales.root missing');
+    assert.ok(Math.abs(rigStates.hero.scales.root.x - 1.14) < 0.01, `expected scaleX ~1.14, got ${rigStates.hero.scales.root.x}`);
+    assert.ok(Math.abs(rigStates.hero.scales.root.y - 0.88) < 0.01, `expected scaleY ~0.88, got ${rigStates.hero.scales.root.y}`);
+
+    // Phase 2 omits scaleWaves -> must reset cleanly to { x: 1, y: 1 }
+    evalMotion(7.5);
+    assert.deepEqual(JSON.parse(JSON.stringify(rigStates.hero.scales.root)), { x: 1, y: 1 }, 'scaleWaves leaked into phase without scaleWaves');
+  });
+
+  test('Batch 2 data-driven VFX & Emote + depth interleaving (midLayers & lane mid)', () => {
+    const bp = makeBlueprintA();
+    bp.rigs[0].z = 0;
+    bp.rigs[1].z = 3;
+    bp.scene.midLayers = [
+      { z: 1, parallax: 15, svg: '<rect data-z="mid-layer-1" x="0" y="0" width="10" height="10" fill="#123456"/>' },
+    ];
+    bp.scene.clusters.push({
+      lane: 'mid',
+      z: 2,
+      mode: 'scatter',
+      cx: 400,
+      cy: 300,
+      rx: 20,
+      ry: 20,
+      count: 2,
+      seed: 909,
+      palette: [['#aabbcc', '#ddeeff']],
+      shapesSvg: ['<circle data-z="mid-cluster-2" cx="0" cy="0" r="4" fill="FILL_A"/>'],
+    });
+    bp.motions[0].phases[0].rigs.companion.emote = {
+      type: 'custom',
+      offsetY: -88,
+      svg: '<circle data-emote="custom-star" cx="0" cy="0" r="6" fill="#55ffee"/>',
+    };
+    bp.motions[0].phases[0].vfx = {
+      warmGlow: { x: 520, y: 310, r: 95, color: '#66f7ff', midColor: '#22aacc', intensity: 0.9 },
+      burst: { rigId: 'companion', y: 410, color: '#ff88cc', highlightColor: '#ffffff' },
+      particles: { rigId: 'companion', intensity: 0.9, color: '#99ffaa', count: 5, dir: -1 },
+    };
+    const bpPath = join(workDir, 'b2-vfx-depth.json');
+    const htmlPath = join(workDir, 'b2-vfx-depth.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, renderAll, state };`, ctx);
+    ctx.__TEST__.state.preset = 'story';
+    ctx.__TEST__.evalMotion(2.5);
+    ctx.__TEST__.renderAll(2.5, 0, 0);
+
+    const heroesHtml = stub.document.getElementById('layerHeroes').innerHTML;
+    const vfxHtml = stub.document.getElementById('layerVfx').innerHTML;
+
+    // Verify strict z-interleaving order inside layerHeroes:
+    // hero (z=0) -> mid-layer-1 (z=1) -> mid-cluster-2 (z=2) -> companion (z=3)
+    const idxHero = heroesHtml.indexOf('url(#bodyGradA)');
+    const idxMidLayer = heroesHtml.indexOf('data-z="mid-layer-1"');
+    const idxMidCluster = heroesHtml.indexOf('data-z="mid-cluster-2"');
+    const idxComp = heroesHtml.indexOf('#f4f1de');
+    assert.ok(idxHero >= 0 && idxMidLayer > idxHero && idxMidCluster > idxMidLayer && idxComp > idxMidCluster,
+      `depth interleaving order broken: hero=${idxHero}, midLayer=${idxMidLayer}, midCluster=${idxMidCluster}, comp=${idxComp}`);
+
+    // Verify custom emote & smooth data-driven dynVfxGlow radialGradient (no hard-edged solid circles)
+    assert.ok(heroesHtml.includes('data-emote="custom-star"'), 'custom emote SVG not rendered');
+    assert.ok(vfxHtml.includes('url(#dynVfxGlow)'), 'vfx.glow must use smooth radialGradient url(#dynVfxGlow)');
+    assert.equal(stub.document.getElementById('vfxGlowS0').getAttribute('stop-color'), '#66f7ff', 'vfxGlowS0 stop-color not updated');
+    assert.equal(stub.document.getElementById('vfxGlowS1').getAttribute('stop-color'), '#22aacc', 'vfxGlowS1 stop-color not updated');
+    assert.ok(vfxHtml.includes('#ff88cc'), 'data-driven burst color not rendered');
+    assert.ok(vfxHtml.includes('#99ffaa'), 'data-driven particles color not rendered');
+  });
+
+  test('Batch 2 polish: parent scaleWaves moves child anchors, falling emitter honors yMin/yMax, toolbar sits outside stageBox', () => {
+    const bp = makeBlueprintA();
+    bp.scene.emitters[0].yMin = 200;
+    bp.scene.emitters[0].yMax = 450;
+    bp.motions[0].phases[0].rigs.hero.scaleWaves = {
+      root: { freq: 4.0, ampX: 0.2, ampY: -0.15, phase: 0 },
+    };
+    const bpPath = join(workDir, 'b2-polish.json');
+    const htmlPath = join(workDir, 'b2-polish.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+
+    // Toolbar must sit outside #stageBox so it never covers characters or foreground art on narrow screens
+    const stageIdx = html.indexOf('id="stageBox"');
+    const chkIdx = html.indexOf('id="chkBones"');
+    const svgCloseIdx = html.indexOf('</svg>');
+    const stageCloseIdx = html.indexOf('</div>', svgCloseIdx);
+    assert.ok(stageIdx > 0 && chkIdx > stageCloseIdx, 'bottom toolbar (chkBones) must sit outside #stageBox');
+
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, computeWorld, renderAll, RIG_BY_ID, state };`, ctx);
+    const { evalMotion, computeWorld, renderAll, RIG_BY_ID, state } = ctx.__TEST__;
+
+    // 1) Child bone head must track parent root's scaleWaves X/Y offset
+    state.preset = 'story';
+    evalMotion(0); // sin(0) = 0 -> scale (1,1)
+    const wUnscaled = computeWorld(RIG_BY_ID.hero);
+    const dxUnscaled = Math.hypot(wUnscaled.head.x - wUnscaled.root.x, wUnscaled.head.y - wUnscaled.root.y);
+    evalMotion(Math.PI / 8); // sin(pi/2) = 1 -> scale (1.2, 0.85)
+    const wScaled = computeWorld(RIG_BY_ID.hero);
+    const dxScaled = Math.hypot(wScaled.head.x - wScaled.root.x, wScaled.head.y - wScaled.root.y);
+    assert.ok(Math.abs(dxScaled - dxUnscaled) > 3, `child bone did not track parent scaleWaves (unscaled=${dxUnscaled}, scaled=${dxScaled})`);
+
+    // 2) Falling emitter particles with yMin=200, yMax=450 must all stay inside [200, 450]
+    renderAll(1.5, 0, 0);
+    const fallingHtml = stub.document.getElementById('layerFallingBack').innerHTML + stub.document.getElementById('layerFallingFront').innerHTML;
+    const ys = [...fallingHtml.matchAll(/translate\([-0-9.]+,([-0-9.]+)\)/g)].map((m) => Number(m[1]));
+    assert.ok(ys.length > 0, 'expected rendered falling particles');
+    for (const y of ys) {
+      assert.ok(y >= 195 && y <= 455, `particle y=${y} escaped emitter [yMin=200, yMax=450]`);
+    }
+
+    // 3) Frame-1 tick() with an earlier rAF timestamp must never produce negative state.time (Phase-4 wrap bug)
+    const stub2 = createDomStub();
+    stub2.performance = { now: () => 500 };
+    const ctx2 = vm.createContext(stub2);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { tick, state };`, ctx2);
+    ctx2.__TEST__.tick(480); // timestamp earlier than performance.now()
+    assert.equal(ctx2.__TEST__.state.time, 0, 'first frame must stay at t=0, not go negative');
+    ctx2.__TEST__.tick(470); // even a backward monotonic glitch must clamp dt >= 0
+    assert.equal(ctx2.__TEST__.state.time, 0, 'backward timestamp must clamp dt to 0');
+    ctx2.__TEST__.tick(486); // +16ms forward
+    assert.ok(ctx2.__TEST__.state.time > 0.015 && ctx2.__TEST__.state.time < 0.017, `expected ~0.016s, got ${ctx2.__TEST__.state.time}`);
+  });
+
+  test('Batch 2 universal negative compile: unsafe SVG in vfx.burst.svg and vfx.particles.shapeSvg fails closed', () => {
+    const bp1 = makeBlueprintA();
+    bp1.motions[0].phases[0].vfx = { burst: { mode: 'phase', svg: '<g onload="alert(1)"><circle r="5"/></g>' } };
+    const p1 = join(workDir, 'neg-burst-svg.json');
+    writeFileSync(p1, JSON.stringify(bp1));
+    const c1 = runNode(COMPILE_SCRIPT, ['--spec', p1, '--check']);
+    assert.equal(c1.status, 1);
+    assert.ok(c1.json?.errors?.some((e) => e.code === 'BP_SVG_UNSAFE'), `expected BP_SVG_UNSAFE for burst.svg, got ${c1.stdout}`);
+
+    const bp2 = makeBlueprintA();
+    bp2.motions[0].phases[0].vfx = { particles: { shapeSvg: '<script>alert(1)</script>' } };
+    const p2 = join(workDir, 'neg-part-shape-svg.json');
+    writeFileSync(p2, JSON.stringify(bp2));
+    const c2 = runNode(COMPILE_SCRIPT, ['--spec', p2, '--check']);
+    assert.equal(c2.status, 1);
+    assert.ok(c2.json?.errors?.some((e) => e.code === 'BP_SVG_UNSAFE'), `expected BP_SVG_UNSAFE for particles.shapeSvg, got ${c2.stdout}`);
+  });
+
+  test('Batch 2 universal generalization: burst types/svg, custom particle shapeSvg, daylight lighting colors, sortY clusters, and 360° spins', () => {
+    const bp = makeBlueprintA();
+    bp.scene.lighting.vignetteColor = '#5c3a21';
+    bp.scene.lighting.shadowColor = '#3b2414';
+    bp.scene.clusters = [
+      {
+        lane: 'back',
+        mode: 'scatter',
+        cx: 400,
+        cy: 300,
+        rx: 80,
+        ry: 90,
+        count: 14,
+        seed: 777,
+        sortY: true,
+        sway: 0,
+        parallax: 0,
+        palette: [['#88aa44', '#557722', '#ddeebb']],
+        shapesSvg: ['<circle cx="0" cy="0" r="6" fill="FILL_A"/>'],
+      },
+    ];
+    // Widened limits on head so it can act as a 360-degree spinning mechanism in phase 1 and reset in phase 2
+    bp.rigs[0].bones[1].limits = { min: -180, max: 180 };
+    bp.rigs[0].bones[1].rest = 0;
+    bp.motions[0].period = 10;
+    bp.motions[0].phases = [
+      {
+        from: 0.0,
+        to: 0.5,
+        label: 'Spin & Forge Sparks',
+        rigs: {
+          hero: {
+            emote: { type: 'music', color: '#ffaa33' },
+            spins: { head: 180 },
+          },
+        },
+        vfx: {
+          burst: { mode: 'phase', type: 'sparks', x: 420, y: 320, color: '#ffbb44', highlightColor: '#ffffff' },
+          particles: { rigId: 'hero', intensity: 0.9, count: 4, color: '#ffcc55', shapeSvg: '<polygon data-p="note" points="0,-4 4,0 0,4 -4,0" fill="FILL_A"/>' },
+        },
+      },
+      {
+        from: 0.5,
+        to: 1.0,
+        label: 'Rest Phase',
+        rigs: { hero: {} },
+      },
+    ];
+
+    const bpPath = join(workDir, 'b2-universal.json');
+    const htmlPath = join(workDir, 'b2-universal.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    assert.ok(!html.includes('id="warmMomentGlow"'), 'legacy warmMomentGlow must be removed');
+
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, renderAll, rigStates, state };`, ctx);
+    const { evalMotion, renderAll, rigStates, state } = ctx.__TEST__;
+
+    // 1) Daylight shadowColor & vignetteColor applied in <defs>
+    const defsHtml = stub.document.getElementById('svgDefs').innerHTML;
+    assert.ok(defsHtml.includes('#5c3a21'), 'custom vignetteColor not applied to autoVignette');
+    assert.ok(defsHtml.includes('#3b2414'), 'custom shadowColor not applied to shadow filters');
+
+    // 2) sortY: true renders cluster items in ascending Y order (shingle layering)
+    renderAll(0, 0, 0);
+    const clHtml = stub.document.getElementById('layerClustersBack').innerHTML;
+    const clYs = [...clHtml.matchAll(/translate\([-0-9.]+,([-0-9.]+)\)\s+rotate\(/g)].map((m) => Number(m[1]));
+    assert.equal(clYs.length, 14);
+    for (let i = 1; i < clYs.length; i++) {
+      assert.ok(clYs[i] >= clYs[i - 1], `cluster sortY violated at index ${i}: ${clYs[i - 1]} > ${clYs[i]}`);
+    }
+
+    // 3) 360-degree continuous spin is pure function of t and resets cleanly when omitted
+    state.preset = 'story';
+    evalMotion(0.5); // 0.5s * 180 deg/s = +90 deg
+    assert.ok(Math.abs(rigStates.hero.angles.head - 90) < 0.01, `expected +90 deg at t=0.5, got ${rigStates.hero.angles.head}`);
+    evalMotion(1.5); // 1.5s * 180 deg/s = 270 deg -> wrapped to -90 deg
+    assert.ok(Math.abs(rigStates.hero.angles.head - (-90)) < 0.01, `expected -90 deg at t=1.5, got ${rigStates.hero.angles.head}`);
+    evalMotion(7.0); // Phase 2 omits spins -> must reset cleanly to rest (0)
+    assert.equal(rigStates.hero.angles.head, 0, 'omitted spin must reset cleanly to rest');
+
+    // 4) Non-water burst type="sparks", custom particle shapeSvg, and music emote
+    evalMotion(2.5); // mid Phase 1 (lt = 0.5)
+    renderAll(2.5, 0, 0);
+    const vfxHtml = stub.document.getElementById('layerVfx').innerHTML;
+    const heroesHtml = stub.document.getElementById('layerHeroes').innerHTML;
+    assert.ok(vfxHtml.includes('data-burst="sparks"'), 'expected burst type="sparks"');
+    assert.ok(vfxHtml.includes('data-p="note"'), 'expected custom particle shapeSvg');
+    assert.ok(heroesHtml.includes('data-emote="music"'), 'expected built-in music emote');
+  });
+
+  test('Batch 2.5 Tactile Paper Engine: paperBevel, paperBevelSoft, built-in patterns, and custom scene.materials[] compile + validate cleanly', () => {
+    const bp = makeBlueprintA();
+    bp.scene.lighting.bevelDir = [-1, -1];
+    bp.scene.lighting.bevelLightColor = '#fff6dc';
+    bp.scene.lighting.bevelWidth = 1.4;
+    bp.scene.materials = [
+      { id: 'pat-tweed-warm', type: 'linen', color: '#5c3d2e', bg: '#8c6248', opacity: 0.3, scale: 1.1 },
+      { id: 'pat-stone-grain', type: 'kraft', color: '#475569', bg: '#94a3b8', opacity: 0.25, scale: 1.0 },
+    ];
+    bp.parts[0].svg = '<g filter="url(#paperBevel)"><path d="M-24 -30 C-10 -34 10 -34 24 -30 L26 24 C10 30 -10 30 -26 24 Z" fill="url(#bodyGradA)"/><path d="M-24 -30 C-10 -34 10 -34 24 -30 L26 24 C10 30 -10 30 -26 24 Z" fill="url(#pat-tweed-warm)" opacity="0.45"/><path d="M0 -30 L0 26" stroke="#fff4d8" stroke-width="1.2" opacity="0.4"/></g>';
+    bp.scene.backLayers[0].svg = '<rect x="0" y="340" width="960" height="200" fill="url(#pat-stone-grain)" filter="url(#paperBevelSoft)"/>';
+
+    const bpPath = join(workDir, 'b25-tactile.json');
+    const packDir = join(workDir, 'b25-tactile-pack');
+    const htmlPath = join(workDir, 'b25-tactile.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile failed: ${c.stdout}`);
+    const v = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(v.status, 0, `validate_pack failed on pack using paperBevel & scene.materials: ${v.stdout}`);
+
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { renderAll };`, ctx);
+    const defsHtml = stub.document.getElementById('svgDefs').innerHTML;
+    assert.ok(defsHtml.includes('id="paperBevel"'), 'missing paperBevel filter in viewer defs');
+    assert.ok(defsHtml.includes('id="paperBevelSoft"'), 'missing paperBevelSoft filter in viewer defs');
+    assert.ok(defsHtml.includes('id="pat-linen"'), 'missing built-in pat-linen pattern in viewer defs');
+    assert.ok(defsHtml.includes('id="pat-kraft"'), 'missing built-in pat-kraft pattern in viewer defs');
+    assert.ok(defsHtml.includes('id="pat-tweed-warm"'), 'missing custom scene.materials pattern pat-tweed-warm');
+    assert.ok(defsHtml.includes('#fff6dc'), 'custom bevelLightColor not applied to paperBevel');
+  });
+
+  test('Batch 2.5 Negative material: invalid scene.materials entry fails closed', () => {
+    const bp = makeBlueprintA();
+    bp.scene.materials = [{ id: 'bad id!', type: 'unknown-type', color: '#fff' }];
+    const bpPath = join(workDir, 'b25-bad-mat.json');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--check']);
+    assert.equal(c.status, 1);
+    assert.ok(c.json?.errors?.some((e) => e.code === 'BP_SCHEMA'), `expected BP_SCHEMA for invalid material, got ${c.stdout}`);
+  });
+
+  test('Batch 2.5 Craft Primitives: deterministic, SVG-guard clean, theme-agnostic, and fail-closed on bad inputs', () => {
+    const craftPath = join(__dirname, 'lib', 'craft-primitives.mjs');
+    assert.ok(existsSync(craftPath), 'craft-primitives.mjs must exist');
+    const res = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import assert from 'node:assert/strict';
+        import { deckleEdgePath, taperedRibbon, scallopBorder, layeredShingleFan, origamiCrease, stitchTrack, kirigamiCutout } from ${JSON.stringify(craftPath)};
+        import { scanSvgFragment } from ${JSON.stringify(join(__dirname, 'lib', 'svg-guard.mjs'))};
+        const d1 = deckleEdgePath([[0,0],[40,0],[40,40],[0,40]], { seed: 42, amplitude: 1.8 });
+        const d2 = deckleEdgePath([[0,0],[40,0],[40,40],[0,40]], { seed: 42, amplitude: 1.8 });
+        assert.equal(d1, d2, 'deckleEdgePath must be deterministic');
+        const rib = taperedRibbon([[0,0],[20,-10],[45,-4],[70,8]], { widthStart: 14, widthEnd: 3 });
+        const scal = scallopBorder([[0,0],[40,0],[80,0]], { depth: 8, scallops: 6 });
+        const fan = layeredShingleFan({ cx: 0, cy: 0, rows: 3, countPerRow: 4, radius: 32, seed: 7 });
+        const fold = origamiCrease({ p1: [0,-20], p2: [0,20], left: [-18,0], right: [18,0], lightFill: '#eee', darkFill: '#999' });
+        const st = stitchTrack([[0,0],[20,10],[40,0]]);
+        const kiri = kirigamiCutout({ cx: 0, cy: 0, r: 24, petals: 8 });
+        const errs = [];
+        const combined = \`<g><path d="\${d1}" fill="#aaa"/><path d="\${rib}" fill="#bbb"/><path d="\${scal}" fill="#ccc"/>\${fan}\${fold}\${st}\${kiri}</g>\`;
+        scanSvgFragment(combined, 'craft-test', (c,w,d) => errs.push({c,w,d}));
+        assert.equal(errs.length, 0, 'craft primitives emitted unsafe SVG: ' + JSON.stringify(errs));
+        assert.throws(() => taperedRibbon([[0,0]], { widthStart: 10, widthEnd: 2 }), /CRAFT_PARAM_INVALID/);
+        assert.throws(() => kirigamiCutout({ r: -5 }), /CRAFT_PARAM_INVALID/);
+        console.log('CRAFT_OK');`,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(res.status, 0, `craft-primitives check failed: ${res.stderr}\n${res.stdout}`);
+    assert.ok(res.stdout.includes('CRAFT_OK'));
+  });
+
+  test('Batch 2.5 Modular Component Kit: kitRef on parts[], {{KIT:...}} macro in scene, custom --kit-dir, and fail-closed security', () => {
+    const kitDir = join(SKILL_DIR, 'assets', 'kit');
+    assert.ok(existsSync(kitDir), 'assets/kit directory must exist');
+
+    // Positive: use built-in kit components via kitRef and {{KIT:...}} macro
+    const bp = makeBlueprintA();
+    bp.parts.push({
+      id: 'kit_hand_test',
+      category: 'hand',
+      kitRef: {
+        id: 'hand-open',
+        tokens: { PRIMARY: '#f2c7a4', SHADOW: '#c9936d', HIGHLIGHT: '#fff1e0', STROKE: '#6b412a' },
+      },
+    });
+    bp.rigs[0].bones[1].variants = { open: 'kit_hand_test' };
+    bp.scene.cornersSvg = '{{KIT:kirigami-rosette|PRIMARY=#e8c589|SHADOW=#8a6230|ACCENT=#fff4d6|x=42|y=42|scale=0.8}}';
+
+    const bpPath = join(workDir, 'b25-kit.json');
+    const packDir = join(workDir, 'b25-kit-pack');
+    const htmlPath = join(workDir, 'b25-kit.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `kit compile failed: ${c.stdout}`);
+    const v = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(v.status, 0, `kit pack validation failed: ${v.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    assert.ok(html.includes('#f2c7a4') && !html.includes('{{KIT:'), 'kit macro or tokens were not resolved');
+
+    // Positive: custom --kit-dir overrides/adds studio artist component without touching code
+    const customKitDir = join(workDir, 'studio-kit');
+    spawnSync('mkdir', ['-p', customKitDir]);
+    writeFileSync(
+      join(customKitDir, 'custom-badge.json'),
+      JSON.stringify({
+        id: 'custom-badge',
+        category: 'prop',
+        size: [40, 40],
+        pivot: [20, 20],
+        anchors: { mount: [20, 34] },
+        tokens: { PRIMARY: '#ffffff', ACCENT: '#000000' },
+        svg: '<g data-custom-kit="1"><path d="M-12 -12 L12 -12 L14 12 L-14 12 Z" fill="{{PRIMARY}}"/><path d="M-6 0 L0 -6 L6 0 L0 6 Z" fill="{{ACCENT}}"/></g>',
+      }),
+    );
+    const bpCustom = makeBlueprintA();
+    bpCustom.scene.cornersSvg = '{{KIT:custom-badge|PRIMARY=#ff5533|ACCENT=#ffee99|x=20|y=20}}';
+    const bpCustomPath = join(workDir, 'b25-custom-kit.json');
+    writeFileSync(bpCustomPath, JSON.stringify(bpCustom));
+    const cCustom = runNode(COMPILE_SCRIPT, ['--spec', bpCustomPath, '--kit-dir', customKitDir, '--check']);
+    assert.equal(cCustom.status, 0, `custom --kit-dir compile failed: ${cCustom.stdout}`);
+
+    // Negative 1: unknown kit ID fails closed with BP_KIT_NOT_FOUND
+    const bpMissing = makeBlueprintA();
+    bpMissing.scene.cornersSvg = '{{KIT:does-not-exist-999}}';
+    const pMissing = join(workDir, 'b25-kit-missing.json');
+    writeFileSync(pMissing, JSON.stringify(bpMissing));
+    const cMissing = runNode(COMPILE_SCRIPT, ['--spec', pMissing, '--check']);
+    assert.equal(cMissing.status, 1);
+    assert.ok(cMissing.json?.errors?.some((e) => e.code === 'BP_KIT_NOT_FOUND'), `expected BP_KIT_NOT_FOUND, got ${cMissing.stdout}`);
+
+    // Negative 2: XSS injection via kit token fails closed
+    const bpXss = makeBlueprintA();
+    bpXss.scene.cornersSvg = '{{KIT:kirigami-rosette|PRIMARY=#fff" onload="alert(1)}}';
+    const pXss = join(workDir, 'b25-kit-xss.json');
+    writeFileSync(pXss, JSON.stringify(bpXss));
+    const cXss = runNode(COMPILE_SCRIPT, ['--spec', pXss, '--check']);
+    assert.equal(cXss.status, 1);
+    assert.ok(
+      cXss.json?.errors?.some((e) => e.code === 'BP_KIT_INVALID' || e.code === 'BP_SVG_UNSAFE'),
+      `expected fail-closed security error for malicious kit token, got ${cXss.stdout}`,
+    );
+  });
+
+  test('Batch 2.5 Craft Audit & validate_pack --strict-craft: flags bare primitive hero parts, passes multi-layer crafted parts', () => {
+    // Primitive blueprint (bare 1-rect/1-circle hero parts)
+    const bpSimple = makeBlueprintA();
+    bpSimple.parts[0].svg = '<rect x="-12" y="-12" width="24" height="24" fill="#888888"/>';
+    bpSimple.parts[1].svg = '<circle cx="0" cy="0" r="14" fill="#aaaaaa"/>';
+    const pSimple = join(workDir, 'b25-simple.json');
+    const packSimple = join(workDir, 'b25-simple-pack');
+    writeFileSync(pSimple, JSON.stringify(bpSimple));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', pSimple, '--out-pack', packSimple]).status, 0);
+
+    // Default validate_pack still PASSes technically, but surfaces craftWarnings
+    const vDefault = runNode(VALIDATE_SCRIPT, [packSimple]);
+    assert.equal(vDefault.status, 0, `default validate_pack should pass technical checks: ${vDefault.stdout}`);
+    assert.ok(Array.isArray(vDefault.json?.craftWarnings) && vDefault.json.craftWarnings.length > 0, 'expected craftWarnings on bare primitive hero parts');
+    assert.ok(vDefault.json.craftWarnings.some((w) => w.code === 'CRAFT_TOO_SIMPLE'), `expected CRAFT_TOO_SIMPLE warning, got ${JSON.stringify(vDefault.json?.craftWarnings)}`);
+
+    // Strict craft mode fails closed on bare primitive hero parts
+    const vStrict = runNode(VALIDATE_SCRIPT, ['--strict-craft', packSimple]);
+    assert.equal(vStrict.status, 1, 'expected --strict-craft to fail on primitive hero parts');
+
+    // Richly crafted blueprint (multi-layer paths + gradients/patterns + bevel/creases) passes --strict-craft
+    const bpRich = makeBlueprintA();
+    const richSvg = '<g filter="url(#paperBevel)"><path d="M-24 -30 C-10 -34 10 -34 24 -30 C28 -8 28 10 24 28 C10 32 -10 32 -24 28 C-28 10 -28 -8 -24 -30 Z" fill="url(#bodyGradA)"/><path d="M-24 -30 C-10 -34 10 -34 24 -30 L24 28 L-24 28 Z" fill="url(#pat-linen)" opacity="0.35"/><path d="M-22 -24 C-6 -20 6 -20 22 -24 L18 22 C4 26 -8 24 -20 18 Z" fill="#182235" opacity="0.22"/><path d="M-18 -26 C-4 -30 8 -30 18 -24" fill="none" stroke="#fff7e4" stroke-width="1.4" opacity="0.55"/><path d="M-10 -12 L10 -12 M-8 4 L8 4" stroke="#f5d9a8" stroke-width="1.1" stroke-dasharray="3 3" opacity="0.6"/></g>';
+    bpRich.parts = bpRich.parts.map((pt) => ({ ...pt, svg: richSvg }));
+    const pRich = join(workDir, 'b25-rich.json');
+    const packRich = join(workDir, 'b25-rich-pack');
+    writeFileSync(pRich, JSON.stringify(bpRich));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', pRich, '--out-pack', packRich]).status, 0);
+    const vRichStrict = runNode(VALIDATE_SCRIPT, ['--strict-craft', packRich]);
+    assert.equal(vRichStrict.status, 0, `richly crafted pack should pass --strict-craft: ${vRichStrict.stdout}`);
+    assert.ok((vRichStrict.json?.craftAudit?.overallCraftScore ?? 0) >= 75, `expected high craft score, got ${JSON.stringify(vRichStrict.json?.craftAudit)}`);
+  });
+
+  test('Batch 2.5 Viewer Audit Query Modes & render_audit.mjs: stageOnly, silhouette, cropRig, and deterministic report', () => {
+    const AUDIT_SCRIPT = join(__dirname, 'render_audit.mjs');
+    assert.ok(existsSync(AUDIT_SCRIPT), 'render_audit.mjs must exist');
+
+    const bp = makeBlueprintA();
+    const bpPath = join(workDir, 'b25-audit.json');
+    const htmlPath = join(workDir, 'b25-audit.html');
+    const auditOut = join(workDir, 'b25-audit-out');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]).status, 0);
+
+    // 1) Verify silhouette=1 and cropRig=hero URL modes in viewer-shell.html runtime
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    stub.window = { location: { search: '?t=1.2&pause=1&stageOnly=1&silhouette=1&cropRig=hero' } };
+    stub.URLSearchParams = URLSearchParams;
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { renderAll, state };`, ctx);
+    ctx.__TEST__.renderAll(1.2, 0, 0);
+    assert.equal(ctx.__TEST__.state.playing, false, 'pause=1 must pause playback');
+    assert.equal(ctx.__TEST__.state.silhouette, true, 'silhouette=1 must enable silhouette mode');
+    const skyHtml = stub.document.getElementById('layerSky').innerHTML;
+    assert.ok(skyHtml.includes('#f4efe6'), 'silhouette mode must render light high-contrast backdrop');
+    const heroesHtml = stub.document.getElementById('layerHeroes').innerHTML;
+    assert.ok(heroesHtml.includes('url(#silhouetteFilter)'), 'silhouette mode must apply silhouetteFilter to rigs');
+    const vb = stub.document.getElementById('sceneSvg').getAttribute('viewBox');
+    assert.ok(vb && vb !== '0 0 960 540', `cropRig=hero must zoom viewBox onto hero rig, got viewBox="${vb}"`);
+
+    // 2) Run render_audit.mjs in --no-chrome mode for deterministic CI-safe craft report
+    const a = runNode(AUDIT_SCRIPT, ['--html', htmlPath, '--spec', bpPath, '--out', auditOut, '--no-chrome']);
+    assert.equal(a.status, 0, `render_audit --no-chrome failed: ${a.stderr}\n${a.stdout}`);
+    assert.ok(a.json && a.json.craftAudit && typeof a.json.craftAudit.overallCraftScore === 'number', `missing craftAudit in report: ${a.stdout}`);
+    assert.ok(existsSync(join(auditOut, 'audit_report.json')), 'audit_report.json not written');
+  });
+
+  test('Batch 2.5 Starter Kit Catalog: every assets/kit/*.json passes svg-guard safety and craft audit', () => {
+    const res = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import assert from 'node:assert/strict';
+        import { loadKitCatalog, expandKitMacrosInString } from ${JSON.stringify(join(__dirname, 'lib', 'kit-resolver.mjs'))};
+        import { scanSvgFragment, getBuiltinViewerDefs } from ${JSON.stringify(join(__dirname, 'lib', 'svg-guard.mjs'))};
+        import { analyzeSvgCraft } from ${JSON.stringify(join(__dirname, 'lib', 'craft-audit.mjs'))};
+        const errs = [];
+        const cat = loadKitCatalog([], (c,w,d) => errs.push({c,w,d}));
+        assert.equal(errs.length, 0, 'kit catalog load errors: ' + JSON.stringify(errs));
+        assert.ok(cat.size >= 12, 'expected at least 12 starter kit components, got ' + cat.size);
+        const defs = getBuiltinViewerDefs({});
+        for (const [id, comp] of cat.entries()) {
+          const rendered = expandKitMacrosInString(\`{{KIT:\${id}}}\`, cat, id, (c,w,d) => errs.push({c,w,d}));
+          scanSvgFragment(rendered, id, (c,w,d) => errs.push({c,w,d}), { knownDefIds: defs, checkDefRefs: true });
+          const score = analyzeSvgCraft(rendered, id);
+          assert.ok(score.totalPrimitives >= 4, \`kit \${id} too simple (\${score.totalPrimitives} primitives)\`);
+        }
+        assert.equal(errs.length, 0, 'kit validation errors: ' + JSON.stringify(errs));
+        console.log('KIT_CATALOG_OK:' + cat.size);`,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(res.status, 0, `kit catalog test failed: ${res.stderr}\n${res.stdout}`);
+    assert.ok(res.stdout.includes('KIT_CATALOG_OK:'));
+  });
+
+  test('Batch 2.8 v3 Surface & Seamless Limbs: gouacheGrain, chalkShadow, seamGroup merged silhouette, and continuous Bezier hoses[]', () => {
+    const bp = makeBlueprintB();
+    bp.rigs[0].groundY = 445;
+    bp.rigs[0].bones[1].seamGroup = 'armMerged';
+    bp.rigs[0].bones[1].seamFilter = 'paperBevelSoft';
+    bp.rigs[0].bones[2].seamGroup = 'armMerged';
+    bp.rigs[0].bones[2].seamFilter = 'paperBevelSoft';
+    bp.rigs[0].bones[1].hiddenInViewer = true;
+    bp.rigs[0].bones[2].hiddenInViewer = true;
+    bp.rigs[0].hoses = [
+      {
+        id: 'arm_hose',
+        upper: 'arm.u',
+        lower: 'arm.l',
+        end: 'hand',
+        z: 1.5,
+        widthStart: 14,
+        widthMid: 11,
+        widthEnd: 8,
+        fill: 'url(#gradBeta)',
+        cuffAt: 0.58,
+        cuffFill: '#bae6fd',
+        rimColor: '#ffffff',
+        seamGroup: 'armMerged',
+      },
+    ];
+    bp.parts[0].svg = '<g filter="url(#gouacheGrain)"><rect x="-20" y="-60" width="40" height="65" rx="14" fill="url(#gradBeta)"/></g>';
+
+    const bpPath = join(workDir, 'v3-seamless.json');
+    const packDir = join(workDir, 'v3-seamless-pack');
+    const htmlPath = join(workDir, 'v3-seamless.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `v3 seamless compile failed: ${c.stdout}`);
+    const v = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(v.status, 0, `v3 seamless validate_pack failed: ${v.stdout}`);
+
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, renderAll };`, ctx);
+    ctx.__TEST__.evalMotion(1.0);
+    ctx.__TEST__.renderAll(1.0, 0, 0);
+
+    const defsHtml = stub.document.getElementById('svgDefs').innerHTML;
+    assert.ok(defsHtml.includes('id="gouacheGrain"'), 'missing gouacheGrain filter in viewer defs');
+    assert.ok(defsHtml.includes('id="chalkShadow"'), 'missing chalkShadow filter in viewer defs');
+
+    const heroesHtml = stub.document.getElementById('layerHeroes').innerHTML;
+    assert.ok(heroesHtml.includes('data-seam-group="armMerged"'), 'missing merged seamGroup wrapper');
+    assert.ok(heroesHtml.includes('data-hose="arm_hose"'), 'missing continuous Bezier hose path');
+    // Verify hiddenInViewer suppressed the rigid rect capsules while keeping hand visible
+    assert.ok(!heroesHtml.includes('fill="#0ea5e9"'), 'hiddenInViewer bone arm.u should not be drawn');
+    assert.ok(heroesHtml.includes('fill="#bae6fd"'), 'cuffFill / hand should still render');
+  });
+
+  test('Batch 2.8 v3 Negative hose: unknown bone or unsafe fill in rig.hoses[] fails closed', () => {
+    const bp = makeBlueprintB();
+    bp.rigs[0].hoses = [{ id: 'bad_hose', upper: 'arm.u', lower: 'missing_bone', end: 'hand', fill: '#fff' }];
+    const p1 = join(workDir, 'v3-bad-hose.json');
+    writeFileSync(p1, JSON.stringify(bp));
+    const c1 = runNode(COMPILE_SCRIPT, ['--spec', p1, '--check']);
+    assert.equal(c1.status, 1);
+    assert.ok(c1.json?.errors?.some((e) => e.code === 'BP_RIG_INVALID'), `expected BP_RIG_INVALID for bad hose bone, got ${c1.stdout}`);
+  });
+
+  test('Batch 2.8 v3 Anti-Stiff Living Motion: stateless IK gait (2x bob + foot-lock), followThrough inertia, and deterministic eye blink', () => {
+    const bp = makeBlueprintB();
+    // Add a scarf bone with followThrough and an eye element with data-eye="1"
+    bp.parts[0].anchors.scarf = [28, 26];
+    bp.parts[0].svg = '<g><rect x="-20" y="-60" width="40" height="65" rx="14" fill="url(#gradBeta)"/><g data-eye="1" transform="translate(8,-42)"><circle cx="0" cy="0" r="4" fill="#111"/></g></g>';
+    bp.parts.push({
+      id: 'scarfTail',
+      category: 'cloth',
+      size: [48, 24],
+      pivot: [40, 12],
+      anchors: { tip: [6, 12] },
+      svg: '<path d="M0 -5 C-12 -3 -24 0 -34 4 C-24 8 -12 7 0 5 Z" fill="#f97316"/>',
+    });
+    bp.rigs[0].bones.push({
+      id: 'scarf',
+      parent: 'root',
+      attach: 'scarf',
+      part: 'scarfTail',
+      limits: { min: -45, max: 45 },
+      rest: 0,
+      z: 1,
+      followThrough: { lag: 0.15, velGain: 0.22 },
+    });
+    bp.rigs[0].blink = { period: 3.0, duration: 0.2, phase: 0 };
+
+    bp.motions = [
+      {
+        id: 'walk',
+        name: 'Procedural Walk',
+        type: 'cycle',
+        period: 4,
+        phases: [
+          {
+            from: 0,
+            to: 1,
+            label: 'Walk Stride',
+            rigs: {
+              actor: {
+                rootX: [320, 560],
+                rootY: [360, 360],
+                gait: {
+                  freq: 1.0,
+                  stride: 36,
+                  lift: 18,
+                  bob: 6,
+                  stanceFrac: 0.6,
+                  chains: [{ ik: 'arm', phase: 0.0, footBone: 'hand', toeOff: 10 }],
+                },
+              },
+            },
+          },
+        ],
+      },
+    ];
+
+    const bpPath = join(workDir, 'v3-living-motion.json');
+    const htmlPath = join(workDir, 'v3-living-motion.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `living motion compile failed: ${c.stdout}`);
+
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, renderAll, rigStates, state };`, ctx);
+    const { evalMotion, renderAll, rigStates, state } = ctx.__TEST__;
+    state.preset = 'walk';
+
+    // 1) Verify 2x vertical bob during gait (rootY at t=0.25 must bob up vs t=0.0)
+    evalMotion(0.0);
+    const yAtContact = rigStates.actor.rootY;
+    evalMotion(0.25); // sin(2*pi*0.25) = 1 -> peak bob lift!
+    const yAtMidStance = rigStates.actor.rootY;
+    assert.ok(yAtContact - yAtMidStance >= 4.5, `expected >= 4.5px vertical gait bob, got contact=${yAtContact}, mid=${yAtMidStance}`);
+
+    // 2) Verify IK gait bends lower limb differently between stance (t=0.2) and swing peak (t=0.8)
+    evalMotion(0.2);
+    const elbowStance = rigStates.actor.angles['arm.l'];
+    evalMotion(0.8);
+    const elbowSwing = rigStates.actor.angles['arm.l'];
+    assert.ok(Math.abs(elbowSwing - elbowStance) > 3, `expected IK gait knee/elbow bend change between stance (${elbowStance}) and swing (${elbowSwing})`);
+
+    // 3) Verify stateless followThrough trails scarf angle when moving right and is 100% order-independent
+    evalMotion(1.8);
+    const scarfForwardPass1 = rigStates.actor.angles.scarf;
+    assert.ok(Math.abs(scarfForwardPass1) > 1.5, `expected followThrough inertia on scarf while moving, got ${scarfForwardPass1}`);
+    evalMotion(0.1);
+    evalMotion(3.7);
+    evalMotion(1.8);
+    const scarfForwardPass2 = rigStates.actor.angles.scarf;
+    assert.equal(scarfForwardPass1, scarfForwardPass2, 'followThrough must be 100% stateless and order-independent');
+
+    // 4) Verify deterministic eye blink scales eyelid closed during blink window (t=0.08) and open outside (t=1.2)
+    evalMotion(0.08);
+    renderAll(0.08, 0, 0);
+    const closedHtml = stub.document.getElementById('layerHeroes').innerHTML;
+    evalMotion(1.2);
+    renderAll(1.2, 0, 0);
+    const openHtml = stub.document.getElementById('layerHeroes').innerHTML;
+    assert.notEqual(closedHtml, openHtml, 'expected deterministic eye blink to animate data-eye element between blink and open frames');
+  });
+
+  test('Batch 2.8 v3 Scene Craft (MIT-adapted fbm ridges + shadow facets + asymmetric storyTree + windingPath): deterministic and SVG-guard clean', () => {
+    const sceneCraftPath = join(__dirname, 'lib', 'scene-craft.mjs');
+    assert.ok(existsSync(sceneCraftPath), 'scene-craft.mjs must exist');
+    const res = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import assert from 'node:assert/strict';
+        import { terrainRidgeLayer, storyTree, foliageSpray, windingPath } from ${JSON.stringify(sceneCraftPath)};
+        import { scanSvgFragment, extractDefIds, getBuiltinViewerDefs } from ${JSON.stringify(join(__dirname, 'lib', 'svg-guard.mjs'))};
+        const r1 = terrainRidgeLayer({ width: 960, height: 540, baseY: 320, amplitude: 55, seed: 101, fill: '#4a6b82', shadowFill: '#2c4659', lightAngleDeg: 135 });
+        const r2 = terrainRidgeLayer({ width: 960, height: 540, baseY: 320, amplitude: 55, seed: 101, fill: '#4a6b82', shadowFill: '#2c4659', lightAngleDeg: 135 });
+        assert.equal(r1.svg, r2.svg, 'terrainRidgeLayer must be deterministic');
+        assert.ok(r1.shadowBandCount >= 1, 'terrainRidgeLayer should emit directional pseudo-3D shadow facets');
+        const tPine = storyTree({ idPrefix: 'tp1', species: 'pine', x: 200, y: 400, height: 210, seed: 55, snow: true });
+        const tOak = storyTree({ idPrefix: 'to1', species: 'oak', x: 500, y: 410, height: 190, seed: 77 });
+        const spray = foliageSpray({ x: 120, y: 480, count: 7, seed: 33 });
+        const road = windingPath({ points: [[480, 405], [440, 455], [360, 540]], widthStart: 22, widthEnd: 110, fill: '#e6d2b5', bankFill: '#bfa582' });
+        const allDefs = (r1.defsSvg ?? '') + (tPine.defsSvg ?? '') + (tOak.defsSvg ?? '');
+        const known = new Set([...getBuiltinViewerDefs({}), ...extractDefIds(allDefs)]);
+        const errs = [];
+        scanSvgFragment(\`<g>\${allDefs}\${r1.svg}\${tPine.svg}\${tOak.svg}\${spray}\${road}</g>\`, 'scene-craft', (c,w,d) => errs.push({c,w,d}), { knownDefIds: known, checkDefRefs: true });
+        assert.equal(errs.length, 0, 'scene-craft emitted invalid SVG: ' + JSON.stringify(errs));
+        console.log('SCENE_CRAFT_OK');`,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(res.status, 0, `scene-craft test failed: ${res.stderr}\n${res.stdout}`);
+    assert.ok(res.stdout.includes('SCENE_CRAFT_OK'));
+  });
+
+  test('Batch 2.8 v3 render_audit motion_sheet: writes 6-frame motion_sheet.html for anti-stiffness review', () => {
+    const AUDIT_SCRIPT = join(__dirname, 'render_audit.mjs');
+    const bp = makeBlueprintA();
+    const bpPath = join(workDir, 'v3-ms.json');
+    const htmlPath = join(workDir, 'v3-ms.html');
+    const auditOut = join(workDir, 'v3-ms-out');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]).status, 0);
+    const a = runNode(AUDIT_SCRIPT, ['--html', htmlPath, '--spec', bpPath, '--out', auditOut, '--no-chrome']);
+    assert.equal(a.status, 0, `render_audit failed: ${a.stderr}\n${a.stdout}`);
+    assert.ok(existsSync(join(auditOut, 'motion_sheet.html')), 'motion_sheet.html must be generated for 6-phase stride/motion inspection');
+  });
+
+  test('v4.0 Style Grammar Packs: 4 styles exist with STYLE.md + preset.json, merge defaults cleanly, and unknown style fails closed (BP_STYLE_UNKNOWN)', () => {
+    const styleSlugs = ['storybook-gouache', 'paper-lightbox', 'paper-popup', 'shadow-craft'];
+    for (const slug of styleSlugs) {
+      assert.ok(existsSync(join(SKILL_DIR, 'styles', slug, 'STYLE.md')), `missing styles/${slug}/STYLE.md`);
+      assert.ok(existsSync(join(SKILL_DIR, 'styles', slug, 'preset.json')), `missing styles/${slug}/preset.json`);
+    }
+
+    const bp = makeBlueprintB();
+    bp.style = 'paper-popup';
+    const bpPath = join(workDir, 'v4-style-popup.json');
+    const htmlPath = join(workDir, 'v4-style-popup.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `style preset compile failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    assert.ok(html.includes('"style":"paper-popup"'), 'compiled HTML must preserve resolved style');
+
+    const badBp = makeBlueprintB();
+    badBp.style = 'nonexistent-neon-style';
+    const badPath = join(workDir, 'v4-style-bad.json');
+    writeFileSync(badPath, JSON.stringify(badBp));
+    const cBad = runNode(COMPILE_SCRIPT, ['--spec', badPath, '--check']);
+    assert.equal(cBad.status, 1, 'unknown style must fail closed');
+    assert.ok(cBad.json?.errors?.some((e) => e.code === 'BP_STYLE_UNKNOWN'), `expected BP_STYLE_UNKNOWN, got ${cBad.stdout}`);
+  });
+
+  test('v4.0 Cut-Paper Optics: cutoutBorder and backlitPulp sRGB filters render in viewer and auto-embed in standalone pack SVGs', () => {
+    const bp = makeBlueprintB();
+    bp.style = 'paper-popup';
+    bp.parts[0].svg = '<g filter="url(#cutoutBorder)"><path d="M-20 -58 C-10 -64 10 -64 20 -58 L20 4 C10 8 -10 8 -20 4 Z" fill="url(#gradBeta)"/><path d="M-16 -52 L-16 0" stroke="#fff" stroke-width="1.2"/></g>';
+    bp.parts[1].svg = '<g filter="url(#backlitPulp)"><path d="M-6 -4 C-6 -8 6 -8 6 -4 L5 36 C2 39 -2 39 -5 36 Z" fill="#0ea5e9"/><path d="M-2 0 L-2 32" stroke="#fff" stroke-width="1"/></g>';
+    const bpPath = join(workDir, 'v4-optics.json');
+    const packDir = join(workDir, 'v4-optics-pack');
+    const htmlPath = join(workDir, 'v4-optics.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `optics compile failed: ${c.stdout}`);
+    const v = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(v.status, 0, `optics validate_pack failed: ${v.stdout}`);
+
+    const torsoSvg = readFileSync(join(packDir, 'body', 'torso.svg'), 'utf8');
+    const armSvg = readFileSync(join(packDir, 'limb', 'armUpper.svg'), 'utf8');
+    assert.ok(torsoSvg.includes('id="cutoutBorder"') && torsoSvg.includes('color-interpolation-filters="sRGB"'), 'cutoutBorder sRGB filter not embedded in pack SVG');
+    assert.ok(armSvg.includes('id="backlitPulp"') && armSvg.includes('color-interpolation-filters="sRGB"'), 'backlitPulp sRGB filter not embedded in pack SVG');
+
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, renderAll };`, ctx);
+    const defsHtml = stub.document.getElementById('svgDefs').innerHTML;
+    assert.ok(defsHtml.includes('id="cutoutBorder"'), 'missing cutoutBorder in viewer svgDefs');
+    assert.ok(defsHtml.includes('id="backlitPulp"'), 'missing backlitPulp in viewer svgDefs');
+  });
+
+  test('v4.0 Living Motion: 12fps stepped cadence, deterministic tremor, multi-link strands[], and fail-closed strand validation', () => {
+    const bp = makeBlueprintB();
+    bp.scene.cadence = { charFps: 12 };
+    bp.rigs[0].tremor = { ampX: 1.4, ampY: 1.0, ampDeg: 0.8 };
+    bp.rigs[0].strands = [
+      {
+        id: 'ribbon_tail',
+        bone: 'root',
+        anchor: 'shoulder',
+        z: 2.5,
+        segments: 5,
+        length: 48,
+        dirDeg: 170,
+        widthStart: 9,
+        widthEnd: 2.5,
+        fill: '#f59e0b',
+        stripeColor: '#fffbeb',
+        waveAmp: 8,
+        waveFreq: 3.2,
+      },
+    ];
+    bp.motions = [
+      {
+        id: 'walk',
+        name: 'Stepped Walk',
+        type: 'cycle',
+        period: 4,
+        phases: [
+          {
+            from: 0,
+            to: 1,
+            label: 'Walk',
+            rigs: { actor: { rootX: [240, 560], rootY: [360, 360] } },
+          },
+        ],
+      },
+    ];
+    const bpPath = join(workDir, 'v4-motion.json');
+    const htmlPath = join(workDir, 'v4-motion.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `v4 motion compile failed: ${c.stdout}`);
+
+    const html = readFileSync(htmlPath, 'utf8');
+    const match = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
+    const stub = createDomStub();
+    const ctx = vm.createContext(stub);
+    vm.runInContext(`${match[1]}\nthis.__TEST__ = { evalMotion, renderAll, rigStates, state };`, ctx);
+    const { evalMotion, renderAll, rigStates, state } = ctx.__TEST__;
+    state.preset = 'walk';
+
+    // Within the same 1/12s step (t=1.01 vs t=1.05 -> floor(t*12)/12 === 1.0), stepped character rootX must match exactly!
+    evalMotion(1.01);
+    const xA = rigStates.actor.rootX;
+    evalMotion(1.05);
+    const xB = rigStates.actor.rootX;
+    assert.equal(xA, xB, `expected 12fps stepped cadence to hold pose across same step (xA=${xA}, xB=${xB})`);
+    // Across steps (t=1.01 vs t=1.26), character advances cleanly
+    evalMotion(1.26);
+    const xC = rigStates.actor.rootX;
+    assert.ok(xC > xA + 5, `expected character to advance on next 12fps step (xA=${xA}, xC=${xC})`);
+
+    // Render strand & verify data-strand attribute + deterministic output
+    renderAll(1.26, 0, 0);
+    const heroes1 = stub.document.getElementById('layerHeroes').innerHTML;
+    assert.ok(heroes1.includes('data-strand="ribbon_tail"'), 'missing multi-link strand SVG output');
+    evalMotion(0.1);
+    evalMotion(1.26);
+    renderAll(1.26, 0, 0);
+    const heroes2 = stub.document.getElementById('layerHeroes').innerHTML;
+    assert.equal(heroes1, heroes2, 'cadence + tremor + strands must be 100% deterministic and order-independent');
+
+    // Negative: bad bone or unsafe fill on strands[] fails closed
+    const badBp = makeBlueprintB();
+    badBp.rigs[0].strands = [{ id: 'bad', bone: 'ghost_bone', anchor: 'shoulder', fill: '#fff' }];
+    const badPath = join(workDir, 'v4-bad-strand.json');
+    writeFileSync(badPath, JSON.stringify(badBp));
+    const cBad = runNode(COMPILE_SCRIPT, ['--spec', badPath, '--check']);
+    assert.equal(cBad.status, 1);
+    assert.ok(cBad.json?.errors?.some((e) => e.code === 'BP_RIG_INVALID'), `expected BP_RIG_INVALID for unknown strand bone, got ${cBad.stdout}`);
+  });
+
+  test('v4.0 Craft & Scene Primitives: wobblyPath, crescentShadePath, and openworkCutout are deterministic and SVG-guard clean', () => {
+    const res = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import assert from 'node:assert/strict';
+        import { wobblyPath, crescentShadePath, openworkCutout } from ${JSON.stringify(join(__dirname, 'lib', 'scene-craft.mjs'))};
+        import { scanSvgFragment, extractDefIds, getBuiltinViewerDefs } from ${JSON.stringify(join(__dirname, 'lib', 'svg-guard.mjs'))};
+        const w1 = wobblyPath([[0,0],[40,0],[40,40],[0,40]], { closed: true, amp: 2.2, seed: 19 });
+        const w2 = wobblyPath([[0,0],[40,0],[40,40],[0,40]], { closed: true, amp: 2.2, seed: 19 });
+        assert.equal(w1, w2, 'wobblyPath must be deterministic');
+        assert.ok(w1.includes('Q') && w1.endsWith('Z'), 'wobblyPath should emit curved closed path');
+        const c = crescentShadePath({ idPrefix: 'cr1', pathD: w1, baseFill: '#f4a261', shadeFill: '#c86d3b', dx: 6, dy: 4 });
+        assert.ok(c.defsSvg.includes('clipPath') && c.svg.includes('clip-path'), 'crescentShadePath must emit clipped crescent shade');
+        const ow = openworkCutout({ outerD: 'M-20 -20 H20 V20 H-20 Z', holes: ['M-8 -8 H8 V8 H-8 Z'], fill: '#b91c1c' });
+        assert.ok(ow.includes('fill-rule="evenodd"'), 'openworkCutout must use evenodd fill-rule');
+        const known = new Set([...getBuiltinViewerDefs({}), ...extractDefIds(c.defsSvg)]);
+        const errs = [];
+        scanSvgFragment(\`<g>\${c.defsSvg}\${c.svg}\${ow}</g>\`, 'v4-prims', (cd,w,d) => errs.push({cd,w,d}), { knownDefIds: known, checkDefRefs: true });
+        assert.equal(errs.length, 0, 'v4 primitives emitted unsafe SVG: ' + JSON.stringify(errs));
+        console.log('V4_PRIMS_OK');`,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(res.status, 0, `v4 primitives test failed: ${res.stderr}\n${res.stdout}`);
+    assert.ok(res.stdout.includes('V4_PRIMS_OK'));
+  });
+
+  test('v4.0 Private Craft Library: assets/library/ has index.json + >=32 validated components across 5 families and supports --library-dir override', () => {
+    const libIndexPath = join(SKILL_DIR, 'assets', 'library', 'index.json');
+    assert.ok(existsSync(libIndexPath), 'assets/library/index.json must exist');
+    const res = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import assert from 'node:assert/strict';
+        import { readFileSync } from 'node:fs';
+        import { loadKitCatalog, expandKitMacrosInString } from ${JSON.stringify(join(__dirname, 'lib', 'kit-resolver.mjs'))};
+        import { scanSvgFragment, getBuiltinPartDefs } from ${JSON.stringify(join(__dirname, 'lib', 'svg-guard.mjs'))};
+        import { analyzeSvgCraft } from ${JSON.stringify(join(__dirname, 'lib', 'craft-audit.mjs'))};
+        const idx = JSON.parse(readFileSync(${JSON.stringify(libIndexPath)}, 'utf8'));
+        assert.ok(Array.isArray(idx.components) && idx.components.length >= 32, 'expected >= 32 curated components in assets/library/index.json, got ' + idx.components?.length);
+        const fams = new Set(idx.components.map((c) => c.family));
+        for (const req of ['anatomy', 'garments', 'botanicals', 'props', 'frames']) {
+          assert.ok(fams.has(req), 'missing library family: ' + req);
+        }
+        const errs = [];
+        const cat = loadKitCatalog([], (c,w,d) => errs.push({c,w,d}));
+        assert.equal(errs.length, 0, 'library load errors: ' + JSON.stringify(errs));
+        assert.ok(cat.size >= 32, 'expected >= 32 total catalog components, got ' + cat.size);
+        const defs = getBuiltinPartDefs({});
+        for (const [id] of cat.entries()) {
+          const rendered = expandKitMacrosInString(\`{{KIT:\${id}}}\`, cat, id, (c,w,d) => errs.push({c,w,d}));
+          scanSvgFragment(rendered, id, (c,w,d) => errs.push({c,w,d}), { knownDefIds: defs, checkDefRefs: true });
+          const sc = analyzeSvgCraft(rendered, id);
+          assert.ok(sc.totalPrimitives >= 3, \`library component \${id} too simple (\${sc.totalPrimitives} primitives)\`);
+        }
+        assert.equal(errs.length, 0, 'library validation errors: ' + JSON.stringify(errs));
+        console.log('LIB_OK:' + cat.size);`,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(res.status, 0, `library catalog test failed: ${res.stderr}\n${res.stdout}`);
+    assert.ok(res.stdout.includes('LIB_OK:'));
+
+    // Test --library-dir override on compile_rig_studio.mjs
+    const customLibDir = join(workDir, 'custom-user-lib');
+    writeFileSync(join(workDir, 'dummy'), ''); // ensure workDir exists
+    const bp = makeBlueprintB();
+    bp.parts[0].kitRef = { id: 'custom-star-prop', tokens: { FILL: '#fbbf24' } };
+    delete bp.parts[0].svg;
+    const customJsonDir = join(customLibDir, 'props');
+    spawnSync(process.execPath, ['-e', `import { mkdirSync, writeFileSync } from 'node:fs'; mkdirSync(${JSON.stringify(customJsonDir)}, { recursive: true }); writeFileSync(${JSON.stringify(join(customJsonDir, 'custom-star-prop.json'))}, JSON.stringify({ id: 'custom-star-prop', category: 'body', size: [80, 100], pivot: [40, 80], anchors: { shoulder: [52, 24] }, tokens: { FILL: '#f59e0b' }, svg: '<g filter="url(#paperBevel)"><path d="M-18 -54 C-6 -62 6 -62 18 -54 L18 2 C6 8 -6 8 -18 2 Z" fill="{{FILL}}"/><path d="M-10 -46 Q0 -50 10 -46" stroke="#fff" stroke-width="1.2" fill="none"/><circle cx="0" cy="-26" r="6" fill="#fff"/></g>' }));`]);
+    const bpPath = join(workDir, 'v4-custom-lib.json');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--library-dir', customLibDir, '--check']);
+    assert.equal(c.status, 0, `--library-dir override failed: ${c.stdout}`);
+  });
+
+  test('v4.0 library_cli.mjs: list, contact-sheet, and safe/fail-closed import --svg', () => {
+    const LIB_CLI = join(__dirname, 'library_cli.mjs');
+    assert.ok(existsSync(LIB_CLI), 'scripts/library_cli.mjs must exist');
+
+    const ls = runNode(LIB_CLI, ['list', '--json']);
+    assert.equal(ls.status, 0, `library_cli list failed: ${ls.stderr}\n${ls.stdout}`);
+    assert.ok(ls.json && ls.json.count >= 32, `expected >= 32 listed components, got ${ls.stdout}`);
+
+    const sheetOut = join(workDir, 'lib-sheet');
+    const cs = runNode(LIB_CLI, ['contact-sheet', '--out', sheetOut, '--no-chrome']);
+    assert.equal(cs.status, 0, `library_cli contact-sheet failed: ${cs.stderr}\n${cs.stdout}`);
+    assert.ok(existsSync(join(sheetOut, 'library_contact_sheet.html')), 'contact-sheet must emit library_contact_sheet.html');
+
+    // Safe SVG import
+    const rawSvgPath = join(workDir, 'artist_hat.svg');
+    writeFileSync(
+      rawSvgPath,
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><path d="M8 32 C12 12 48 12 52 32 Z" fill="#8b5a2b"/><path d="M4 32 Q30 26 56 32 Q30 37 4 32 Z" fill="#5c3a1e"/><path d="M14 24 Q30 18 46 24" stroke="#f5deb3" stroke-width="1.5" fill="none"/></svg>',
+    );
+    const userLibOut = join(workDir, 'imported-lib');
+    const imp = runNode(LIB_CLI, ['import', '--svg', rawSvgPath, '--id', 'artist-hat', '--family', 'garments', '--category', 'head', '--out-dir', userLibOut]);
+    assert.equal(imp.status, 0, `library_cli import failed: ${imp.stderr}\n${imp.stdout}`);
+    assert.ok(existsSync(join(userLibOut, 'garments', 'artist-hat.json')), 'imported component JSON must be written');
+
+    // Unsafe SVG import must fail closed
+    const evilSvgPath = join(workDir, 'evil.svg');
+    writeFileSync(evilSvgPath, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><script>alert(1)</script><circle cx="20" cy="20" r="10" fill="#f00"/></svg>');
+    const impBad = runNode(LIB_CLI, ['import', '--svg', evilSvgPath, '--id', 'evil-prop', '--family', 'props', '--out-dir', userLibOut]);
+    assert.equal(impBad.status, 1, 'unsafe SVG import must fail closed');
+    assert.equal(existsSync(join(userLibOut, 'props', 'evil-prop.json')), false, 'must not write unsafe imported asset');
+  });
+
+  test('v4.0 Prove-the-Look Model Sheet: render_audit emits modelsheet_<rigId>.html with 4 inspection views', () => {
+    const AUDIT_SCRIPT = join(__dirname, 'render_audit.mjs');
+    const bp = makeBlueprintB();
+    const bpPath = join(workDir, 'v4-modelsheet.json');
+    const htmlPath = join(workDir, 'v4-modelsheet.html');
+    const auditOut = join(workDir, 'v4-modelsheet-out');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]).status, 0);
+    const a = runNode(AUDIT_SCRIPT, ['--html', htmlPath, '--spec', bpPath, '--out', auditOut, '--no-chrome']);
+    assert.equal(a.status, 0, `render_audit failed: ${a.stderr}\n${a.stdout}`);
+    const msPath = join(auditOut, 'modelsheet_actor.html');
+    assert.ok(existsSync(msPath), 'modelsheet_actor.html must be generated for every rig');
+    const msHtml = readFileSync(msPath, 'utf8');
+    assert.ok(msHtml.includes('rest=1') && msHtml.includes('silhouette=1') && msHtml.includes('cropRig=actor'), 'modelsheet HTML must embed Rest, Posed, Variant/Bones, and Silhouette views');
+  });
+
+  // =========================================================================
+  // v5.0 TDD SUITE — Cinema-Grade 3D Sculpted & Backlit Three.js Engine
+  // =========================================================================
+  function makeSculpted3dBlueprint(styleSlug = 'shadowbox-moonlit') {
+    const bp = makeBlueprintB();
+    bp.style = styleSlug;
+    bp.meta.packId = `test-3d-${styleSlug}`;
+    bp.meta.title = `3D Sculpted Test (${styleSlug})`;
+    bp.scene.layers3d = [
+      {
+        id: 'mountain_back',
+        kind: 'folded_ridge',
+        foldStyle: 'pleated',
+        z: -2.4,
+        baseY: -4.5,
+        color: '#233b5e',
+        edgeColor: '#8eb2de',
+        pleats: 16,
+        peaks: [[-1.8, 2.1, 0.65, 3.2], [2.1, 1.7, 0.58, 3.0]],
+      },
+      {
+        id: 'cliff_mid',
+        kind: 'folded_ridge',
+        foldStyle: 'tiered_cliff_slabs',
+        z: -1.2,
+        baseY: -4.5,
+        color: '#1e3554',
+        edgeColor: '#9ec0e6',
+        slabs: [
+          { x: -2.2, y: -1.4, w: 3.4, h: 1.8, zStep: 0.16 },
+          { x: 1.8, y: -1.6, w: 3.1, h: 1.6, zStep: 0.14 },
+        ],
+      },
+      {
+        id: 'lotus_fg',
+        kind: 'cupped_petals',
+        x: -3.2,
+        y: -2.2,
+        z: 0.85,
+        color: '#f2dcb3',
+        edgeColor: '#ffffff',
+      },
+    ];
+    bp.parts[0].cardstock = { thickness: 0.11, bevel: 0.018, edgeColor: '#fff8ea', translucency: 0.28 };
+    return bp;
+  }
+
+  test('v5.0 Style Presets: 4 new 3D presets exist and default to sculpted3d while v4 presets stay svg2d', () => {
+    for (const slug of ['shadowbox-moonlit', 'lightbox-led', 'daylight-sculpted', 'winter-tunnel']) {
+      const pFile = join(SKILL_DIR, 'styles', slug, 'preset.json');
+      const sDoc = join(SKILL_DIR, 'styles', slug, 'STYLE.md');
+      assert.ok(existsSync(pFile), `missing 3D style preset: ${pFile}`);
+      assert.ok(existsSync(sDoc), `missing 3D style guide: ${sDoc}`);
+      const preset = JSON.parse(readFileSync(pFile, 'utf8'));
+      assert.equal(preset.sceneDefaults?.renderMode, 'sculpted3d', `${slug} must default to renderMode=sculpted3d`);
+      assert.ok(preset.sceneDefaults?.boxCavity, `${slug} must define default boxCavity`);
+      assert.ok(preset.sceneDefaults?.lighting3d, `${slug} must define default lighting3d`);
+    }
+    for (const legacy of ['storybook-gouache', 'paper-lightbox', 'paper-popup', 'shadow-craft']) {
+      const preset = JSON.parse(readFileSync(join(SKILL_DIR, 'styles', legacy, 'preset.json'), 'utf8'));
+      assert.notEqual(preset.sceneDefaults?.renderMode, 'sculpted3d', `legacy style ${legacy} must remain svg2d compatible`);
+    }
+  });
+
+  test('v5.0 Vendor Bundle: three-sculpted.bundle.min.js + .sha256 exist and lock deterministic GTAO', () => {
+    const bundlePath = join(SKILL_DIR, 'assets', 'vendor', 'three-sculpted.bundle.min.js');
+    const shaPath = join(SKILL_DIR, 'assets', 'vendor', 'three-sculpted.bundle.sha256');
+    assert.ok(existsSync(bundlePath), 'assets/vendor/three-sculpted.bundle.min.js must exist');
+    assert.ok(existsSync(shaPath), 'assets/vendor/three-sculpted.bundle.sha256 must exist');
+    const raw = readFileSync(bundlePath);
+    const actualSha = createHash('sha256').update(raw).digest('hex');
+    const expectedSha = readFileSync(shaPath, 'utf8').trim().split(/\s+/)[0];
+    assert.equal(actualSha, expectedSha, 'vendor bundle SHA-256 mismatch');
+    const txt = raw.toString('utf8');
+    assert.ok(txt.includes('createDeterministicGTAOPass'), 'vendor bundle must export createDeterministicGTAOPass');
+  });
+
+  test('v5.0 Engine Safety Guards: sculpted-paper-engine.js has zero Math.random() and zero negative scale.y', () => {
+    const engPath = join(SKILL_DIR, 'assets', 'sculpted-paper-engine.js');
+    const shell3dPath = join(SKILL_DIR, 'assets', 'viewer-shell-3d.html');
+    assert.ok(existsSync(engPath), 'assets/sculpted-paper-engine.js must exist');
+    assert.ok(existsSync(shell3dPath), 'assets/viewer-shell-3d.html must exist');
+    const engSrc = readFileSync(engPath, 'utf8');
+    assert.equal(/\bMath\.random\s*\(/.test(engSrc), false, 'sculpted-paper-engine.js must not call Math.random()');
+    assert.equal(/\.scale\.y\s*=\s*-1\b/.test(engSrc), false, 'sculpted-paper-engine.js must not invert normals via scale.y = -1');
+  });
+
+  test('v5.0 Blueprint Validation: rejects invalid renderMode, invalid layers3d, and invalid part.cardstock', () => {
+    const bpBadMode = makeBlueprintB();
+    bpBadMode.scene.renderMode = 'unreal5';
+    const p1 = join(workDir, 'v5-bad-mode.json');
+    writeFileSync(p1, JSON.stringify(bpBadMode));
+    const r1 = runNode(COMPILE_SCRIPT, ['--spec', p1, '--check']);
+    assert.equal(r1.status, 1);
+    assert.ok(r1.json?.errors?.some((e) => e.code === 'BP_SCHEMA' && e.where.includes('renderMode')));
+
+    const bpBadLayer = makeSculpted3dBlueprint();
+    bpBadLayer.scene.layers3d.push({ id: 'broken_layer', kind: 'unknown_3d_kind', z: -1 });
+    const p2 = join(workDir, 'v5-bad-layer3d.json');
+    writeFileSync(p2, JSON.stringify(bpBadLayer));
+    const r2 = runNode(COMPILE_SCRIPT, ['--spec', p2, '--check']);
+    assert.equal(r2.status, 1);
+    assert.ok(r2.json?.errors?.some((e) => e.code === 'BP_SCENE3D_INVALID'));
+
+    const bpBadCard = makeSculpted3dBlueprint();
+    bpBadCard.parts[0].cardstock = { thickness: -0.5 };
+    const p3 = join(workDir, 'v5-bad-cardstock.json');
+    writeFileSync(p3, JSON.stringify(bpBadCard));
+    const r3 = runNode(COMPILE_SCRIPT, ['--spec', p3, '--check']);
+    assert.equal(r3.status, 1);
+    assert.ok(r3.json?.errors?.some((e) => e.code === 'BP_CARDSTOCK_INVALID'));
+  });
+
+  test('v5.0 Pack Compilation & Validation (sculpted3d): emits scene3d.json + cardstock with verified SHA-256', () => {
+    const bp = makeSculpted3dBlueprint('shadowbox-moonlit');
+    const bpPath = join(workDir, 'v5-pack-ok.json');
+    const packDir = join(workDir, 'v5-pack-out');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir]);
+    assert.equal(c.status, 0, `compile sculpted3d pack failed: ${c.stdout}\n${c.stderr}`);
+
+    const scene3dPath = join(packDir, 'scene3d.json');
+    assert.ok(existsSync(scene3dPath), 'sculpted3d pack must emit scene3d.json');
+    const manifest = JSON.parse(readFileSync(join(packDir, 'manifest.json'), 'utf8'));
+    assert.ok(manifest.scene3d && manifest.scene3d.file === 'scene3d.json' && manifest.scene3d.sha256, 'manifest.json must record scene3d file + sha256');
+    const partEntry = manifest.assets.find((a) => a.id === bp.parts[0].id);
+    assert.ok(partEntry?.cardstock && partEntry.cardstock.thickness === 0.11, 'manifest asset must preserve cardstock metadata');
+
+    const v = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(v.status, 0, `validate_pack failed on sculpted3d pack: ${v.stdout}`);
+  });
+
+  test('v5.0 Pack Validator Fail-Closed: detects tampered or missing scene3d.json', () => {
+    const bp = makeSculpted3dBlueprint('daylight-sculpted');
+    const bpPath = join(workDir, 'v5-tamper.json');
+    const packDir = join(workDir, 'v5-tamper-pack');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir]).status, 0);
+
+    // Tamper scene3d.json
+    const s3dFile = join(packDir, 'scene3d.json');
+    writeFileSync(s3dFile, readFileSync(s3dFile, 'utf8') + '\n ');
+    const vTamper = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(vTamper.status, 1, 'tampered scene3d.json must fail closed');
+    assert.ok(vTamper.json?.errors?.some((e) => e.code === 'SCENE3D_SHA_MISMATCH'));
+
+    // Delete scene3d.json
+    rmSync(s3dFile);
+    const vMissing = runNode(VALIDATE_SCRIPT, [packDir]);
+    assert.equal(vMissing.status, 1, 'missing scene3d.json must fail closed');
+    assert.ok(vMissing.json?.errors?.some((e) => e.code === 'SCENE3D_MISSING'));
+  });
+
+  test('v5.0 Standalone Offline 3D Studio HTML: zero external CDN links, embeds engine & blueprint', () => {
+    const bp = makeSculpted3dBlueprint('lightbox-led');
+    const bpPath = join(workDir, 'v5-html.json');
+    const htmlPath = join(workDir, 'v5-studio3d.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `compile 3D HTML failed: ${c.stdout}`);
+    const html = readFileSync(htmlPath, 'utf8');
+    assert.ok(html.includes('data-render-mode="sculpted3d"'), '3D HTML must declare data-render-mode="sculpted3d"');
+    assert.equal(/https?:\/\/(cdn|unpkg|jsdelivr)/i.test(html), false, '3D HTML must be 100% offline with zero external CDN URLs');
+  });
+
+  test('v5.0 Dual-Path Library + Hoses + Strands + IK Gait Compatibility in sculpted3d', () => {
+    const bp = makeSculpted3dBlueprint('winter-tunnel');
+    bp.parts.push({
+      id: 'libProfileHead',
+      category: 'head',
+      kitRef: { id: 'head-profile-storybook', tokens: { SKIN: '#f7d8bf', HAIR_MAIN: '#3b2318' } },
+    });
+    bp.rigs[0].bones[1].part = 'libProfileHead';
+    bp.rigs[0].strands = [
+      { id: 'scarf3d', bone: bp.rigs[0].bones[0].id, z: 3, segments: 5, length: 42, widthStart: 9, widthEnd: 3, fill: '#d6453d', rimColor: '#ffdad6' },
+    ];
+    const bpPath = join(workDir, 'v5-dualpath.json');
+    const htmlPath = join(workDir, 'v5-dualpath.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]);
+    assert.equal(c.status, 0, `dual-path library + strands 3D compile failed: ${c.stdout}`);
+  });
+
+  test('v5.0 Multi-Character & Multi-Variant Reusability (>= 2 rigs, >= 2 variants) in sculpted3d', () => {
+    const bp = makeBlueprintA();
+    bp.style = 'shadowbox-moonlit';
+    bp.parts[1].variants = undefined;
+    bp.parts.push({
+      id: 'headA_alt',
+      category: 'head',
+      size: [60, 60],
+      pivot: [20, 30],
+      anchors: {},
+      svg: '<path d="M-12 -10 C-10 -22 12 -22 18 -10 C22 2 12 14 -4 12 Z" fill="#f4a261"/><circle cx="6" cy="-4" r="2.5" fill="#1d3557"/>',
+    });
+    bp.rigs[0].bones[1].variants = { alt: 'headA_alt' };
+    bp.rigs[0].variants = { head: ['default', 'alt'] };
+    const bpPath = join(workDir, 'v5-multirig.json');
+    const packDir = join(workDir, 'v5-multirig-pack');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    const c = runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-pack', packDir]);
+    assert.equal(c.status, 0, `multi-rig sculpted3d compile failed: ${c.stdout}`);
+    assert.equal(runNode(VALIDATE_SCRIPT, [packDir]).status, 0);
+  });
+
+  test('v5.0 Single-Context Audit (--no-chrome): render_audit detects sculpted3d mode and configures 3D audit gates', () => {
+    const AUDIT_SCRIPT = join(__dirname, 'render_audit.mjs');
+    const bp = makeSculpted3dBlueprint('shadowbox-moonlit');
+    const bpPath = join(workDir, 'v5-audit-nochrome.json');
+    const htmlPath = join(workDir, 'v5-audit-nochrome.html');
+    const auditOut = join(workDir, 'v5-audit-nochrome-out');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]).status, 0);
+    const a = runNode(AUDIT_SCRIPT, ['--html', htmlPath, '--spec', bpPath, '--out', auditOut, '--no-chrome']);
+    assert.equal(a.status, 0, `3D render_audit --no-chrome failed: ${a.stderr}\n${a.stdout}`);
+    assert.equal(a.json?.renderMode, 'sculpted3d', 'audit report must detect renderMode=sculpted3d');
+  });
+
+  test('v5.0 WebGL2 Live Render & Bit-Exact Determinism Gate (Chrome Headless)', () => {
+    const AUDIT_SCRIPT = join(__dirname, 'render_audit.mjs');
+    const bp = makeSculpted3dBlueprint('shadowbox-moonlit');
+    const bpPath = join(workDir, 'v5-audit-live.json');
+    const htmlPath = join(workDir, 'v5-audit-live.html');
+    const auditOut = join(workDir, 'v5-audit-live-out');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]).status, 0);
+    const a = runNode(AUDIT_SCRIPT, ['--html', htmlPath, '--spec', bpPath, '--out', auditOut]);
+    assert.equal(a.status, 0, `3D live WebGL2 render_audit failed: ${a.stderr}\n${a.stdout}`);
+    assert.equal(a.json?.determinismCheck?.status, 'PASS', `expected determinismCheck PASS, got ${JSON.stringify(a.json?.determinismCheck)}`);
+    assert.ok(existsSync(join(auditOut, 'frame_oblique_3d.png')), '3D audit must emit frame_oblique_3d.png');
+    assert.ok(existsSync(join(auditOut, 'frame_exploded_z.png')), '3D audit must emit frame_exploded_z.png');
+    assert.ok(existsSync(join(auditOut, 'motion_sheet.png')), '3D audit must emit motion_sheet.png');
+    assert.ok(existsSync(join(auditOut, 'modelsheet_actor.png')), '3D audit must emit modelsheet_<rigId>.png');
+  });
+
+  test('v5.0 Legacy Backward Compatibility: blueprints without renderMode still emit svg2d HTML', () => {
+    const bp = makeBlueprintB();
+    const bpPath = join(workDir, 'v5-legacy-svg2d.json');
+    const htmlPath = join(workDir, 'v5-legacy-svg2d.html');
+    writeFileSync(bpPath, JSON.stringify(bp));
+    assert.equal(runNode(COMPILE_SCRIPT, ['--spec', bpPath, '--out-html', htmlPath]).status, 0);
+    const html = readFileSync(htmlPath, 'utf8');
+    assert.equal(html.includes('data-render-mode="sculpted3d"'), false, 'legacy blueprint must remain svg2d');
+    assert.ok(html.includes('id="sceneSvg"'), 'legacy blueprint must use SVG viewer-shell.html');
   });
 } finally {
   rmSync(workDir, { recursive: true, force: true });

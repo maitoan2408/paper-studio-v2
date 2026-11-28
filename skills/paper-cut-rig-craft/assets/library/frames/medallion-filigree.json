@@ -1,0 +1,27 @@
+{
+  "id": "medallion-filigree",
+  "family": "frames",
+  "category": "frame",
+  "styles": [
+    "paper-lightbox",
+    "shadow-craft",
+    "paper-popup",
+    "storybook-gouache"
+  ],
+  "description": "Circular openwork kirigami crest medallion with symmetrical carved petals, corner pinpoints, and gilded rim ring.",
+  "size": [
+    72,
+    72
+  ],
+  "pivot": [
+    36,
+    36
+  ],
+  "anchors": {},
+  "tokens": {
+    "PAPER": "#b8322c",
+    "RIM": "#f2c96b",
+    "DARK": "#7d1b18"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M0 -30 A30 30 0 1 0 0 30 A30 30 0 1 0 0 -30 Z M0 -21 C4 -14 4 -6 0 -2 C-4 -6 -4 -14 0 -21 Z M0 21 C-4 14 -4 6 0 2 C4 6 4 14 0 21 Z M21 0 C14 4 6 4 2 0 C6 -4 14 -4 21 0 Z M-21 0 C-14 -4 -6 -4 -2 0 C-6 4 -14 4 -21 0 Z\" fill=\"{{PAPER}}\" fill-rule=\"evenodd\"/><circle cx=\"0\" cy=\"0\" r=\"26.5\" fill=\"none\" stroke=\"{{RIM}}\" stroke-width=\"1.6\" stroke-dasharray=\"4 3\"/><circle cx=\"0\" cy=\"0\" r=\"14\" fill=\"none\" stroke=\"{{DARK}}\" stroke-width=\"1.1\" opacity=\"0.6\"/><circle cx=\"0\" cy=\"0\" r=\"4.2\" fill=\"{{RIM}}\"/><circle cx=\"14\" cy=\"-14\" r=\"1.9\" fill=\"{{RIM}}\"/><circle cx=\"-14\" cy=\"-14\" r=\"1.9\" fill=\"{{RIM}}\"/><circle cx=\"14\" cy=\"14\" r=\"1.9\" fill=\"{{RIM}}\"/><circle cx=\"-14\" cy=\"14\" r=\"1.9\" fill=\"{{RIM}}\"/></g>"
+}

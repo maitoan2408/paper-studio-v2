@@ -1,69 +1,78 @@
 ---
 name: paper-cut-rig-craft
-description: Designs and compiles handcrafted, cinema-storybook 2D/2.5D multiplane paper-cut and shadow-box skeletal rigs for any theme (single or multi-character, nature, fantasy, underwater, seasonal, or human characters) into both a 60fps interactive HTML preview studio (FK/IK, proscenium frame, backlit lighting, two-tone procedural foliage/motif clusters, 3D parallax, bone diagnostics) and a validated paper-studio-v2 asset pack (SVG + manifest.json with SHA-256 + rig.json). Use when the user asks to create or preview a paper-cut rig, shadow-box diorama, articulated creature or character, cutout puppet, or interactive rig viewer.
-compatibility: Requires Node.js 18+ (zero external dependencies). Works across Antigravity, Claude Code, Cursor, and Codex.
+description: Designs and compiles cinema-grade 3D sculpted & backlit paper-cut shadow-box dioramas and 2D multiplane skeletal rigs (v5.0: Three.js WebGL2 Dual-Path 3D Engine with 300gsm cotton normal/roughness PBR, thin-paper backlit subsurface scattering, deterministic seeded GTAO crevice occlusion + 4x MSAA/SMAA, folded/pleated/tiered-slab 3D relief, die-cut printed cardstock slabs for 48 Private Craft Library SVGs with zero Z-fighting, 3D extruded hoses[] & strands[], analytic 2-bone IK walk gaits, and bit-exact deterministic WebGL2 multi-angle render_audit) into both an offline interactive studio HTML and a validated paper-studio-v2 asset pack (manifest.json + scene3d.json + rig.json + SVGs with SHA-256).
+compatibility: Requires Node.js 18+ (zero external npm dependencies; bundles locked Three.js WebGL2 vendor runtime; optional Chrome/Chromium for headless WebGL2 Model Sheets, Motion Sheets, 18° Oblique/Exploded 3D proofs, and Bit-Exact Determinism Gate).
 metadata:
   author: paper-studio-v2
-  version: "2.1.0"
+  version: "5.0.0"
 ---
 
-# Paper-Cut & Shadow-Box Rig Craft (v2.1 — Universal Handcrafted Diorama)
+# Paper-Cut & Shadow-Box Rig Craft (v5.0 — Cinema-Grade 3D Sculpted & Backlit Engine)
 
-Turn **any theme or creative brief** (ocean, forest, snow village, cherry blossoms, desert, workshop, fantasy creatures, or human characters) into a **warm, tactile paper-cut shadow-box studio** plus a **validated `paper-studio-v2` asset pack** — with zero hardcoded themes and zero external dependencies.
+Turn any creative brief into a **cinema-grade 3D sculpted & backlit paper-cut diorama** plus a **validated `paper-studio-v2` asset pack** — powered by **Dual-Path 3D Geometry** (multi-layer folded relief + die-cut printed cardstock slabs), **physical 300gsm cotton PBR + backlit subsurface scattering + seeded GTAO**, a **48-component Private Craft Library**, and a **5-Gate Visual & Bit-Exact Determinism Workflow** — with zero external npm dependencies and 100% backward compatibility with `svg2d` blueprints.
+
+## Style Grammar Packs (`styles/<slug>/STYLE.md` + `preset.json`)
+
+### Primary 3D Sculpted Presets (`renderMode: "sculpted3d"` — Recommended)
+1. **`shadowbox-moonlit`** — 3-ply `oval_scallop_bottom` deep shadow-box, pleated & faceted indigo mountains, warm pavilion arches, cupped 3D lotus clusters, glowing moon backlight + `12fps` handcrafted cadence.
+2. **`lightbox-led`** — 3-ply `pagoda_lantern_window` heritage lightbox, intense warm amber/gold internal LED subsurface glow (`backlightGain: 1.65`), crisp white edge rim catchlights on dark foreground silhouettes.
+3. **`daylight-sculpted`** — Crisp `42°` raking sunlight, `faceted` origami peaks + `tiered_cliff_slabs` with meadow/snow ledges, multi-tower architecture, deep teal cast shadows + `GTAO`.
+4. **`winter-tunnel`** — 4-ply wide-stepped concentric `scalloped_arch` snow-blue paper tunnel receding into a starry cobalt clearing with pure white paper-cut pines & silhouettes.
+
+### Classic 2D Multiplane Presets (`renderMode: "svg2d"` — Legacy Compatible)
+- `storybook-gouache`, `paper-lightbox`, `paper-popup`, `shadow-craft`.
 
 ## Bundled Resources (Load On Demand)
 
-- **Universal handcrafted aesthetic & emotional motion rules:** [references/aesthetic-and-motion.md](references/aesthetic-and-motion.md) — **mandatory read** for backlit focal lighting, proscenium framing, leading lines, anti-clipart rules, and 3-layer emotional acting.
-- **Universal rig archetypes & 2-segment limb rules:** [references/rig-archetypes.md](references/rig-archetypes.md) — read to pick the skeleton (13–15 bone Quadruped, Companion, Wave Creature, 15–24 bone Biped).
-- **Exact `blueprint.json` v2.1 contract & copy-adapt template:** [references/blueprint-schema.md](references/blueprint-schema.md) — **mandatory read** before authoring the blueprint JSON.
-- **Fail-closed compiler:** `scripts/compile_rig_studio.mjs` — validates schema, SVG allowlist (across both `parts[]` and `scene.*`), and `<defs>` completeness (`BP_*`), then compiles 1 `blueprint.json` into both the interactive HTML studio (`assets/viewer-shell.html`) and the full SVG/JSON pack in `~0.15s`. Supports `--check` for dry-run validation.
-- **Fail-closed pack validator:** `scripts/validate_pack.mjs` — verifies SVG allowlist, `<defs>` self-containment (`ART_MISSING_DEF`), `SHA-256`, bone acyclicity, limits, skins, anchors, and non-degenerate lengths across `rig.json` and `rigs/*.json`.
-- **Automated regression suite:** `scripts/test_skill.mjs` — verifies compiler/validator fail-closed rules, pure `t → pose` determinism, and IK safety.
+- **Blueprint JSON v5.0 Contract:** [references/blueprint-schema.md](references/blueprint-schema.md) — **mandatory read** for `style`, `scene.renderMode`, `scene.boxCavity`, `scene.lighting3d`, `scene.layers3d[]`, `part.cardstock`, `rig.hoses[]`, `rig.strands[]`, `gait`, and `kitRef`.
+- **Aesthetic, 3D Relief & Anti-Stiffness Bible:** [references/aesthetic-and-motion.md](references/aesthetic-and-motion.md) — **mandatory read** for Dual-Path 3D rules (zero Z-fighting, positive determinants, telephoto `24°` lens), value ladders, seamless 3D `hoses[]`/`strands[]`, and IK `gait`.
+- **Universal Rig Archetypes:** [references/rig-archetypes.md](references/rig-archetypes.md) — 2-spine Biped + IK gait + hoses + strands, Quadruped, Winged Spirit/Bird, Kinetic prop, or Wave Creature.
+- **48-Component Private Craft Library (`assets/library/` + `assets/kit/`):** Browse or import artist SVGs fail-closed:
+  ```bash
+  node scripts/library_cli.mjs list [--family anatomy|garments|botanicals|props|frames] [--json]
+  node scripts/library_cli.mjs contact-sheet --out <dir>
+  node scripts/library_cli.mjs import --svg <artist.svg> --id <slug> --family <fam> --out-dir <private-lib>
+  ```
 
-## Fast 4-Step Workflow
+## Mandatory 5-Gate Production Workflow
 
-Never hand-code 900 lines of HTML/FK/IK/Parallax boilerplate from scratch. Author **one expressive, theme-agnostic `blueprint.json`** and compile it.
+### Gate 1 — Pick 3D Style Preset & Plan Z-Depth Value Ladder
+1. Pick `"style"` (`shadowbox-moonlit`, `lightbox-led`, `daylight-sculpted`, or `winter-tunnel`) and read `styles/<slug>/STYLE.md`.
+2. Design `6–14` distinct `Z` planes (`z = -3.4 .. +1.4`) with generous `spacerGap` (`0.35–0.85` world units) so raking `keyLight` + `GTAO` cast bold, unmistakable physical shadows across planes.
 
-### Step 1 — Design the Diorama Composition & Emotional Arc
-Read [references/aesthetic-and-motion.md](references/aesthetic-and-motion.md) and [references/rig-archetypes.md](references/rig-archetypes.md):
-- **Canvas & Proscenium Frame:** Default to 16:9 (`width: 960, height: 540`) with `scene.frame: { style: "proscenium", layers: [...] }` ordered **outermost dark hue (`layers[0]`) → innermost warm/midtone (`layers[n-1]`)**.
-- **Backlit Focal Point & Leading Line:** Set `scene.lighting.focalGlow` directly behind the hero/meeting point, add `scene.lighting.mist` for aerial depth, and sculpt an S-curved path, river, or wave trough leading into the focal stage.
-- **Layered Handcrafted Detail (`scene.clusters[]`):** Replace flat clipart blobs with procedural two-tone folded paper clusters (`FILL_A`/`FILL_B`) for canopies, corals, blossoms, snowflakes, or foreground corner foliage.
-- **Multi-Character Articulated Rigs (`rigs[]`):** Give every interacting subject its own rig (with **2-segment walking limbs**, cohesive `groupShadow: "shadowDeep"`, auto soft ground shadow `groundY/shadowRx/shadowRy`, and optional paper-fastener `brad` pins).
+### Gate 2 — Dual-Path Craft Assembly (Library Cardstock Slabs + 3D Sculpted Relief)
+1. **Characters & Intricate Props (`parts[]`):** Pull rich components from `assets/library/` (`kitRef` / `{{KIT:...}}`) + add `cardstock: { thickness, bevel, edgeColor, translucency }`. The engine automatically traces their outer silhouette into a **3D beveled cardstock slab** and prints the `4×` supersampled SVG + live `data-eye="1"` blink onto the front cap (**zero Z-fighting**). Use `rig.hoses[]` for seamless limbs, `rig.strands[]` for flowing 3D scarves/tails, and analytic 2-bone IK `gait` for walking.
+2. **Scenery & Architecture (`scene.layers3d[]`):** Build genuine 3D volume using `folded_ridge` (`pleated`, `faceted`, `tiered_cliff_slabs`), `architecture` (`pagoda_roof` with carved rafters, `rect` with `holeArches`, `cone`), `cupped_petals`, `pine_fan_tree`, `botanical_frond`, `tiered_pine_group`, and `extruded_svg`.
 
-### Step 2 — Author `blueprint.json`
-Follow [references/blueprint-schema.md](references/blueprint-schema.md) (start from its copy-adapt template):
-- Draw all rotating limb/tail segments around local `(0, 0)` with concentric circular overlap caps and keep internal bone `shadow: "none"` (or `"shadowInner"` only on near limbs/head).
-- Declare all `url(#...)` gradients used by `parts[].svg` inside `scene.defsSvg` (the compiler and validator enforce `BP_MISSING_DEF` / `ART_MISSING_DEF`).
-- Choreograph all 3 motion layers purely as functions of `t`: Primary emotional story phases + Secondary overlapping wave lag + Ambient `falling` particles (`speedY > 0` falling or `speedY < 0` rising), `fireflies`/`meteor`, and perspective `swarms`.
-
-### Step 3 — Compile Both Deliverables
+### Gate 3 — Fail-Closed Compile & Strict Pack Validation
 ```bash
 node scripts/compile_rig_studio.mjs \
   --spec <path/to/blueprint.json> \
   --out-pack <path/to/pack-dir> \
-  --out-html <path/to/preview_studio.html>
+  --out-html <path/to/studio_3d.html>
+
+node scripts/validate_pack.mjs --pretty --strict-craft <path/to/pack-dir>
 ```
 
-### Step 4 — Fail-Closed Validation & Live Preview Delivery
+### Gate 4 — WebGL2 Multi-Angle & Bit-Exact Determinism Audit (`render_audit.mjs`)
 ```bash
-node scripts/validate_pack.mjs --pretty <path/to/pack-dir>
+node scripts/render_audit.mjs \
+  --html <path/to/studio_3d.html> \
+  --spec <path/to/blueprint.json> \
+  --out <path/to/audit-dir> \
+  --strict-craft
 ```
-- **Exit code `0` (`"status": "PASS"`) is mandatory for both `compile_rig_studio.mjs` and `validate_pack.mjs`.** Fix any reported error (`BP_*`, `ART_*`, `RIG_*`), re-compile, and re-validate until `0` errors remain.
-- Do not commit or push to Git unless the user explicitly asks.
+Verify `audit_report.json` reports `"status": "PASS"` and `"determinismCheck": { "status": "PASS" }` (proving `direct(t)` SHA-256 matches `seek(t_other → t)` bit-for-bit).
 
-## Gotchas (Mistakes That Make Scenes Look Flat, Stiff, or Broken)
+### Gate 5 — Honest Visual Inspection & Inline Chat Image Delivery
+1. Inspect **all real rendered PNGs** via `view_file` in order:
+   - `modelsheet_<rigId>.png` (Rest `0°`, Active `18°` Oblique, Skeleton & Anchors, Silhouette)
+   - `frame_oblique_3d.png` & `frame_exploded_z.png` (verify true physical paper thickness, bevel rim catchlight, and layer separation)
+   - `motion_sheet.png` (6 phases rendered on a single WebGL2 context: verify IK foot-lock, `2×` hip bob, and sliding 3D cast shadows)
+   - `frame_0_*.png` (front `0°` cinema frame: verify GTAO crevice depth, backlit translucency, zero tangents, zero Z-fighting)
+2. **MANDATORY CHAT DELIVERY RULE:** Copy final verified PNGs to `<artifact_dir>` if not already there and **embed them directly inline in your chat message (`![caption](/abs/path.png)`)** so the user sees every proof image immediately in chat without hunting through files!
 
-1. **Clipart blobs kill emotional craft:** Never use plain concentric circles for canopies or flat rectangles for branches/grounds. Always use `scene.clusters[]` with two-tone folded SVG motifs (`FILL_A`/`FILL_B`), layered paper strips for trunks/terrain, and S-curved leading lines.
-2. **Stiff 1-segment peg-legs:** Give walking hero quadrupeds and bipeds **2-segment articulated legs** (`upper → lower`) so paws/knees curl gracefully mid-stride.
-3. **Heavy per-bone drop shadows slice limbs apart:** Always use rig-level `groupShadow: "shadowDeep"` and keep bone `shadow: "none"` on spine/tail segments (`"shadowInner"` only on near limbs/head); use optional `bone.brad` pins for authentic papercraft pivot accents.
-4. **Static companion kills the story:** Always put every interacting character in `rigs[]` with synchronized story beats.
-5. **Floating characters or harsh brown ovals:** Always use `groundY`, `shadowRx`, `shadowRy` for soft auto-scaling ground contact shadows.
-6. **Hardcoding one theme:** Every color, motif shape, particle direction (`speedY > 0` falling vs `speedY < 0` rising), and proscenium frame palette MUST come from `blueprint.json` data.
-7. **Missing `<defs>`, `Math.random()`, or unsafe SVG tags:** Every `url(#id)` used in `parts[].svg` must live in `scene.defsSvg` (enforced fail-closed via `BP_MISSING_DEF` / `ART_MISSING_DEF`); never use `Math.random()` or disallowed tags (`<script>`, `<style>`, `<image>`, `<foreignObject>`, `on*`, external `href`/`xlink:href`).
-8. **HTML preview opens as raw source code in artifact UIs (Antigravity):** Shell scripts skip `ArtifactMetadata`. When delivering an `.html` preview in an artifact-enabled UI, register/write the `.html` artifact via the native file-creation tool (`UserFacing: true`, `RequestFeedback: false`) so it renders live visually.
-
-## Delivery Checklist
-- [ ] `compile_rig_studio.mjs` exited `0` (`PASS`) and produced both HTML studio and pack directory.
-- [ ] `validate_pack.mjs` exited `0` (`PASS`) across `rig.json` and any `rigs/*.json`.
-- [ ] Visual self-check: backlit focal glow, proscenium frame (dark outer → warm inner), two-tone folded motif clusters, 2-segment limb articulation, cohesive character shadows, auto ground shadows, and 3-layer pure `t → pose` motion.
+## Critical Gotchas (Never Ship These)
+1. **Never use `Math.random()` or `.scale.y = -1`:** Always use deterministic `makeRng(seed)` and convert `(x, -y)` in `THREE.Shape` geometry before extrusion so normals and `GTAOPass` stay mathematically valid.
+2. **Never use wide-angle FOV (`> 30°`) on articulated 2D+Z rigs:** Keep studio telephoto `fov: 24°` + tight intra-rig bone Z-step (`0.016`) so 2-bone IK joints never separate in perspective.
+3. **Never ship without inline PNG proof in chat:** Passing CLI exit code `0` without visually inspecting `frame_oblique_3d.png`, `modelsheet_*.png`, and `motion_sheet.png` and embedding them in chat is an incomplete delivery.

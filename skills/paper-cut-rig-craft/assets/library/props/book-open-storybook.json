@@ -1,0 +1,33 @@
+{
+  "id": "book-open-storybook",
+  "family": "props",
+  "category": "prop",
+  "styles": [
+    "storybook-gouache",
+    "paper-popup",
+    "paper-lightbox"
+  ],
+  "description": "Open illustrated pop-up storybook with fanned cream pages, embossed leather cover, and trailing crimson ribbon bookmark.",
+  "size": [
+    78,
+    48
+  ],
+  "pivot": [
+    39,
+    34
+  ],
+  "anchors": {
+    "center": [
+      39,
+      20
+    ]
+  },
+  "tokens": {
+    "COVER": "#6c2c2c",
+    "PAGE": "#fdf6e4",
+    "PAGE_SHADOW": "#d7c6a5",
+    "RIBBON": "#c94038",
+    "INK": "#705844"
+  },
+  "svg": "<g filter=\"url(#paperBevel)\"><path d=\"M-34 4 L-2 -2 L2 -2 L34 4 L30 12 L0 7 L-30 12 Z\" fill=\"{{COVER}}\"/><path d=\"M-31 2 C-22 -14 -8 -18 0 -10 C8 -18 22 -14 31 2 C18 -2 8 0 0 6 C-8 0 -18 -2 -31 2 Z\" fill=\"{{PAGE}}\"/><path d=\"M-31 2 C-18 -2 -8 0 0 6 L0 -10 C-6 -4 -18 -4 -31 2 Z\" fill=\"{{PAGE_SHADOW}}\" opacity=\"0.48\"/><path d=\"M-22 -6 Q-12 -10 -5 -6 M-20 -1 Q-11 -5 -4 -1 M6 -6 Q15 -10 23 -6 M6 -1 Q14 -5 21 -1\" fill=\"none\" stroke=\"{{INK}}\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\"0.6\"/><path d=\"M-2 5 L-5 19 L0 15 L5 19 L2 5 Z\" fill=\"{{RIBBON}}\"/></g>"
+}
